@@ -1,0 +1,3138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bộ Trò Chơi Sàng Lọc Nhận Thức</title>
+    <link rel="icon" type="image/x-icon" href="icon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="config.js"></script>
+
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    body { 
+        min-height: 100vh;
+        background: linear-gradient(-45deg, #ff7675, #74b9ff, #a29bfe, #fdcb6e, #55efc4); 
+        background-size: 400% 400%; 
+        animation: bgmove 15s ease infinite; 
+        display: flex; 
+        flex-direction: column;
+        overflow-x: hidden;
+        -ms-overflow-style: none;  
+        scrollbar-width: none;  
+    }
+    
+    body::-webkit-scrollbar {
+        display: none; 
+    }
+    
+    @keyframes bgmove { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+
+    .top-navbar {
+        width: 100%; height: 75px; background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5); display: flex;
+        justify-content: space-between; align-items: center;
+        padding: 0 30px; position: fixed; top: 0; left: 0; z-index: 1000;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-brand { display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s ease; }
+    .nav-brand:hover { transform: scale(1.02); }
+    .nav-logo-emoji { font-size: 26px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+    .nav-brand h3 { color: #1e293b; font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+
+    .nav-links { display: flex; align-items: center; gap: 4px; }
+    .nav-tab-btn {
+        padding: 10px 14px; border: none; background: transparent;
+        color: #475569; font-size: 13.5px; font-weight: 700;
+        border-radius: 12px; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex; align-items: center; gap: 6px;
+    }
+    .nav-tab-btn i { font-size: 14px; }
+    .nav-tab-btn:hover { background: rgba(0, 0, 0, 0.04); color: #1e293b; transform: translateY(-1px); }
+    .nav-tab-btn.active { background: #1a73e8; color: white; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2); }
+    .nav-tab-btn:active { transform: scale(0.96); }
+
+    .nav-right { display: flex; align-items: center; gap: 15px; }
+
+    .user-profile-widget { display: flex; align-items: center; gap: 10px; background: white; padding: 6px 14px; border-radius: 14px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .user-profile-widget:hover { border-color: #1a73e8; background: #f8fafc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }
+    .user-avatar-circle { width: 34px; height: 34px; border-radius: 50%; background: #e8f0fe; color: #1a73e8; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid #cbd5e1; overflow: hidden; }
+    .user-meta { text-align: left; }
+    .user-meta h4 { font-size: 13px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .user-meta p { font-size: 11px; color: #64748b; font-weight: 600; margin-top: 1px; }
+    .user-id-tag { background: #1a73e8; color: white; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 6px; font-family: monospace; }
+    
+    .music-btn { background: #f0fdf4; border: none; width: 36px; height: 36px; border-radius: 10px; color: #16a34a; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; font-size: 15px; }
+    .music-btn:hover { background: #16a34a; color: white; transform: scale(1.05); }
+    .music-btn.playing { background: #fee2e2; color: #ef4444; }
+    .music-btn.playing:hover { background: #ef4444; color: white; }
+
+    .logout-btn { background: #fee2e2; border: none; width: 36px; height: 36px; border-radius: 10px; color: #ef4444; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; font-size: 15px; }
+    .logout-btn:hover { background: #ef4444; color: white; transform: scale(1.05); }
+    .logout-btn:active { transform: scale(0.95); }
+
+    .main-content { 
+        flex: 1; width: 100%; max-width: 1250px; 
+        margin: 110px auto 40px auto; padding: 0 20px; 
+    }
+    
+    .tab-panel { display: none; width: 100%; }
+    .tab-panel.active { display: block; animation: fadeInSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    
+    @keyframes fadeInSlideUp { 
+        from { opacity: 0; transform: translateY(12px); } 
+        to { opacity: 1; transform: translateY(0); } 
+    }
+
+    .panel-card-container { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: left; }
+    .modal-title { color: #1e293b; margin-bottom: 25px; text-align: center; font-size: 24px; font-weight: 800; }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; width: 100%; text-align: left; }
+    .form-group label { display: block; font-weight: 700; color: #334155; font-size: 14.5px; padding-left: 12px; }
+    .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="file"], .form-group input[type="password"] { 
+		width: 100%; padding: 12px 24px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 50px; outline: none; font-size: 14px; font-weight: 600; color: #1e293b; transition: all 0.25s ease;
+	}
+    .form-group input:focus { border-color: #1a73e8; background: white; box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
+    .form-group textarea { width: 100%; padding: 16px 24px; border: 1px solid #cbd5e1; border-radius: 24px; resize: none; height: 95px; outline: none; font-size: 14px; color: #1e293b; font-weight: 600; transition: all 0.25s ease; background: #f8fafc; }
+    .form-group textarea:focus { border-color: #1a73e8; background: #ffffff; box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
+    
+    .btn-submit { width: 100%; padding: 14px; border: none; border-radius: 50px; background: #1a73e8; color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15); display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-submit:hover { background: #155cb4; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(26,115,232,0.25); }
+    .btn-submit:active { transform: scale(0.96); }
+    
+    .stars { display: flex; justify-content: center; gap: 12px; font-size: 38px; color: #cbd5e1; cursor: pointer; margin-bottom: 22px; }
+    .stars i { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease; }
+    .stars i:hover { transform: scale(1.2); }
+    .stars i.active { color: #eab308; transform: scale(1.08); text-shadow: 0 2px 10px rgba(234,179,8,0.2); }
+
+    .dashboard-layout-grid { display: grid; grid-template-columns: 2.5fr 1fr; gap: 25px; align-items: start; }
+    @media (max-width: 1150px) { .dashboard-layout-grid { grid-template-columns: 1fr; } }
+    
+    .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    @media (max-width: 680px) { .game-grid { grid-template-columns: 1fr; } }
+
+    .game-card { 
+        background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 25px; 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02); display: flex; flex-direction: column;
+        justify-content: space-between; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .game-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); border-color: #cbd5e1; }
+    
+    .icon-box { width: 52px; height: 52px; border-radius: 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; }
+    .game-card h3 { color: #1e293b; font-size: 17px; margin-bottom: 8px; font-weight: 700; }
+    .game-card p { color: #64748b; font-weight: 500; line-height: 1.6; min-height: 60px; margin-bottom: 20px; font-size: 13.5px; }
+    .game-card .btn { display: block; padding: 11px; text-decoration: none; border: none; border-radius: 10px; background: #1a73e8; color: white; font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.2s ease; width: 100%; }
+    .game-card .btn:hover { background: #155cb4; transform: translateY(-1px); }
+    .game-card .btn:active { transform: scale(0.97); }
+
+    .leaderboard-panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; }
+    .leaderboard-panel h3 { text-align: center; color: #d97706; margin-bottom: 2px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .leaderboard-panel p { text-align: center; font-size: 12px; color: #94a3b8; margin-bottom: 16px; font-style: italic; font-weight: 500; }
+    .leaderboard-list { max-height: 320px; overflow-y: auto; }
+    .leaderboard-item { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; transition: background 0.2s ease; }
+    .leaderboard-item:hover { background: #f8fafc; }
+
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13.5px; min-width: 600px; }
+    th, td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; }
+    th { background: #f8fafc; color: #64748b; font-weight: 700; }
+
+    .profile-layout { display: grid; grid-template-columns: 1fr 1.8fr; gap: 30px; align-items: start; }
+    @media (max-width: 850px) { .profile-layout { grid-template-columns: 1fr; } }
+    .profile-sidebar { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 25px; text-align: center; }
+    .profile-big-avatar { width: 100px; height: 100px; border-radius: 50%; background: white; border: 3px solid #1a73e8; display: flex; align-items: center; justify-content: center; font-size: 52px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(0,0,0,0.05); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; }
+    .profile-big-avatar:hover { transform: scale(1.05) rotate(5deg); }
+    .social-counters { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 20px 0; background: white; padding: 14px; border-radius: 14px; border: 1px solid #e2e8f0; }
+    .counter-item { text-align: center; }
+    .counter-item h5 { font-size: 22px; font-weight: 800; color: #1a73e8; }
+    .counter-item p { font-size: 11px; color: #64748b; font-weight: bold; margin-top: 2px; letter-spacing: 0.5px; }
+    
+    .avatar-picker-grid { display: flex; gap: 8px; margin-top: 8px; padding: 10px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 50px; overflow-x: auto; }
+    .avatar-option { font-size: 24px; padding: 4px 10px; text-align: center; background: white; border-radius: 50px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .avatar-option:hover { transform: scale(1.15); background: #f1f5f9; }
+    .avatar-option.selected { border-color: #1a73e8; background: #e8f0fe; }
+
+    .stats-sub-tabs { 
+        display: flex; gap: 6px; margin: 0 auto 25px auto; background: #f1f5f9; padding: 6px; border-radius: 50px; width: fit-content; box-shadow: inset 0 2px 5px rgba(0,0,0,0.04); justify-content: center; align-items: center; flex-wrap: wrap;
+    }
+    .sub-tab-btn { 
+        padding: 10px 24px; border: none; background: transparent; color: #64748b; font-size: 13.5px; font-weight: 700; border-radius: 50px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: inline-flex; align-items: center; gap: 6px;
+    }
+    .sub-tab-btn:hover { color: #1e293b; background: rgba(0,0,0,0.04); transform: translateY(-1px); }
+    .sub-tab-btn.active { background: #1a73e8; color: white; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3); }
+    .sub-tab-btn:active { transform: scale(0.95); }
+
+    #statsOverviewCards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+    @media (max-width: 900px) { #statsOverviewCards { grid-template-columns: repeat(2, 1fr) !important; } }
+    @media (max-width: 550px) { #statsOverviewCards { grid-template-columns: 1fr !important; } }
+
+    .stat-box-card { padding: 18px 20px; border-radius: 14px; text-align: left; box-shadow: 0 2px 6px rgba(0,0,0,0.02); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 5px solid #cbd5e1; }
+    .stat-box-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.05); }
+    .stat-box-card h4 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+    .stat-box-card p { font-size: 26px; font-weight: 800; margin-top: 8px; font-family: system-ui, -apple-system, sans-serif; }
+
+    .stats-dashboard-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; align-items: start; margin-top: 15px; margin-bottom: 30px; }
+    @media (max-width: 950px) { .stats-dashboard-wrapper { grid-template-columns: 1fr; } }
+
+    .chart-container-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+    .chart-header-title { font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 20px; text-align: left; display: flex; align-items: center; gap: 8px; }
+    .canvas-holder { position: relative; width: 100%; height: 230px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+    
+    .total-counter-label { font-size: 12.5px; font-weight: 700; color: #475569; margin-top: 20px; background: #ffffff; padding: 6px 18px; border-radius: 50px; display: inline-block; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.03); cursor: default; }
+
+    .table-responsive { transition: all 0.3s ease; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; width: 100%; overflow-x: auto; }
+    .table-responsive th { background: #f8fafc; color: #64748b; font-weight: 800; font-size: 13px; border-bottom: 2px solid #e2e8f0; padding: 14px 12px; }
+    .table-responsive td { padding: 14px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; color: #334155; vertical-align: middle; }
+    .table-responsive tr:hover td { background: #f8fafc; }
+
+    .chat-container-box { background: white; border-radius: 24px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 240px); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+    .chat-header { background: #f8fafc; padding: 18px 25px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    .chat-header h3 { font-size: 16px; color: #1e293b; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .chat-header p { font-size: 12.5px; color: #64748b; margin-top: 2px; }
+    .chat-messages-area { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; background: #ffffff; scroll-behavior: smooth; }
+    
+    .chat-bubble-row { display: flex; width: 100%; align-items: flex-start; gap: 12px; animation: msgSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes msgSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .chat-bubble-row.me { justify-content: flex-end; }
+    .chat-bubble-row.other { justify-content: flex-start; }
+    
+    .chat-avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: #e8ecef; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; border: 1px solid #cbd5e1; margin-top: 4px; overflow: hidden; }
+    .chat-bubble-body { max-width: 75%; display: flex; flex-direction: column; }
+    .chat-bubble-row.me .chat-bubble-body { align-items: flex-end; }
+    .chat-bubble-row.other .chat-bubble-body { align-items: flex-start; }
+    
+    .chat-msg-author { font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 4px; margin-left: 4px; }
+    .chat-msg-text { padding: 10px 18px; font-size: 14px; font-weight: 500; line-height: 1.45; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.03); border-radius: 20px; }
+    
+    .chat-bubble-row.me .chat-msg-text { background: #1a73e8; color: white; }
+    .chat-bubble-row.other .chat-msg-text { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; }
+
+    .chat-input-row { padding: 15px 25px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; align-items: center; }
+    .chat-input-row input { flex: 1; padding: 12px 20px; border: 1px solid #cbd5e1; border-radius: 24px; font-size: 14px; font-weight: 500; outline: none; background: #f8fafc; }
+    .chat-input-row input:focus { border-color: #1a73e8; background: white; }
+    .chat-input-row button { padding: 11px 26px; border: none; background: #1a73e8; color: white; border-radius: 24px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    .friend-sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: white; margin-bottom: 6px; cursor: pointer; text-align: left; }
+    .friend-sidebar-item.active { background: #e8f0fe; border-color: #1a73e8; }
+    
+    .social-action-btn { border: none; color: white; padding: 5px 12px; border-radius: 14px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    .view-profile-btn { background: #1a73e8; color: white; border: none; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+    .floating-contact { position: fixed; right: 20px; bottom: 20px; display: flex; gap: 10px; z-index: 1000; }
+    .contact-bubble { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-decoration: none; }
+    footer { text-align: center; padding: 20px 0 10px 0; color: #475569; font-size: 13.5px; font-weight: 600; margin-top: auto; }
+
+    @media (max-width: 768px) {
+        .top-navbar {
+            height: auto !important;
+            flex-wrap: wrap !important;
+            padding: 8px 12px !important;
+            gap: 6px !important;
+        }
+        .nav-brand { order: 1; }
+        .nav-right { order: 2; gap: 8px !important; }
+        .user-meta { display: none !important; }
+        .user-profile-widget { padding: 4px 10px !important; border-radius: 12px !important; }
+        .nav-links {
+            order: 3; width: 100% !important; overflow-x: auto !important;
+            white-space: nowrap !important; display: flex !important;
+            padding: 6px 0 2px 0 !important; margin-top: 4px !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+            scrollbar-width: none !important; -webkit-overflow-scrolling: touch;
+        }
+        .nav-links::-webkit-scrollbar { display: none !important; }
+        .nav-tab-btn { padding: 8px 12px !important; font-size: 12.5px !important; flex-shrink: 0 !important; border-radius: 10px !important; }
+        .main-content { margin: 142px auto 25px auto !important; padding: 0 12px !important; }
+        .panel-card-container { padding: 20px 15px !important; border-radius: 18px !important; }
+        .modal-title { font-size: 20px !important; }
+        #dailyGymBanner { padding: 16px !important; flex-direction: column !important; gap: 12px !important; align-items: stretch !important; }
+        #dailyGymBtn { text-align: center !important; }
+        
+        /* Reset inline styles của card Flexibility trên mobile để không làm vỡ Grid */
+        .game-grid .game-card { grid-column: span 1 !important; }
+        .game-grid .game-card > div[style*="display: flex"] { flex-direction: column !important; align-items: stretch !important; text-align: left; gap: 12px !important; }
+        .game-grid .game-card .btn { width: 100% !important; }
+
+        .stats-sub-tabs {
+            display: flex !important; gap: 6px !important; overflow-x: auto !important;
+            white-space: nowrap !important; width: 100% !important;
+            justify-content: flex-start !important; padding: 4px !important;
+            scrollbar-width: none !important; -webkit-overflow-scrolling: touch;
+        }
+        .stats-sub-tabs::-webkit-scrollbar { display: none !important; }
+        .stats-sub-tabs .sub-tab-btn { flex-shrink: 0 !important; padding: 8px 16px !important; font-size: 12px !important; }
+        .profile-layout { grid-template-columns: 1fr !important; gap: 20px !important; }
+        .form-group[style*="display:grid"] { grid-template-columns: 1fr !important; gap: 12px !important; }
+        .stats-dashboard-wrapper { grid-template-columns: 1fr !important; gap: 20px !important; }
+        .canvas-holder { height: 190px !important; }
+        table { font-size: 12px !important; }
+        th, td { padding: 10px 6px !important; }
+        
+        #sub-panel-chat-banbe .chat-container-box {
+            display: block !important; position: relative !important; overflow: hidden !important;
+            height: calc(100dvh - 250px) !important; background: #ffffff !important; border-radius: 18px !important;
+        }
+        #sub-panel-chat-banbe .chat-container-box > div:first-child { width: 100% !important; height: 100% !important; display: flex !important; flex-direction: column !important; padding: 15px !important; border-right: none !important; }
+        #privateFriendsListArea { display: flex !important; flex-direction: column !important; gap: 8px !important; overflow-y: auto !important; overflow-x: hidden !important; padding: 4px 0 !important; flex: 1 !important; }
+        .friend-sidebar-item { width: 100% !important; padding: 12px !important; margin-bottom: 0 !important; }
+        #sub-panel-chat-banbe .chat-container-box > div:last-child {
+            position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; background: #ffffff !important;
+            transform: translateX(100%) !important; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important; z-index: 100 !important; display: flex !important; flex-direction: column !important;
+        }
+        #sub-panel-chat-banbe .chat-container-box.mobile-show-chat > div:last-child { transform: translateX(0) !important; }
+        #backToFriendListBtn {
+            display: inline-flex !important; align-items: center; justify-content: center; gap: 5px; background: #f1f5f9 !important; border: none !important; padding: 6px 12px !important;
+            border-radius: 12px !important; font-size: 12.5px !important; font-weight: 700 !important; color: #475569 !important; cursor: pointer !important; margin-right: 6px !important; white-space: nowrap !important;
+        }
+        
+        /* Sửa lỗi cú pháp CSS hiển thị tiêu đề chatbox bảo mật */
+        #sub-panel-chat-banbe .chat-container-box > div:last-child > div:first-child { padding: 8px 12px !important; background: #f8fafc !important; display: flex !important; align-items: center !important; justify-content: space-between !important; }
+        #currentPrivateChatTitle { font-size: 12px !important; max-width: 55% !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
+        
+        #viewFriendProfileBtn { padding: 5px 10px !important; font-size: 10.5px !important; }
+        #privateChatBox { padding: 12px !important; flex: 1 !important; }
+        #sub-panel-chat-banbe .chat-input-row { padding: 8px 12px !important; }
+        #privateChatInput { padding: 10px 14px !important; font-size: 13px !important; border-radius: 20px !important; }
+        #sendPrivateChatBtn { padding: 8px 16px !important; font-size: 13px !important; border-radius: 20px !important; }
+    }
+</style>
+</head>
+<body>
+
+<audio id="bgMusic" src="Nhạc nền vui của Độ mixi.mp3" loop autoplay></audio>
+
+<header class="top-navbar">
+    <div class="nav-brand" onclick="window.switchTab('game')">
+        <div class="nav-logo-emoji">🧠</div>
+        <div class="nav-brand-text">
+            <h3>Sàng lọc tâm lý</h3>
+        </div>
+    </div>
+    
+    <nav class="nav-links">
+        <button class="nav-tab-btn active" data-tab="game" onclick="window.switchTab('game')"><i class="fa-solid fa-gamepad"></i> Game lẻ</button>
+        <button class="nav-tab-btn" style="background: rgba(234,179,8,0.1); color: #d97706; border: 1px solid rgba(234,179,8,0.2);" onclick="window.location.href='kiemtra.html'"><i class="fa-solid fa-clipboard-check"></i> Đánh Giá Tổng Hợp</button>
+        
+        <button class="nav-tab-btn" data-tab="survey" onclick="window.switchTab('survey')"><i class="fa-solid fa-square-poll-horizontal"></i> Khảo sát hằng ngày</button>
+        <button class="nav-tab-btn" data-tab="stats" onclick="window.switchTab('stats')"><i class="fa-solid fa-chart-line"></i> Thống kê của tôi</button>
+        <button class="nav-tab-btn" data-tab="ai-assistant" onclick="window.switchTab('ai-assistant')"><i class="fa-solid fa-robot"></i> Trợ lý AI Tâm Lý</button>
+        <button class="nav-tab-btn" data-tab="feedback" onclick="window.switchTab('feedback')"><i class="fa-solid fa-comment-dots"></i> Phản hồi</button>
+        <button class="nav-tab-btn" data-tab="rating" onclick="window.switchTab('rating')"><i class="fa-solid fa-star"></i> Đánh giá</button>
+        <button class="nav-tab-btn" data-tab="profile" onclick="window.switchTab('profile')"><i class="fa-solid fa-user-gear"></i> Hồ sơ của tôi</button>
+		<button class="nav-tab-btn" data-tab="posts" onclick="window.switchTab('posts')"><i class="fa-solid fa-images"></i> Bản Tin Học Đường</button>
+        <button class="nav-tab-btn" data-tab="chat" onclick="window.switchTab('chat')"><i class="fa-solid fa-comments"></i> Phòng Chat</button>
+    </nav>
+    
+    <div class="nav-right">
+        <div class="user-profile-widget" onclick="window.switchTab('profile')">
+            <div class="user-avatar-circle">👤</div>
+            <div class="user-meta">
+                <h4 id="profileName">Học sinh</h4>
+                <p id="profileClass">Khối lớp --</p>
+            </div>
+            <span id="profileIdBadge" class="user-id-tag">ID: N/A</span>
+        </div>
+        
+        <button id="bgmToggleBtn" class="music-btn" onclick="window.toggleMusic()" title="Bật/Tắt nhạc nền vui nhộn">
+            <i class="fa-solid fa-music"></i>
+        </button>
+
+        <button class="logout-btn" onclick="window.logout()" title="Đăng xuất khỏi hệ thống"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+</header>
+
+<main class="main-content">
+    
+    <div id="panel-game" class="tab-panel active">
+        <div id="dailyGymBanner" style="background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 22px 28px; border-radius: 20px; margin-bottom: 25px; display: none; align-items: center; justify-content: space-between; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.15); border: 1px solid rgba(255,255,255,0.15);">
+            <div style="text-align: left; max-width: 75%;">
+                <h3 style="margin-bottom: 6px; font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: #fef08a;"><i class="fa-solid fa-dumbbell"></i> HÔM NAY LUYỆN GÌ? (DAILY BRAIN GYM)</h3>
+                <p id="dailyGymSuggestText" style="font-size: 13.5px; opacity: 0.95; font-weight: 500; line-height: 1.5;">Hệ thống đang phân tích chỉ số nhận thức của riêng bạn...</p>
+            </div>
+            <a id="dailyGymBtn" href="#" class="btn" style="background: #ffffff; color: #4f46e5; width: auto; padding: 12px 24px; border-radius: 12px; font-weight: 800; text-decoration: none; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.2s; white-space: nowrap;">Vào rèn luyện ngay</a>
+        </div>
+
+        <div id="badgesContainer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px;"></div>
+
+        <div class="panel-card-container" style="margin-bottom: 25px; background: rgba(255, 255, 255, 0.96); border-left: 6px solid #1a73e8;">
+            <h3 style="color: #1e293b; font-size: 17px; font-weight: 800; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-info" style="color: #1a73e8; font-size: 19px;"></i> GIỚI THIỆU DỰ ÁN SÀNG LỌC TÂM LÝ
+            </h3>
+            <p style="color: #475569; font-size: 13.5px; line-height: 1.6; text-align: justify; margin-bottom: 12px; font-weight: 500;">
+                Ở lứa tuổi trung học cơ sở (THCS), many yếu tố như căng thẳng học tập, thiếu ngủ, xung đột bạn bè hoặc thay đổi nội tiết có thể làm xuất hiện các biểu hiện khó chịu về cảm xúc và suy giảm tạm thời một số chức năng nhận thức (chú ý, trí nhớ, kiểm soát hành vi). Một tỷ lệ rất nhỏ học sinh có thể gặp các “trải nghiệm tâm lý bất bất thường ở mức sớm” (ví dụ: cảm giác bị quan sát, nghe thấy tiếng gọi thoáng qua, nghi ngờ quá mức) và nếu các trải nghiệm này lặp lại, tăng dần hoặc đi kèm suy giảm học tập thì cần được theo dõi và tư vấn chuyên môn.
+            </p>
+            <p style="color: #475569; font-size: 13.5px; line-height: 1.6; text-align: justify; margin-bottom: 15px; font-weight: 500;">
+                Đề tài xây dựng bộ 05 trò chơi nhận thức (Memory, Go/No-Go, N-back, Trail Making, Flexibility) phù hợp học sinh THCS nhằm thu thập tự động các chỉ số định lượng (thời gian phản ứng, số lỗi, tỷ lệ bỏ sót/nhấn nhầm…), từ đó tính chỉ số nguy cơ tổng hợp để phân loại 3 mức theo dõi trong nhà trường. Công cụ hướng tới hỗ trợ phòng tư vấn học đường phát hiện sớm nhóm học sinh cần quan tâm, và luôn nhấn mạnh: đây là công cụ sàng lọc hỗ trợ, không phải chẩn đoán; mọi trường hợp mức cao cần được trao đổi với phụ huynh và tham vấn với chuyên gia chuyên khoa khi cần.
+            </p>
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <span style="font-size: 13.5px; color: #475569; font-weight: 800;">
+                    <i class="fa-solid fa-user-pen" style="color: #16a34a; margin-right: 4px;"></i> Tác giả đề tài: <span style="color: #1a73e8; background: #e8f0fe; padding: 4px 10px; border-radius: 6px; font-family: inherit;">Nguyễn Phát - Nguyễn Ngọc Trâm Anh</span>
+                </span>
+                <span style="font-size: 12px; color: #94a3b8; font-weight: 700; font-style: italic; background: #f1f5f9; padding: 4px 12px; border-radius: 50px;">
+                    <i class="fa-solid fa-school"></i>Trường THCS Phan Đình Phùng - Trường THCS-THPT Nguyễn Khuyến
+                </span>
+            </div>
+        </div>
+
+        <div class="dashboard-layout-grid">
+            <div class="game-grid">
+                <div class="game-card"> 
+                    <div>
+                        <div class="icon-box" style="background: #e0e7ff; color: #4f46e5;"><i class="fa-solid fa-brain"></i></div>
+                        <h3>Memory Matching</h3> 
+                        <p>Kiểm tra trí nhớ ngắn hạn. Lật và ghép các cặp hình giống nhau trong thời gian quy định.</p> 
+                    </div>
+                    <a href="sanglocnhanthuc(1).html" class="btn">Bắt đầu</a> 
+                </div>
+                <div class="game-card"> 
+                    <div>
+                        <div class="icon-box" style="background: #fee2e2; color: #ef4444;"><i class="fa-solid fa-hand"></i></div>
+                        <h3>Stop the Game</h3> 
+                        <p>Kiểm tra khả năng ức chế hành vi và tốc độ phản xạ trước các chuỗi tín hiệu đột xuất.</p> 
+                    </div>
+                    <a href="kiemtraucche(2).html" class="btn">Bắt đầu</a> 
+                </div>
+                <div class="game-card"> 
+                    <div>
+                        <div class="icon-box" style="background: #e0f2fe; color: #0284c7;"><i class="fa-solid fa-arrows-rotate"></i></div>
+                        <h3>N-Back Task</h3> 
+                        <p>Đánh giá năng lực trí nhớ làm việc (Working Memory) bằng cách khớp vị trí thẻ tuần tự.</p> 
+                    </div>
+                    <a href="kiemtrratrinholamviec(3).html" class="btn">Bắt đầu</a> 
+                </div>
+                <div class="game-card"> 
+                    <div>
+                        <div class="icon-box" style="background: #dcfce7; color: #16a34a;"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <h3>Trail Making Test</h3> 
+                        <p>Nối các điểm mục tiêu số học liên tiếp nhanh nhất để kiểm tra tốc độ xử lý thị giác tư duy.</p> 
+                    </div>
+                    <a href="kiemtratocdo.html" class="btn">Bắt đầu</a> 
+                </div>
+                <div class="game-card" style="grid-column: span 2;"> 
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <div class="icon-box" style="background: #fef3c7; color: #d97706; margin-bottom:0;"><i class="fa-solid fa-shuffle"></i></div>
+                        <div style="flex: 1;">
+                            <h3>Flexibility Test</h3> 
+                            <p style="min-height:auto; margin-bottom:0;">Đánh giá mức độ linh hoạt trong tư duy nhận thức và khả năng thích ứng linh hoạt.</p>
+                        </div>
+                        <a href="kiemtrralinhhoat(5).html" class="btn" style="width: 150px; flex-shrink:0;">Bắt đầu</a>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="leaderboard-panel">
+                    <h3><i class="fa-solid fa-trophy" style="color:#eab308;"></i> TOP 10 CAO THỦ</h3>
+                    <p>(Điểm trung bình đúng Bài 2, 3, 5)</p>
+                    <div id="mainLeaderboardContent" class="leaderboard-list">
+                        <p style='text-align:center; padding: 15px 0; color: #94a3b8;'>🔄 Đang tải dữ liệu đám mây...</p>
+                    </div>
+                    <div class="social-counters" style="margin-top: 15px; border-radius: 50px;">
+                        <div class="counter-item">
+                            <h5 id="cntFriends">0</h5>
+                            <p>BẠN BÈ HỆ THỐNG</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-survey" class="tab-panel">
+        <div class="panel-card-container" style="max-width: 650px; margin: 0 auto; text-align: center;">
+            <div class="icon-box" style="background: #fff3e0; color: #e65100; width: 65px; height: 65px; border-radius: 18px; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 28px;"><i class="fa-solid fa-fire"></i></div>
+            <h3 class="modal-title" style="margin-bottom: 15px;">Khảo Sát Tâm Lý & Duy Trì Chuỗi Lửa hằng ngày</h3>
+            <p style="color: #64748b; font-weight: 500; line-height: 1.6; margin-bottom: 30px; font-size: 14.5px;">
+                Hãy dành ra 1 phút để thực hiện khảo sát trạng thái tâm lý, giấc ngủ và mức độ tập trung hằng ngày. 
+                Việc này giúp hệ thống phân tích sâu sắc hơn tình trạng sức khỏe nhận thức of em, đồng thời tích lũy <b>Chuỗi Ngày Luyện Tập (Streak)</b> để vinh danh trên bảng xếp hạng toàn trường!
+            </p>
+            <button type="button" class="btn-submit" onclick="window.openDailySurvey();" style="display: inline-flex; width: auto; margin: 0 auto; border: none;">
+				<i class="fa-solid fa-play"></i> Bắt đầu vào khảo sát
+			</button>
+        </div>
+    </div>
+
+    <div id="panel-stats" class="tab-panel">
+        <div class="panel-card-container">
+            <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                <h2 style="font-size:18px; font-weight:800; color:#1e293b;">
+                    <i class="fa-solid fa-chart-line" style="color:#1a73e8; margin-right:8px;"></i> Trung Tâm Phân Tích Chỉ Số Đo Lường
+                </h2>
+                <button id="btnExportStatsPDF" class="btn" style="background:#475569; border-radius:50px; padding:8px 18px; font-size:13px; color:white; border:none; cursor:pointer;" onclick="window.exportComprehensivePDF()"><i class="fa-solid fa-file-pdf"></i> Xuất Báo Cáo PDF</button>
+            </div>
+            
+            <div class="stats-sub-tabs">
+                <button class="sub-tab-btn active" onclick="window.filterStats('all', this)">☀️ Tất cả bài</button>
+                <button class="sub-tab-btn" style="background: rgba(162,155,254,0.12); color: #6c5ce7; font-weight:800; border: 1px solid rgba(162,155,254,0.25);" onclick="window.filterStats('combined', this)">📋 Đánh Giá Tổng Hợp</button>
+                <button class="sub-tab-btn" onclick="window.filterStats('game1', this)">🧠 1. Memory Matching</button>
+                <button class="sub-tab-btn" onclick="window.filterStats('game2', this)">✋ 2. Stop Game</button>
+                <button class="sub-tab-btn" onclick="window.filterStats('game3', this)">🔢 3. N-Back Task</button>
+                <button class="sub-tab-btn" onclick="window.filterStats('game4', this)">🖌️ 4. Trail Test</button>
+                <button class="sub-tab-btn" onclick="window.filterStats('game5', this)">🔀 5. Flexibility</button>
+            </div>
+
+            <div id="statsOverviewCards">
+                <div class="stat-box-card" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #22c55e;">
+                    <h4 style="color: #166534;"><i class="fa-solid fa-circle-play"></i> Tổng ván test</h4>
+                    <p style="color: #14532d;" id="statTotalGames">0</p>
+                </div>
+                <div class="stat-box-card" style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 5px solid #3b82f6;">
+                    <h4 style="color: #1e40af;"><i class="fa-solid fa-square-check"></i> Đúng nhiều nhất</h4>
+                    <p style="color: #1e3a8a;" id="statMaxCorrect">0</p>
+                </div>
+                <div class="stat-box-card" style="background: #fff7ed; border: 1px solid #ffedd5; border-left: 5px solid #f97316;">
+                    <h4 style="color: #9a3412;"><i class="fa-solid fa-stopwatch"></i> T.gian trung bình</h4>
+                    <p style="color: #7c2d12;" id="statAvgTime">0s</p>
+                </div>
+                <div class="stat-box-card" style="background: #faf5ff; border: 1px solid #f3e8ff; border-left: 5px solid #a855f7;">
+                    <h4 style="color: #6b21a8;"><i class="fa-solid fa-heart-pulse"></i> Trạng thái tâm lý</h4>
+                    <p style="color: #581c87;" id="statPsychologyRisk">---</p>
+                </div>
+            </div>
+
+            <div class="stats-dashboard-wrapper">
+                <div class="chart-container-card">
+                    <div class="chart-header-title" id="pieChartHeaderTitle">
+                        <i class="fa-solid fa-chart-pie" style="color: #ff4d6d;"></i> Phân phối tần suất luyện tập
+                    </div>
+                    <div class="canvas-holder">
+                        <canvas id="myPieChartCanvas"></canvas>
+                    </div>
+                    <div id="statsTotalLabel" class="total-counter-label">Tổng số ván: 0</div>
+                </div>
+
+                <div class="chart-container-card">
+                    <div class="chart-header-title">
+                        <i class="fa-solid fa-chart-line" style="color: #1a73e8;"></i> Quỹ đạo độ chính xác nhận thức (%)
+                    </div>
+                    <div class="canvas-holder">
+                        <canvas id="myLineChartCanvas"></canvas>
+                    </div>
+                    <div class="total-counter-label" style="border-color:#1a73e8; color:#1a73e8;">Biểu đồ xu hướng tiến bộ</div>
+                </div>
+            </div>
+
+            <div>
+    <h3 style="font-size: 15px; font-weight: 800; color: #1e293b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-clock-rotate-left" style="color:#1a73e8;"></i> Nhật ký đo lường chuẩn hóa (Lưu ngày giờ thực tế)
+    </h3>
+    <div id="myStatsContent"></div>
+</div>
+
+<div style="margin-top: 25px;">
+    <h3 style="font-size: 15px; font-weight: 800; color: #1e293b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-square-poll-vertical" style="color:#22c55e;"></i> Nhật ký Đánh Giá Chuỗi Đa Nhiệm Tổng Hợp (kiemtra.html)
+    </h3>
+    <div id="multiTaskStatsContainer" class="table-responsive" style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; overflow-x: auto; min-height: 80px;">
+        <p style="font-style: italic; color: #94a3b8; font-size: 13px; text-align: center;">🔄 Đang tải dữ liệu chuỗi đa nhiệm học đường...</p>
+    </div>
+</div>
+        </div>
+    </div>
+
+    <div id="panel-ai-assistant" class="tab-panel">
+        <div class="chat-container-box">
+            <div class="chat-header" style="background: #f0fdf4; border-left: 5px solid #22c55e;">
+                <h3><i class="fa-solid fa-robot" style="color:#22c55e;"></i> Trợ Lý Tâm Lý AI Thấu Cảm</h3>
+                <p>Hãy thoải mái chia sẻ áp lực học tập, chuyện bạn bè, gia đình. AI hỗ trợ lắng nghe và định hướng tích cực.</p>
+            </div>
+            
+            <div style="display: flex; gap: 12px; padding: 12px 25px; background: #ffffff; border-bottom: 1px solid #e2e8f0; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-weight: 700; font-size: 13.5px; color: #334155;"><i class="fa-solid fa-user-astronaut" style="color:#1a73e8;"></i> Chọn người bạn AI:</label>
+                    <select id="aiPersonaSelect" onchange="window.changeAiPersona()" style="padding: 6px 14px; border-radius: 50px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 13px; color: #1e293b; outline: none; background: #f8fafc; cursor: pointer;">
+                        <option value="thau-cam">👩‍⚕️ Chị Tâm Lý Thấu Cảm</option>
+                        <option value="thong-thai">🧙‍♂️ Thầy Thông Thái</option>
+                        <option value="tri-ky">🦊 Bạn Cáo Tri Kỷ</option>
+                    </select>
+                </div>
+                <div id="aiExpressionWidget" style="font-size: 12px; font-weight: 700; color: #16a34a; background: #e8f0fe; border: 1px solid #bfdbfe; padding: 5px 12px; border-radius: 50px; display: flex; align-items: center; gap: 6px;">
+                    <span id="aiCurrentEmoji" style="font-size:14px;">👩‍⚕️</span> Biểu cảm AI: <span id="aiCurrentExpression" style="color:#1a73e8;">Thấu cảm</span>
+                </div>
+            </div>
+
+            <div id="aiChatBox" class="chat-messages-area">
+                <div class="chat-bubble-row other">
+                    <div class="chat-avatar-placeholder" id="aiWelcomeAvatar" style="background: #dcfce7; color: #16a34a;">👩‍⚕️</div>
+                    <div class="chat-bubble-body">
+                        <span class="chat-msg-author" id="aiWelcomeAuthor">Chị Tâm Lý Thấu Cảm</span>
+                        <div class="chat-msg-text" id="aiWelcomeText">Chào em! Hôm nay của em thế nào? Có điều gì làm em mệt mỏi, căng thẳng hay có chuyện vui nào muốn kể cho Chị nghe không? 😊</div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="aiChatInput" placeholder="Nhập lời tâm sự của em tại đây..." autocomplete="off">
+                <input type="button" class="btn" value="Gửi tâm sự" onclick="window.sendAiMessage()" style="width: auto; padding: 10px 24px; background: #22c55e; border-radius: 50px;">
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-feedback" class="tab-panel">
+        <div class="panel-card-container" style="max-width: 650px; margin: 0 auto;">
+            <h3 class="modal-title">Gửi Ý Kiến Phản Hồi</h3>
+            <div class="form-group"><label>Ý kiến đóng góp chung của bạn về bộ sản phẩm trò chơi</label><textarea id="fb-general" placeholder="Nhập cảm nhận tại đây..."></textarea></div>
+            <div class="form-group"><label>Các ưu điểm bạn thấy thích thú</label><textarea id="fb-pros" placeholder="Ưu điểm nổi bật..."></textarea></div>
+            <div class="form-group"><label>Nhược điểm hoặc điểm cần tối ưu nâng cấp</label><textarea id="fb-cons" placeholder="Nhược điểm hoặc lỗi..."></textarea></div>
+            <button class="btn-submit" onclick="window.submitFeedback()">Gửi phản hồi lên hệ thống</button>
+        </div>
+    </div>
+
+    <div id="panel-rating" class="tab-panel">
+        <div class="panel-card-container" style="max-width: 550px; margin: 0 auto;">
+            <h3 class="modal-title">Đánh Giá Trải Nghiệm Ứng Dụng</h3>
+            <div class="stars" id="starContainer"><i class="fa-solid fa-star active" data-value="1"></i><i class="fa-solid fa-star active" data-value="2"></i><i class="fa-solid fa-star active" data-value="3"></i><i class="fa-solid fa-star active" data-value="4"></i><i class="fa-solid fa-star active" data-value="5"></i></div>
+            <div class="form-group"><label>Chi tiết cảm nhận cá nhân của bạn</label><textarea id="rating-text" placeholder="Hãy viết vài lời chia sẻ trải nghiệm tại đây..."></textarea></div>
+            <button class="btn-submit" onclick="window.submitRating()">Gửi đánh giá sao</button>
+        </div>
+    </div>
+
+    <div id="panel-profile" class="tab-panel">
+        <div class="panel-card-container">
+            <div class="profile-layout">
+                <div class="profile-sidebar" style="border-radius: 24px; background: #eef4fa;">
+                    <div class="profile-big-avatar" id="bigProfileAvatar" style="position: relative; border: 4px solid #1a73e8;">👤</div>
+                    <div style="background: white; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 50px; font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 10px;" id="sidebarStudentName">Họ và Tên</div>
+                    <div style="background: white; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 50px; font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 15px;" id="sidebarStudentClass">Lớp --</div>
+                    
+                    <div style="background: white; border: 1px solid #cbd5e1; padding: 14px 20px; border-radius: 24px; font-size: 13.5px; color: #475569; font-style: italic; min-height: 80px; text-align: left; margin-bottom: 20px;" id="sidebarStudentBio">
+                        Chưa viết tiểu sử...
+                    </div>
+
+                    <div style="text-align: left; width:100%;">
+                        <h4 style="font-size:12px; color:#475569; font-weight:800; text-transform:uppercase; margin-bottom:8px; padding-left:10px;"><i class="fa-solid fa-medal"></i> Danh hiệu đã đạt</h4>
+                        <div id="sidebarStudentBadges" style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style='background: white; border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 50px; font-size:13px; color:#94a3b8; font-style:italic; text-align:center;'>Chưa đạt danh hiệu nào</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size:18px; font-weight:800; margin-bottom:20px; color:#1e293b; padding-left:4px;"><i class="fa-solid fa-user-pen" style="color:#1a73e8; margin-right:6px;"></i> Cập Nhật Hồ Sơ Cá Nhân</h3>
+                    
+                    <div class="form-group">
+                        <label>Họ và Tên học sinh <span style="color:#ef4444; font-size:11px; font-weight:600;">(Liên hệ Admin để sửa đổi)</span></label>
+                        <input type="text" id="editProfileName" placeholder="Họ và Tên học sinh" readonly style="background: #e2e8f0; cursor: not-allowed; color:#64748b;">
+                    </div>
+                    <div class="form-group">
+                        <label>Trường học đang theo học <span style="color:#ef4444; font-size:11px; font-weight:600;">(Liên hệ Admin để sửa đổi)</span></label>
+                        <input type="text" id="editProfileSchool" placeholder="Trường học đang theo học" readonly style="background: #e2e8f0; cursor: not-allowed; color:#64748b;">
+                    </div>
+                    <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div>
+                            <label>Khối Lớp (Thay đổi 10 ngày/lần)</label>
+                            <input type="number" id="editProfileClass" placeholder="Khối Lớp">
+                        </div>
+                        <div>
+                            <label>Tuổi (Thay đổi 10 ngày/lần)</label>
+                            <input type="number" id="editProfileAge" placeholder="Tuổi">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tiểu sử ngắn của bạn (Thay đổi tự do không giới hạn)</label>
+                        <textarea id="editProfileBio" placeholder="Hãy viết lời giới thiệu ngắn về bản thân..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tải tệp ảnh đại diện (Thay đổi tự do không giới hạn)</label>
+                        <input type="file" id="uploadAvatarInput" accept="image/*">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hoặc chọn biểu tượng có sẵn</label>
+                        <div class="avatar-picker-grid">
+                            <div class="avatar-option" data-emoji="👤">👤</div>
+                            <div class="avatar-option" data-emoji="🧠">🧠</div>
+                            <div class="avatar-option" data-emoji="🚀">🚀</div>
+                            <div class="avatar-option" data-emoji="🐱">🐱</div>
+                            <div class="avatar-option" data-emoji="🦊">🦊</div>
+                            <div class="avatar-option" data-emoji="🏆">🏆</div>
+                            <div class="avatar-option" data-emoji="💻">💻</div>
+                        </div>
+                    </div>
+					
+					<div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top: 15px;">
+                        <div>
+                            <label>🔑 Mật khẩu mới (Để trống nếu không đổi)</label>
+                            <input type="password" id="editProfilePassword" placeholder="Nhập mật khẩu mới">
+                        </div>
+                        <div>
+                            <label>🔒 Xác nhận mật khẩu mới</label>
+                            <input type="password" id="editProfileConfirmPassword" placeholder="Nhập lại mật khẩu mới">
+                        </div>
+                    </div>
+					
+                    
+                    <div class="form-group" style="flex-direction:row; justify-content:space-between; align-items:center; background:#f8fafc; padding:14px 24px; border-radius:50px; border:1px solid #e2e8f0; margin-top:15px;">
+                        <label style="margin-bottom:0; font-size:13.5px; cursor:pointer; padding-left:0;" for="privacyToggle">🔒 Chế độ riêng tư ẩn danh tìm kiếm</label>
+                        <input type="checkbox" id="privacyToggle" style="width:20px; height:20px; cursor:pointer;">
+                    </div>
+
+                    <button class="btn-submit" style="margin-top:25px;" onclick="window.updateStudentProfileData()"><i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi hồ sơ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-view-profile" class="tab-panel">
+        <div class="panel-card-container" style="max-width: 600px; margin: 0 auto; text-align: center;">
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 15px;">
+                <button onclick="window.switchTab('chat'); window.switchChatSubTab('banbe');" class="sub-tab-btn active" style="padding: 8px 20px;"><i class="fa-solid fa-arrow-left"></i> Quay lại chat</button>
+            </div>
+            <div id="viewProfileCardContent" style="padding: 10px 0;"></div>
+        </div>
+    </div>
+	
+	<div id="panel-posts" class="tab-panel">
+    <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 25px; align-items: start;">
+        
+        <div>
+            <div class="panel-card-container" style="margin-bottom:20px; padding: 20px; background: #ffffff; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px;">
+                    <div class="user-avatar-circle" id="postBoxAvatar" style="width: 40px; height: 40px; flex-shrink: 0;">👤</div>
+                    <h4 style="font-size:15px; font-weight:700; color:#1e293b;">Tạo bài viết mới</h4>
+                </div>
+                
+                <textarea id="studentPostContent" placeholder="Em đang suy nghĩ gì thế? Hãy chia sẻ cùng các bạn nhé..." style="width:100%; border: none; border-bottom: 1px solid #f1f5f9; border-radius:0; height:70px; padding:8px 4px; margin-bottom:6px; background:transparent; font-size: 15px; font-weight: 500; resize: none;"></textarea>
+                
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <span id="postWordCounter" style="font-size:12px; color:#64748b; font-weight:700;">0/200 từ</span>
+                </div>
+
+                <div id="postImagePreviewContainer" style="display:none; position:relative; margin-bottom:15px; border-radius:8px; overflow:hidden; border: 1px solid #e2e8f0; background: #f8fafc; text-align: center; padding: 10px;">
+                    <img id="postImagePreview" src="" style="max-height:220px; max-width:100%; object-fit:contain; border-radius: 6px;">
+                    <button onclick="window.removePostSelectedImage()" style="position:absolute; top:8px; right:8px; background:rgba(15,23,42,0.7); color:white; border:none; border-radius:50%; width:26px; height:26px; font-weight:bold; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="nav-tab-btn" onclick="document.getElementById('postImageInput').click()" style="background: #f0fdf4; color: #16a34a; padding: 8px 14px; border-radius: 50px;">
+                            <i class="fa-solid fa-image" style="font-size: 16px;"></i> Ảnh/Video
+                        </button>
+                        <input type="file" id="postImageInput" accept="image/*" style="display:none;" onchange="window.handlePostImageUpload(event)">
+
+                        <select id="studentPostVisibility" style="padding:6px 14px; border-radius:50px; font-weight:700; border:1px solid #cbd5e1; font-size:12.5px; outline:none; background:#f8fafc; color:#475569; cursor:pointer;">
+                            <option value="public">🌍 Công khai</option>
+                            <option value="friends">👥 Bạn bè hệ thống</option>
+                            <option value="private">🔒 Nhật ký riêng tư</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="window.createStudentPost()" style="width:auto; padding:10px 28px; background:#1877f2; border-radius:8px; color:white; font-weight:700; font-size:14px; box-shadow: none;">Đăng bài</button>
+                </div>
+            </div>
+
+            <div id="studentPostFeedContainer" style="display:flex; flex-direction:column; gap:16px;"></div>
+        </div>
+
+        <div class="panel-card-container" style="padding:20px; background:#ffffff; border-radius:16px;">
+            <h4 style="color:#1877f2; font-weight:800; font-size:14px; margin-bottom:10px;"><i class="fa-solid fa-shield-heart"></i> Nguyên tắc cộng đồng</h4>
+            <p style="font-size:12.5px; color:#475569; line-height:1.6; text-align:justify; font-weight: 500;">
+                Môi trường mạng xã hội học đường hướng tới sự thấu cảm và sẻ chia áp lực tâm lý. Vui lòng giữ văn minh, không sử dụng từ ngữ tiêu cực hoặc công kích cá nhân. Ban Giám Hiệu kiểm duyệt 24/7.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+    <div id="panel-chat" class="tab-panel">
+        <div class="chat-container-box" style="background: transparent; border: none; box-shadow: none; height: auto; overflow: visible;">
+            
+            <div class="stats-sub-tabs" style="margin-bottom: 20px;">
+                <button class="sub-tab-btn active" id="btnChatChung" onclick="window.switchChatSubTab('chung')">💬 Chat Chung</button>
+                <button class="sub-tab-btn" id="btnChatBanBe" onclick="window.switchChatSubTab('banbe')">👥 Chat Với Bạn Bè</button>
+            </div>
+
+            <div id="sub-panel-chat-chung" style="display: block; width: 100%;">
+                <div class="chat-container-box">
+                    <div class="chat-header">
+                        <h3><i class="fa-solid fa-comments" style="color:#1a73e8;"></i> Phòng Chat Giao Lưu Học Đường</h3>
+                        <p>Thảo luận trực tuyến thời gian thực cùng bạn bè trên toàn hệ thống</p>
+                    </div>
+                    <div id="chatBox" class="chat-messages-area"><p style='text-align:center; color:#94a3b8;'>🔄 Kết nối chat đám mây...</p></div>
+                    <div class="chat-input-row">
+                        <input type="text" id="chatInput" placeholder="Nhập tin nhắn... nhấn Enter hoặc nút Gửi" autocomplete="off">
+                        <button onclick="window.sendChatMessage()" style="color: white; border: none; background: #1a73e8; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">Gửi tin</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sub-panel-chat-banbe" style="display: none; width: 100%;">
+                <div class="chat-container-box" style="display: grid; grid-template-columns: 310px 1fr; height: calc(100vh - 240px); overflow: hidden; background: white;">
+                    <div style="background: #f8fafc; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 15px; overflow: hidden;">
+                        <h4 style="font-size: 13px; color: #475569; margin-bottom: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;"><i class="fa-solid fa-address-book"></i> Học sinh hệ thống</h4>
+                        <input type="text" id="searchPrivateFriendInput" placeholder="🔍 Gõ tên bạn... Nhấn Enter" onkeypress="window.handleSearchPrivateKeyPress(event)" style="width: 100%; padding: 9px 14px; border-radius: 20px; border: 1px solid #cbd5e1; outline: none; font-size: 12px; font-weight: 600; margin-bottom: 6px; background:white;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px;">
+                            <div id="privateHistoryTags" style="display: flex; gap: 4px; overflow-x: auto; white-space: nowrap; max-width: 75%;"></div>
+                            <button onclick="window.clearPrivateSearchHistory()" style="font-size: 10px; color: #ef4444; border: none; background: transparent; cursor: pointer; font-weight: 700; white-space: nowrap;">Xóa lịch sử</button>
+                        </div>
+                        <div id="privateFriendsListArea" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                            <p style="font-size: 12px; color: #94a3b8; font-style: italic;">Đang tải danh sách...</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; background: #ffffff; height: 100%; overflow: hidden;">
+                        <div style="background: #f8fafc; padding: 15px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                            <button id="backToFriendListBtn" style="display: none;" onclick="window.backToFriendList()"><i class="fa-solid fa-chevron-left"></i> Quay lại</button>
+							<h4 id="currentPrivateChatTitle" style="font-size: 14px; color: #1e293b; font-weight: 800; max-width: 70%; text-align: left;"><i class="fa-solid fa-user-lock"></i> Hãy chọn một người bạn ở danh sách bên trái để bảo mật trò chuyện</h4>
+                            <button id="viewFriendProfileBtn" class="view-profile-btn" style="display: none;" onclick="window.triggerViewFriendProfile()">📄 Xem Profile</button>
+                        </div>
+                        <div id="privateChatBox" class="chat-messages-area" style="flex: 1; padding: 25px; overflow-y: auto; background: #ffffff;">
+                            <p style="text-align: center; color: #94a3b8; font-style: italic; margin-top: 30px;">Chưa chọn phòng chat riêng tư</p>
+                        </div>
+                        <div class="chat-input-row" style="padding: 15px 25px; background: white; border-top: 1px solid #e2e8f0;">
+                            <input type="text" id="privateChatInput" placeholder="Nhập tin nhắn bảo mật..." autocomplete="off" disabled>
+                            <button id="sendPrivateChatBtn" onclick="window.sendPrivateChatMessage()" disabled>Gửi tin</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="floating-contact">
+    <a href="https://zalo.me/0762523437" target="_blank" class="contact-bubble" style="background: #0068ff; color:white; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:12px; font-weight:bold;">Zalo</a>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set, get, child, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0",
+        authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+        databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "bo-tro-cho-tam-li",
+        storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+        messagingSenderId: "150226282506",
+        appId: "1:150226282506:web:4df0cab215501b315317f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+	
+	async function hashPassword(password) {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+	
+    let savedUser = localStorage.getItem("user");
+    let senderName = "Khách", senderClass = "N/A", senderId = "N/A", senderSchool = "N/A";
+    let selectedAvatarEmoji = "👤"; 
+    
+    let globalChartInstance = null;
+    let globalLineChartInstance = null;
+    let rawScoreData = [];
+	window.currentStatsKey = 'all';
+	let objGlobalPosts = {};
+    let myFriendsListGlobal = {};
+    let currentRatingStars = 5;
+	let globalPostSelectedImageBase64 = null;
+    
+    let activeFriendId = null;
+    let privateChatCloseListener = null;
+    const pageLoadTime = Date.now();
+    window.lastNotifiedTimestamp = 0;
+
+    window.aiPersonas = {
+        'thau-cam': {
+            name: "Chị Tâm Lý Thấu Cảm",
+            emoji: "👩‍⚕️",
+            welcome: "Chào em! Hôm nay của em thế nào? Có điều gì làm em mệt mỏi, căng thẳng hay có chuyện vui nào muốn kể cho Chị nghe không? 😊",
+            systemPrompt: "Bạn là một Trợ lý Tâm lý học học đường thấu cảm học sinh THCS. Hãy trả lời học sinh bằng giọng văn nhẹ nhàng, lắng nghe và định hướng tích cực. Không đưa ra chẩn đoán y khoa nguy hiểm. QUAN TRỌNG: Hãy luôn bắt đầu câu trả lời của bạn bằng một dòng duy nhất có định dạng: '[CẢM XÚC: Thấu cảm]' hoặc '[CẢM XÚC: Vui vẻ]' hoặc '[CẢM XÚC: Trầm ngâm]' tùy thuộc vào nội dung trò chuyện, sau đó xuống dòng mới viết lời tư vấn."
+        },
+        'thong-thai': {
+            name: "Thầy Thông Thái",
+            emoji: "🧙‍♂️",
+            welcome: "Chào em. Thầy có thể giúp gì cho em trong việc tối ưu hóa tư duy, sắp xếp thời gian biểu học tập hoặc giải tỏa những thắc mắc nhận thức hôm nay? 🧠",
+            systemPrompt: "Bạn là một Chuyên gia Giáo dục và Tâm lý học nhận thức dày dặn kinh nghiệm dành cho lứa tuổi học đường THCS. Hãy đưa ra những lời khuyên khoa học, logic, dễ hiểu, mang tính kiến tạo và truyền cảm hứng mạnh mẽ cho học sinh. QUAN TRỌNG: Hãy luôn bắt đầu câu trả lời của bạn bằng một dòng duy nhất có định dạng: '[CẢM XÚC: Sáng suốt]' hoặc '[CẢM XÚC: Nghiêm túc]' hoặc '[CẢM XÚC: Điềm tĩnh]' tùy thuộc vào nội dung trò chuyện, sau đó xuống dòng mới viết lời tư vấn."
+        },
+        'tri-ky': {
+            name: "Bạn Cáo Tri Kỷ",
+            emoji: "🦊",
+            welcome: "Alo alo! Người bạn thân mến ơi, hôm nay có chuyện gì vui kể Cáo nghe đi, hoặc có tảng đá áp lực học hành nào đè nặng để Cáo thổi bay cho nào! 🚀",
+            systemPrompt: "Bạn là một người bạn đồng lứa thân thiết, vui vẻ và cực kỳ hài hước của học sinh THCS. Hãy sử dụng ngôn từ năng động, dí dỏm, thân thiện, giúp giải tỏa áp lực tinh thần một cách lạc quan nhất. QUAN TRỌNG: Hãy luôn bắt đầu câu trả lời của bạn bằng một dòng duy nhất có định dạng: '[CẢM XÚC: Hài hước]' hoặc '[CẢM XÚC: Hào hứng]' hoặc '[CẢM XÚC: Đồng cảm]' tùy thuộc vào nội dung trò chuyện, sau đó xuống dòng mới viết lời tư vấn."
+        }
+    };
+
+    window.toggleMusic = function() {
+        const audio = document.getElementById("bgMusic");
+        const btn = document.getElementById("bgmToggleBtn");
+        if (audio.paused) {
+            audio.play().then(() => {
+                btn.classList.add("playing");
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+            }).catch(err => {
+                alert("Hãy nhấp chuột vào bất cứ đâu trên màn hình một lần rồi bật lại nhạc, để cho phép trình duyệt phát âm thanh nhé!");
+            });
+        } else {
+            audio.pause();
+            btn.classList.remove("playing");
+            btn.innerHTML = '<i class="fa-solid fa-music"></i>';
+        }
+    };
+
+    function triggerAutoPlayOnLoad() {
+        const audio = document.getElementById("bgMusic");
+        const btn = document.getElementById("bgmToggleBtn");
+        
+        audio.play().then(() => {
+            btn.classList.add("playing");
+            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        }).catch(err => {
+            console.log("Autoplay bị chặn bởi hệ thống bảo mật trình duyệt. Nhạc sẽ tự bật ở click chuột đầu tiên.");
+            
+            const runMusicOnFirstClick = () => {
+                audio.play().then(() => {
+                    btn.classList.add("playing");
+                    btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    document.removeEventListener("click", runMusicOnFirstClick);
+                });
+            };
+            document.addEventListener("click", runMusicOnFirstClick);
+        });
+    }
+
+    window.removeAccents = function(str) {
+        if (!str) return "---";
+        return str
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/Đ/g, 'D');
+    };
+
+    window.flattenFirebaseData = function(snapshotValue) {
+        let records = [];
+        if (!snapshotValue || typeof snapshotValue !== 'object') return records;
+        if ('gameName' in snapshotValue || 'score' in snapshotValue || 'studentId' in snapshotValue) {
+            records.push(snapshotValue); return records;
+        }
+        Object.keys(snapshotValue).forEach(key1 => {
+            let val1 = snapshotValue[key1];
+            if (val1 && typeof val1 === 'object') {
+                if ('gameName' in val1 || 'score' in val1 || 'studentId' in val1) {
+                    if (!val1.id) val1.id = key1;
+                    if (!val1.studentId) val1.studentId = "";
+                    records.push(val1);
+                } else {
+                    Object.keys(val1).forEach(key2 => {
+                        let val2 = val1[key2];
+                        if (val2 && typeof val2 === 'object') {
+                            if (!val2.id) val2.id = key2;
+                            if (!val2.studentId) val2.studentId = key1; 
+                            records.push(val2);
+                        }
+                    });
+                }
+            }
+        });
+        return records;
+    };
+
+    window.parseScoreDetails = function(s) {
+    let correct = 0, wrong = 0, time = 0;
+    if (!s) return { correct, wrong, time };
+    
+    if (s.rawCorrect !== undefined) correct = parseInt(s.rawCorrect) || 0;
+    if (s.rawErrors !== undefined) wrong = parseInt(s.rawErrors) || 0;
+    
+    if (correct === 0 && wrong === 0) {
+        if (s.score && typeof s.score === 'object') {
+            correct = s.score.correct || s.score.right || s.score.score || 0;
+            wrong = s.score.wrong || s.score.errors || s.score.failed || 0;
+        } else if (s.score) {
+            let scoreStr = String(s.score);
+            let matchCorrect = scoreStr.match(/(?:Đúng|Correct|Right|Score|thành)[:\s]*(\d+)/i) || scoreStr.match(/(\d+)\s*(?:câu đúng|đúng)/i);
+            if (matchCorrect) correct = parseInt(matchCorrect[1]);
+            else if (/^\d+$/.test(scoreStr.trim())) correct = parseInt(scoreStr.trim());
+            
+            let matchErrors = scoreStr.match(/(?:Sai|Lỗi|Wrong|Error|Fail|Khuyết|Thiếu|lỗi)[:\s]*(\d+)/i) || scoreStr.match(/(\d+)\s*(?:câu sai|lỗi|sai)/i);
+            if (matchErrors) wrong = parseInt(matchErrors[1]);
+        }
+    }
+    
+    if (s.timePlayed) time = parseInt(s.timePlayed) || 0;
+    else if (s.rawTime) time = parseInt(s.rawTime) || 0;
+    
+    return { correct, wrong, time };
+};
+
+    window.extractAccuracyNum = function(s) {
+        if (s.accuracy) {
+            let match = String(s.accuracy).match(/(\d+)%/);
+            if (match) return parseInt(match[1]);
+            let num = parseInt(s.accuracy);
+            if (!isNaN(num)) return num;
+        }
+        let details = window.parseScoreDetails(s);
+        let total = details.correct + details.wrong;
+        return total > 0 ? Math.round((details.correct / total) * 100) : 100;
+    };
+
+    window.getAvatarHtml = function(avatarString) {
+        if (!avatarString) return "👤";
+        if (avatarString.startsWith("data:image") || avatarString.startsWith("http")) {
+            return `<img src="${avatarString}" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;">`;
+        }
+        return avatarString;
+    }
+
+    if(savedUser) {
+        let user = JSON.parse(savedUser);
+        senderId = user.id || "N/A"; senderName = user.name || "Người dùng ẩn danh"; senderClass = user.class || "N/A"; senderSchool = user.school || "N/A";
+        selectedAvatarEmoji = user.avatar || "👤";
+        
+        document.getElementById("profileName").innerText = senderName; 
+        document.getElementById("profileClass").innerText = `Lớp ${senderClass} - THCS`; 
+        document.getElementById("profileIdBadge").innerText = "ID: " + senderId;
+        document.querySelector(".user-profile-widget .user-avatar-circle").innerHTML = window.getAvatarHtml(selectedAvatarEmoji);
+    }
+
+    window.switchTab = function(tabId) {
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'panel-' + tabId));
+        if (tabId === 'stats') window.loadMyStats();
+        if (tabId === 'posts') window.renderStudentTimelineFeed(); 
+    }
+
+    window.logout = function() { if(confirm("Bạn có muốn đăng xuất khỏi hệ thống không?")) { localStorage.removeItem("user"); window.location.href = "../index.html"; } }
+
+    window.loadMyStats = function() {
+    onValue(ref(db, 'scores'), (snapshot) => {
+        if(!snapshot.exists()) {
+            rawScoreData = []; window.filterStats('all'); return;
+        }
+        rawScoreData = window.flattenFirebaseData(snapshot.val()).filter(s => s.studentId === senderId);
+        window.filterStats('all'); 
+    });
+}
+
+window.loadMultiTaskReports = function(currentStudentId) {
+    onValue(ref(db, 'scores'), (snapshot) => {
+        const container = document.getElementById("multiTaskStatsContainer");
+        if (!container) return;
+        if (!snapshot.exists()) {
+            container.innerHTML = `<p style="font-style:italic; color:#94a3b8; text-align:center; font-size:13px; padding:15px;">Chưa có dữ liệu kiểm tra chuỗi.</p>`;
+            return;
+        }
+
+        let localScores = window.flattenFirebaseData(snapshot.val());
+        let html = `<table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left; min-width:600px;">
+                        <thead>
+                            <tr style="background:#f8fafc; font-weight:bold; border-bottom:2px solid #e2e8f0; color:#475569;">
+                                <th style="padding:10px;">Chuỗi Thử Thách / Ngày thực hiện</th>
+                                <th style="padding:10px;">Chi Tiết Tiến Độ / Tổng Lỗi Bài Lẻ</th>
+                                <th style="padding:10px; text-align:center;">Phân Loại Nguy Cơ</th>
+                                <th style="padding:10px; text-align:center;">Thời Gian</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+        let hasData = false;
+
+        localScores.forEach(item => {
+            let scoreKey = item.id || "";
+            if (item.studentId === currentStudentId && (scoreKey.startsWith("SCORE_COMBINED_") || (item.gameName && item.gameName.toLowerCase().includes("chuỗi đa nhiệm")))) {
+                hasData = true;
+                let dateText = item.date;
+                if (!dateText && item.timestamp) {
+                    let d = new Date(item.timestamp);
+                    dateText = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                }
+                if(!dateText) dateText = "Vừa xong";
+
+                html += `
+                    <tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:12px 10px; font-weight:700; color:#1a73e8;">${item.gameName || 'Chuỗi đa nhiệm tổng hợp'}<br><span style="font-size:11px; font-weight:normal; color:#94a3b8;">${dateText}</span></td>
+                        <td style="padding:12px 10px; color:#475569; font-size:12px;">${item.score || 'N/A'}</td>
+                        <td style="padding:12px 10px; text-align:center; font-weight:bold;">${item.accuracy || 'N/A'}</td>
+                        <td style="padding:12px 10px; color:#64748b; text-align:center;">${item.timePlayed || 'N/A'}</td>
+                    </tr>`;
+            }
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = hasData ? html : `<p style="font-style:italic; color:#94a3b8; text-align:center; font-size:13px; padding:15px;">Em chưa tham gia chuỗi kiểm tra đánh giá tổng hợp nào.</p>`;
+    });
+}
+
+    window.filterStats = function(gameKey, btnElement) {
+        window.currentStatsKey = gameKey || 'all';
+
+        if(btnElement) {
+            document.querySelectorAll('.stats-sub-tabs .sub-tab-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+        
+        let filtered = [];
+        if (gameKey === 'all' || !gameKey) {
+            filtered = rawScoreData;
+        } else if (gameKey === 'combined') {
+            filtered = rawScoreData.filter(s => s.gameName && s.gameName.toLowerCase().includes("tổng hợp"));
+        } else {
+            filtered = rawScoreData.filter(s => {
+                if (!s.gameName || s.gameName.toLowerCase().includes("tổng hợp")) return false;
+                let name = s.gameName.toLowerCase();
+                if (gameKey === 'game1' && name.includes("memory")) return true;
+                if (gameKey === 'game2' && (name.includes("stop") || name.includes("go/no-go") || name.includes("ức chế"))) return true;
+                if (gameKey === 'game3' && name.includes("n-back")) return true;
+                if (gameKey === 'game4' && (name.includes("trail") || name.includes("tốc độ") || name.includes("tmt"))) return true;
+                if (gameKey === 'game5' && (name.includes("flexibility") || name.includes("linh hoạt"))) return true;
+                return false;
+            });
+        }
+
+        document.getElementById("statTotalGames").innerText = filtered.length;
+        
+        let maxCorrect = 0; let totalSeconds = 0;
+        filtered.forEach(s => {
+            let details = window.parseScoreDetails(s);
+            if (details.correct > maxCorrect) maxCorrect = details.correct;
+            totalSeconds += details.time;
+        });
+        
+        if ((gameKey === 'game4' || gameKey === 'combined') && filtered.length > 0) {
+            document.getElementById("statMaxCorrect").innerText = "Đạt chuẩn";
+        } else {
+            document.getElementById("statMaxCorrect").innerText = maxCorrect;
+        }
+        document.getElementById("statAvgTime").innerText = filtered.length ? Math.round(totalSeconds / filtered.length) + "s" : "0s";
+        document.getElementById("statPsychologyRisk").innerText = filtered.length ? "Năng lượng tốt" : "---";
+
+        let sortedLogs = [...filtered].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        function getTriBadgeHtml(mucStr) {
+            if (!mucStr || mucStr === "---") return "---";
+            let text = String(mucStr).toLowerCase();
+            let label = "Mức thấp"; let bg = "#22c55e";
+            if (text.includes("cao") || text.includes("quá tải") || text.includes("áp lực") || text.includes("căng thẳng")) {
+                bg = "#ef4444"; label = "Cao (cần theo dõi)";
+            } else if (text.includes("trung bình") || text.includes("tb")) {
+                bg = "#f59e0b"; label = "Trung bình";
+            } else {
+                bg = "#22c55e"; label = "Mức thấp";
+            }
+            return `<span class="user-id-tag" style="background:${bg}; color:white; font-size:11px; padding:4px 10px; border-radius:6px; font-weight:bold; white-space:nowrap;">${label}</span>`;
+        }
+
+        let html = "";
+
+        if (gameKey === 'combined') {
+            html = `<div class="table-responsive">
+                <table style="min-width: 2200px; text-align: center;">
+                    <thead>
+                        <tr style="background: #0f172a; color: white;">
+                            <th>ID</th><th>Giới</th><th>Tuổi</th><th>Khối</th><th>Ngủ (giờ/đêm)</th><th>Thiết bị (giờ/ngày)</th>
+                            <th>RT trung bình (ms)</th><th>Go/No-Go: nhấn nhầm (%)</th><th>N-back: chính xác (%)</th>
+                            <th>TMT: chi phí chuyển đổi (s)</th><th>Flex: lỗi kiên định (n)</th><th>Stress (0-40)</th>
+                            <th style="background: #1e293b;">Norm_RT</th><th style="background: #1e293b;">Norm_FA</th>
+                            <th style="background: #1e293b;">Norm_Acc( đảo)</th><th style="background: #1e293b;">Norm_TMT</th>
+                            <th style="background: #1e293b;">Norm_Flex</th><th style="background: #1e293b;">Norm_Stress</th>
+                            <th style="background: #1e3a8a;">TRI</th><th style="background: #1e3a8a;">Mức</th>
+                            <th style="background: #1e3a8a;">TRI (giá trị)</th><th style="background: #1e3a8a;">Mức (giá trị)</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                    
+            if(sortedLogs.length === 0) {
+                html += `<tr><td colspan="22" style="text-align:center; color:#94a3b8; font-style:italic; padding: 30px;">Chưa ghi nhận dữ liệu kết quả nào.</td></tr>`;
+            } else {
+                sortedLogs.forEach(s => {
+                    let id = s.studentId || senderId; let gioi = s.gioi || "---"; let tuoi = s.tuoi || s.age || "---"; let khoi = s.khoi || s.class || senderClass;
+                    let gioNgu = s.sleepHours || s.gioNgu || "---"; let gioThietBi = s.deviceHours || s.gioThietBi || "---";
+                    let rt = s.rtTrungBinh || "---"; let gono = s.gonoNhanNham || "---"; let nback = s.nbackChinhXac || "---";
+                    let tmt = s.tmtChiPhi || "---"; let flex = s.flexLoiKienDinh || "---"; let stress = s.stressScore || "---";
+                    
+                    let n_rt = s.normRT || "---"; let n_fa = s.normFA || "---"; let n_acc = s.normAcc || "---";
+                    let n_tmt = s.normTMT || "---"; let n_flex = s.normFlex || "---"; let n_stress = s.normStress || "---";
+                    let triLabel = s.triLabel || s.tri || "---"; let triValue = s.triValue || "---";
+                    let mucLabelRaw = s.mucLabel || s.mucDo || s.muc || "---"; let mucValueRaw = s.mucValue || "---";
+
+                    let scoreStr = String(s.score || "");
+                    let stressMatch = scoreStr.match(/Stress:\s*([^\s|\\(]+)/i);
+                    if(stressMatch && stress === "---") stress = stressMatch[1].trim();
+
+                    html += `<tr>
+                        <td><b>${id}</b></td><td>${gioi}</td><td>${tuoi}</td><td>${khoi}</td><td>${gioNgu}</td><td>${gioThietBi}</td>
+                        <td>${rt}</td><td style="color:#ef4444; font-weight:700;">${gono}</td><td style="color:#16a34a; font-weight:700;">${nback}</td>
+                        <td>${tmt}</td><td>${flex}</td><td>${stress}</td>
+                        <td style="background: #f8fafc;">${n_rt}</td><td style="background: #f8fafc;">${n_fa}</td><td style="background: #f8fafc;">${n_acc}</td>
+                        <td style="background: #f8fafc;">${n_tmt}</td><td style="background: #f8fafc;">${n_flex}</td><td style="background: #f8fafc;">${n_stress}</td>
+                        <td style="font-weight:700; color:#1a73e8; background: #f0f7ff;">${triLabel}</td><td style="background: #f0f7ff;">${getTriBadgeHtml(mucLabelRaw)}</td>
+                        <td style="font-weight:700; color:#1a73e8; background: #f0f7ff;">${triValue}</td><td style="background: #f0f7ff;">${getTriBadgeHtml(mucValueRaw)}</td>
+                    </tr>`;
+                });
+            }
+            html += `</tbody></table></div>`;
+        } else {
+            html = `<div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Game</th><th style="text-align:center;">Đúng</th><th style="text-align:center;">Sai</th>
+                            <th>Mức độ</th><th>Diễn biến</th><th>stress(mức độ)</th><th>Thời gian</th><th style="text-align:center;">Hiệu suất</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            if(sortedLogs.length === 0) {
+                html += `<tr><td colspan="8" style="text-align:center; color:#94a3b8; font-style:italic; padding: 20px;">Chưa ghi nhận bất cứ ván đo nhận thức nào thuộc mục này.</td></tr>`;
+            } else {
+                sortedLogs.forEach(s => {
+                    let details = window.parseScoreDetails(s);
+                    let accNum = window.extractAccuracyNum(s);
+                    let badgeBg = accNum < 60 ? "#ef4444" : (accNum < 80 ? "#f59e0b" : "#22c55e");
+
+                    let formattedDate = s.date;
+                    if (!formattedDate && s.timestamp) {
+                        let d = new Date(s.timestamp);
+                        formattedDate = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                    }
+                    if (!formattedDate && s.id && !isNaN(s.id) && String(s.id).length >= 10) {
+                        let d = new Date(parseInt(s.id));
+                        formattedDate = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                    }
+                    if (!formattedDate) formattedDate = "Vừa xong";
+
+                    let scoreStr = String(s.score || "");
+                    let dung = "---"; let sai = details.wrong; let stressMucDo = "Bình thường"; let mucDoNhanDạng = "Thấp";
+
+                    let isGame4 = s.gameName && (s.gameName.toLowerCase().includes("trail") || s.gameName.toLowerCase().includes("tmt"));
+                    let dungMatch = scoreStr.match(/Đúng:\s*(\d+(?:\/\d+)?)/i); 
+                    if (dungMatch) {
+                        dung = dungMatch[1];
+                    } else {
+                        dung = isGame4 ? "Hoàn thành" : details.correct;
+                    }
+
+                    if (s.gameName && s.gameName.toLowerCase().includes("tổng hợp")) {
+                        stressMucDo = s.stressScore ? s.stressScore + " (Điểm)" : "---";
+                        mucDoNhanDạng = s.mucLabel || s.mucDo || "Thấp";
+                    } else {
+                        mucDoNhanDạng = scoreStr;
+                        let stressMatch = scoreStr.match(/Stress:\s*([^\(]+)/i); if(stressMatch) stressMucDo = stressMatch[1].replace(/-*\s*$/, "").trim();
+                    }
+
+                    let dbCheck = (scoreStr + " " + (s.gameName || "")).toLowerCase();
+                    let dienBienHtml = "";
+                    if (dbCheck.includes("dừng") || dbCheck.includes("reject")) {
+                        dienBienHtml = `<span class="user-id-tag" style="background:#f97316; color:white; font-size:11px; padding:4px 10px; border-radius:6px; font-weight:bold; white-space:nowrap;">Bị dừng giữa chừng</span>`;
+                    } else {
+                        dienBienHtml = `<span class="user-id-tag" style="background:#10b981; color:white; font-size:11px; padding:4px 10px; border-radius:6px; font-weight:bold; white-space:nowrap;">Bình thường</span>`;
+                    }
+
+                    html += `<tr>
+                        <td><b style="color:#1e293b;">${s.gameName || 'Bài tập tổng hợp'}</b></td>
+                        <td style="text-align:center; font-weight:700; color:#1a73e8;">${dung}</td>
+                        <td style="text-align:center; font-weight:700; color:#ef4444;">${sai}</td>
+                        <td>${getTriBadgeHtml(mucDoNhanDạng)}</td>
+                        <td>${dienBienHtml}</td>
+                        <td><span class="user-id-tag" style="background:#64748b; color:white; font-size:11px; padding:3px 8px; border-radius:6px; font-weight:bold;">${stressMucDo}</span></td>
+                        <td style="color:#64748b; font-weight:600;"><i class="fa-regular fa-clock" style="margin-right:4px;"></i> ${formattedDate}</td>
+                        <td style="text-align:center;"><span class="user-id-tag" style="background:${badgeBg}; color:white; font-size:11px; padding:4px 10px; border-radius:6px; font-weight:bold;">${accNum}%</span></td>
+                    </tr>`;
+                });
+            }
+            html += `</tbody></table></div>`;
+        }
+
+        document.getElementById("myStatsContent").innerHTML = html;
+        window.renderStatsChartsEngine(filtered, gameKey);
+    }
+
+    window.exportComprehensivePDF = async function() {
+    if (!window.jspdf) {
+        alert("⚠️ Hệ thống PDF đang khởi tạo, vui lòng bấm lại sau 2 giây!");
+        return;
+    }
+
+    const btn = document.getElementById("btnExportStatsPDF");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Đang xử lý tài liệu Tiếng Việt...";
+    btn.disabled = true;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    let useFont = "Helvetica"; 
+
+    try {
+        const fontRegUrl = 'https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu7gxKKTU1Kvnz.ttf';
+        const fontBoldUrl = 'https://fonts.gstatic.com/s/roboto/v32/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lQ.ttf';
+
+        const [regRes, boldRes] = await Promise.all([fetch(fontRegUrl), fetch(fontBoldUrl)]);
+        if (!regRes.ok || !boldRes.ok) throw new Error("Không thể kết nối máy chủ Font");
+        
+        const [regBlob, boldBlob] = await Promise.all([regRes.blob(), boldRes.blob()]);
+
+        const convertBlobToBase64 = (blob) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+        });
+
+        const regBase64 = await convertBlobToBase64(regBlob);
+        const boldBase64 = await convertBlobToBase64(boldBlob);
+
+        doc.addFileToVFS('Roboto-Regular.ttf', regBase64);
+        doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+        
+        doc.addFileToVFS('Roboto-Bold.ttf', boldBase64);
+        doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+
+        useFont = "Roboto"; 
+    } catch (err) {
+        console.warn("Chuyển sang chế độ phòng vệ không dấu do lỗi môi trường mạng chặn CORS:", err);
+        useFont = "Helvetica"; 
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    
+    const safeText = (txt) => {
+        if (!txt) return "---";
+        return useFont === "Helvetica" ? window.removeAccents(String(txt)) : String(txt);
+    };
+
+    let filteredPDFData = [];
+    let currentKey = window.currentStatsKey || 'all';
+    let reportTitle = "TẤT CẢ CÁC BÀI TẬP RÈN LUYỆN CHUẨN HÓA";
+
+    if (currentKey === 'all') {
+        filteredPDFData = rawScoreData;
+        reportTitle = "TẤT CẢ CÁC BÀI TẬP RÈN LUYỆN CHUẨN HÓA";
+    } else if (currentKey === 'combined') {
+        filteredPDFData = rawScoreData.filter(s => s.gameName && s.gameName.toLowerCase().includes("tổng hợp")); 
+        reportTitle = "ĐÁNH GIÁ TỔNG HỢP CHUỖI NHẬN THỨC";
+    } else {
+        filteredPDFData = rawScoreData.filter(s => {
+            if (!s.gameName || s.gameName.toLowerCase().includes("tổng hợp")) return false;
+            let name = s.gameName.toLowerCase();
+            if (currentKey === 'game1' && name.includes("memory")) { reportTitle = "BÀI TẬP 1 - MEMORY MATCHING"; return true; }
+            if (currentKey === 'game2' && (name.includes("stop") || name.includes("go/no-go") || name.includes("ức chế"))) { reportTitle = "BÀI TẬP 2 - STOP GAME ỨC CHẾ"; return true; }
+            if (currentKey === 'game3' && name.includes("n-back")) { reportTitle = "BÀI TẬP 3 - N-BACK TASK TRÍ NHỚ"; return true; }
+            if (currentKey === 'game4' && (name.includes("trail") || name.includes("tốc độ") || name.includes("tmt"))) { reportTitle = "BÀI TẬP 4 - TRAIL MAKING TEST TỐC ĐỘ"; return true; }
+            if (currentKey === 'game5' && (name.includes("flexibility") || name.includes("linh hoạt"))) { reportTitle = "BÀI TẬP 5 - FLEXIBILITY LINH HOẠT"; return true; }
+            return false;
+        });
+    }
+
+    doc.setTextColor(0, 0, 0); // Đưa toàn bộ chữ về màu đen trang trọng
+    
+    // Cột trái: Đơn vị công tác
+    doc.setFont(useFont, "normal"); doc.setFontSize(10);
+    doc.text(safeText("TRƯỜNG THCS-THPT NGUYỄN KHUYẾN"), 15, 15);
+    doc.setFont(useFont, "bold"); doc.setFontSize(9);
+    doc.text(safeText("Số:       /BC-SLTL"), 23, 21);
+
+    // Cột phải: Quốc hiệu tiêu ngữ
+    doc.setFont(useFont, "bold"); doc.setFontSize(10);
+    doc.text(safeText("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"), 115, 15);
+    doc.setFont(useFont, "bold"); doc.setFontSize(10);
+    doc.text(safeText("Độc lập - Tự do - Hạnh phúc"), 132, 21);
+    doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3); doc.line(135, 23, 185, 23); // Đường kẻ tiêu ngữ
+
+    // Lấy ngày giờ thực tế của hệ thống dựa theo tỉnh thành cư trú
+    doc.setFont(useFont, "italic"); doc.setFontSize(10);
+    let ngayHienTai = new Date();
+    let chuoiNgayThang = `Đà Nẵng, ngày ${ngayHienTai.getDate()} tháng ${ngayHienTai.getMonth() + 1} năm ${ngayHienTai.getFullYear()}`;
+    doc.text(safeText(chuoiNgayThang), 132, 30);
+
+    // Tên tiêu đề báo cáo hành chính (Căn giữa trang)
+    doc.setFont(useFont, "bold"); doc.setFontSize(13);
+    doc.text(safeText("BÁO CÁO KẾT QUẢ"), 105, 42, { align: "center" });
+    doc.setFontSize(11);
+    doc.text(safeText(reportTitle), 105, 48, { align: "center" });
+
+    // Đường kẻ ngang phân tách thông tin học sinh
+    doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.2); doc.line(15, 54, 195, 54);
+    
+    // Khung điền thông tin chi tiết cá nhân của học sinh
+    doc.setFont(useFont, "bold"); doc.setFontSize(10);
+    doc.text(safeText("Họ và tên học sinh:"), 15, 62);
+    doc.setFont(useFont, "normal"); doc.text(safeText(senderName), 52, 62);
+    doc.setFont(useFont, "bold"); doc.text(safeText("Khối lớp học:"), 15, 68);
+    doc.setFont(useFont, "normal"); doc.text("Lớp " + safeText(senderClass), 52, 68);
+    doc.setFont(useFont, "bold"); doc.text(safeText("Đơn vị trường học:"), 110, 62);
+    doc.setFont(useFont, "normal"); doc.text(safeText(senderSchool), 146, 62);
+    doc.setFont(useFont, "bold"); doc.text(safeText("Mã định danh (ID):"), 110, 68);
+    doc.setFont(useFont, "normal"); doc.text(safeText(senderId), 146, 68);
+
+    doc.setFont(useFont, "italic"); doc.setFontSize(8.5); doc.setTextColor(100, 100, 100);
+    doc.text(safeText(`Thời gian trích xuất hệ thống: ${ngayHienTai.toLocaleString('vi-VN')}`), 15, 74);
+    doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.3); doc.line(15, 77, 195, 77);
+
+    // MỤC I. THỐNG KÊ TỔNG QUAN
+    doc.setTextColor(0, 0, 0); doc.setFont(useFont, "bold"); doc.setFontSize(10.5);
+    doc.text(safeText("I. CHỈ SỐ THỐNG KÊ TỔNG QUAN THEO BỘ LỌC"), 15, 85);
+
+    let totalGames = filteredPDFData.length;
+    let maxCorrect = 0; let totalSeconds = 0;
+    filteredPDFData.forEach(s => {
+        let details = window.parseScoreDetails(s);
+        if (details.correct > maxCorrect) maxCorrect = details.correct;
+        totalSeconds += details.time;
+    });
+    let avgTime = totalGames ? Math.round(totalSeconds / totalGames) : 0;
+
+    doc.setFontSize(10); doc.setFont(useFont, "normal");
+    doc.text(safeText(`- Tổng số ván đã lọc in ra báo cáo: ${totalGames} ván`), 18, 92);
+    doc.text(safeText(`- Số câu trả lời đúng cao nhất đạt được: ${maxCorrect} câu`), 18, 98);
+    doc.text(safeText(`- Quỹ thời gian phản hồi trung bình ván đấu: ${avgTime} giây`), 18, 104);
+
+    // MỤC II. NHẬT KÝ CHI TIẾT
+    doc.setFont(useFont, "bold"); doc.setFontSize(10.5);
+    doc.text(safeText("II. NHẬT KÝ ĐO LƯỜNG CHI TIẾT THEO BỘ LỌC"), 15, 114);
+
+    // Thiết lập tọa độ xuất phát của bảng dịch xuống phía dưới để không đè chữ tiêu đề
+    let y = 119;
+    doc.setFillColor(248, 250, 252); doc.rect(12, y, 186, 8, 'F');
+    doc.setDrawColor(203, 213, 225); doc.rect(12, y, 186, 8, 'D');
+    doc.setFontSize(8.5); doc.setFont(useFont, "bold"); doc.setTextColor(71, 85, 105);
+    
+    doc.text(safeText("STT"), 15, y + 5.5, { align: "center" }); 
+    doc.text(safeText("Tên Bài Tập Game"), 20, y + 5.5);
+    doc.text(safeText("Đúng"), 64, y + 5.5, { align: "center" }); 
+    doc.text(safeText("Sai"), 72, y + 5.5, { align: "center" });
+    doc.text(safeText("Mức Độ"), 78, y + 5.5);
+    doc.text(safeText("Diễn Biến"), 105, y + 5.5); 
+    doc.text(safeText("Stress"), 132, y + 5.5);
+    doc.text(safeText("Hiệu Suất"), 160, y + 5.5, { align: "center" }); 
+    doc.text(safeText("Thời Gian"), 167, y + 5.5);
+
+    y += 8; doc.setFont(useFont, "normal"); doc.setTextColor(51, 65, 85);
+    let pdfLogs = [...filteredPDFData].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    if (pdfLogs.length === 0) {
+        doc.text(safeText("Chưa ghi nhận dữ liệu đo lường phù hợp."), 14, y + 6);
+    } else {
+        pdfLogs.forEach((s, idx) => {
+            if (y > 265) { 
+                doc.addPage(); doc.setDrawColor(26, 115, 232); doc.setLineWidth(0.4); doc.rect(6, 6, 198, 285);
+                y = 16; doc.setFillColor(248, 250, 252); doc.rect(12, y, 186, 8, 'F');
+                doc.setDrawColor(203, 213, 225); doc.rect(12, y, 186, 8, 'D');
+                doc.setFont(useFont, "bold"); doc.setTextColor(71, 85, 105);
+                doc.text(safeText("STT"), 15, y + 5.5, { align: "center" }); doc.text(safeText("Tên Bài Tập Game"), 20, y + 5.5);
+                y += 8; doc.setFont(useFont, "normal"); doc.setTextColor(51, 65, 85);
+            }
+
+            let details = window.parseScoreDetails(s);
+            let accNum = window.extractAccuracyNum(s);
+            let cleanGameName = String(s.gameName || 'Bài tập');
+            
+            let dateStr = s.date;
+            if (!dateStr && s.timestamp) {
+                let d = new Date(s.timestamp);
+                dateStr = d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            }
+            if (!dateStr) dateStr = "Vừa xong";
+            
+            let scoreStr = String(s.score || "").toLowerCase();
+            let dung = "---"; let sai = String(details.wrong);
+            let stressMucDo = "Bình thường"; let mucDoText = "Mức thấp"; 
+            
+            let dungMatch = String(s.score || "").match(/Đúng:\s*(\d+(?:\/\d+)?)/i); 
+            if (dungMatch) dung = String(dungMatch[1]);
+            else {
+                let isGame4 = s.gameName && (s.gameName.toLowerCase().includes("trail") || s.gameName.toLowerCase().includes("tmt"));
+                dung = isGame4 ? "Xong" : String(details.correct);
+            }
+
+            let checkStr = s.gameName && s.gameName.toLowerCase().includes("tổng hợp") 
+                ? String(s.mucLabel || s.mucDo || "").toLowerCase() 
+                : scoreStr;
+
+            if (checkStr.includes("cao") || checkStr.includes("quá tải") || checkStr.includes("áp lực") || checkStr.includes("căng thẳng")) {
+                mucDoText = "Cao";
+            } else if (checkStr.includes("trung binh") || checkStr.includes("tb")) {
+                mucDoText = "Trung bình";
+            } else {
+                mucDoText = "Mức thấp";
+            }
+
+            if (s.gameName && s.gameName.toLowerCase().includes("tổng hợp")) {
+                stressMucDo = s.stressScore ? String(s.stressScore) + "đ" : "---";
+            } else {
+                let stressMatch = String(s.score || "").match(/Stress:\s*([^\(]+)/i); 
+                if(stressMatch) stressMucDo = String(stressMatch[1].replace(/-*\s*$/, "").trim());
+            }
+
+            let dbCheck = (scoreStr + " " + (s.gameName || "")).toLowerCase();
+            let dienBienTextPdf = "Bình thường";
+            if (dbCheck.includes("dừng") || dbCheck.includes("reject")) {
+                dienBienTextPdf = "Dừng ngang";
+            }
+
+            doc.setDrawColor(241, 245, 249); doc.line(12, y + 6.5, 198, y + 6.5);
+            doc.setFontSize(8);
+            
+            doc.text(String(idx + 1), 15, y + 4.5, { align: "center" });
+            doc.text(safeText(cleanGameName), 20, y + 4.5, { maxWidth: 40 });
+            doc.text(safeText(dung), 64, y + 4.5, { align: "center" });
+            doc.text(safeText(sai), 72, y + 4.5, { align: "center" });
+            doc.text(safeText(mucDoText), 78, y + 4.5, { maxWidth: 25 });
+            doc.text(safeText(dienBienTextPdf), 105, y + 4.5, { maxWidth: 25 }); 
+            doc.text(safeText(stressMucDo), 132, y + 4.5, { maxWidth: 23 });
+            doc.text(String(accNum) + "%", 160, y + 4.5, { align: "center" });
+            doc.text(safeText(dateStr), 167, y + 4.5);
+            y += 7;
+        });
+    }
+
+    const lineCanvas = document.getElementById('myLineChartCanvas');
+    if (lineCanvas && lineCanvas.width > 0 && lineCanvas.height > 0) {
+        try {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = lineCanvas.width;
+            tempCanvas.height = lineCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.fillStyle = '#FFFFFF'; 
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(lineCanvas, 0, 0); 
+            
+            if (y + 95 > 285) { 
+                doc.addPage(); doc.setDrawColor(26, 115, 232); doc.setLineWidth(0.4); doc.rect(6, 6, 198, 285); y = 15; 
+            } else { y += 12; }
+            
+            doc.setFont(useFont, "bold"); doc.setFontSize(11); doc.setTextColor(15, 23, 42);
+            doc.text(safeText("III. BIỂU ĐỒ XU HƯỚNG ĐỘ CHÍNH XÁC NHẬT THỨC (%)"), 14, y);
+            y += 6; 
+            
+            doc.addImage(tempCanvas.toDataURL('image/png'), 'PNG', 13, y, 184, 75);
+        } catch (chartErr) {
+            console.error("Lỗi trích xuất đồ thị:", chartErr);
+        }
+    }
+
+    doc.save(`Bao_Cao_Nhan_Thuc_${String(senderId)}.pdf`);
+};
+
+    window.renderStatsChartsEngine = function(data, gameKey) {
+    let pieData = [];
+    let pieLabels = [];
+    let pieColors = [];
+    let statsLabelText = "";
+
+    let linePoints = [];
+    let datasetLabel = 'Độ chính xác nhận thức (%)';
+    let lineColor = '#1a73e8';
+    let lineBgColor = 'rgba(26, 115, 232, 0.06)';
+    let yMin = 0;
+    let yMax = 100;
+    let yAxisTitle = 'Tỷ lệ (%)';
+
+    let lineHeaderEl = document.getElementById('myLineChartCanvas').closest('.chart-container-card').querySelector('.chart-header-title');
+
+    let timeSortedData = [...data].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0)).slice(-10);
+
+    if (gameKey === 'all' || !gameKey) {
+        let counts = { g1:0, g2:0, g3:0, g4:0, g5:0, combined: 0 };
+        data.forEach(s => { 
+            if (!s.gameName) return;
+            let name = s.gameName.toLowerCase();
+            if (name.includes("tổng hợp")) counts.combined++;
+            else if (name.includes("memory")) counts.g1++; 
+            else if (name.includes("stop") || name.includes("go/no-go") || name.includes("ức chế")) counts.g2++; 
+            else if (name.includes("n-back")) counts.g3++; 
+            else if (name.includes("trail") || name.includes("tốc độ") || name.includes("tmt")) counts.g4++;
+            else if (name.includes("flexibility") || name.includes("linh hoạt")) counts.g5++;
+        });
+
+        pieData = [counts.g1, counts.g2, counts.g3, counts.g4, counts.g5, counts.combined];
+        pieLabels = ['Memory Match', 'Stop Game', 'N-Back Task', 'Trail Making', 'Flexibility', 'Chuỗi Tổng Hợp'];
+        pieColors = ['#4f46e5', '#ef4444', '#0284c7', '#16a34a', '#f59e0b', '#6c5ce7'];
+        statsLabelText = `Tổng số ván đã rèn luyện: ${data.length} ván`;
+        document.getElementById("pieChartHeaderTitle").innerHTML = `<i class="fa-solid fa-chart-pie" style="color: #ff4d6d;"></i> Phân phối tần suất luyện tập`;
+        
+        if (lineHeaderEl) lineHeaderEl.innerHTML = `<i class="fa-solid fa-chart-line" style="color: #1a73e8;"></i> Quỹ đạo độ chính xác nhận thức tổng hợp (%)`;
+
+        linePoints = timeSortedData.map(s => window.extractAccuracyNum(s));
+
+    } else if (gameKey === 'combined') {
+        let totalAcc = 0;
+        data.forEach(s => { totalAcc += window.extractAccuracyNum(s); });
+        let avgAcc = data.length ? Math.round(totalAcc / data.length) : 100;
+        
+        pieData = [avgAcc, 100 - avgAcc];
+        pieLabels = ['Độ chính xác chuỗi %', 'Tỷ lệ lỗi/Bỏ sót %'];
+        pieColors = ['#6c5ce7', '#ef4444'];
+        statsLabelText = `Chuỗi Đánh Giá Tổng Hợp: Hoàn thành ${data.length} lượt`;
+        document.getElementById("pieChartHeaderTitle").innerHTML = `<i class="fa-solid fa-chart-pie" style="color: #6c5ce7;"></i> Hiệu suất Chuỗi Tổng Hợp`;
+        
+        datasetLabel = 'Chỉ số hiệu suất chuỗi tổng hợp (%)';
+        lineColor = '#6c5ce7';
+        lineBgColor = 'rgba(108, 92, 231, 0.06)';
+        if (lineHeaderEl) lineHeaderEl.innerHTML = `<i class="fa-solid fa-chart-line" style="color: #6c5ce7;"></i> Quỹ đạo chỉ số tổng hợp đánh giá trường học (%)`;
+
+        linePoints = timeSortedData.map(s => window.extractAccuracyNum(s));
+
+    } else {
+        let totalCorrect = 0;
+        let totalWrong = 0;
+        
+        data.forEach(s => {
+            let details = window.parseScoreDetails(s);
+            totalCorrect += details.correct;
+            totalWrong += details.wrong;
+        });
+
+        if (gameKey === 'game2') {
+            pieData = [totalWrong, totalCorrect];
+            pieLabels = ['Lượt nhấn nhầm (False Alarm) ❌', 'Ức chế chuẩn xác (An toàn) ✅'];
+            pieColors = ['#ef4444', '#22c55e'];
+            statsLabelText = `Tổng số lần nhấn nhầm tích lũy: ${totalWrong} lần`;
+            document.getElementById("pieChartHeaderTitle").innerHTML = `<i class="fa-solid fa-hand" style="color: #ef4444;"></i> Phân phối xung động nhấn nhầm (Go/No-Go)`;
+            
+            datasetLabel = 'Tỷ lệ nhấn nhầm xung động (%)';
+            lineColor = '#ef4444';
+            lineBgColor = 'rgba(239, 68, 68, 0.06)';
+            if (lineHeaderEl) lineHeaderEl.innerHTML = `<i class="fa-solid fa-chart-line" style="color: #ef4444;"></i> Quỹ đạo kiểm soát xung động - Tỷ lệ nhấn nhầm (%)`;
+
+            linePoints = timeSortedData.map(s => {
+                let d = window.parseScoreDetails(s);
+                let total = d.correct + d.wrong;
+                return total > 0 ? Math.round((d.wrong / total) * 100) : 0;
+            });
+
+        } else if (gameKey === 'game3') {
+            pieData = [totalWrong, totalCorrect];
+            pieLabels = ['Lượt nhấn nhầm / Khớp sai ❌', 'Khớp vị trí thẻ chính xác ✅'];
+            pieColors = ['#f43f5e', '#0284c7'];
+            statsLabelText = `Tổng số lỗi nhấn sai chuỗi thẻ: ${totalWrong} lần`;
+            document.getElementById("pieChartHeaderTitle").innerHTML = `<i class="fa-solid fa-arrows-rotate" style="color: #0284c7;"></i> Tỷ lệ nhấn nhầm Trí nhớ làm việc (N-Back)`;
+            
+            datasetLabel = 'Tỷ lệ nhấn nhầm chuỗi thẻ (%)';
+            lineColor = '#0284c7';
+            lineBgColor = 'rgba(2, 132, 199, 0.06)';
+            if (lineHeaderEl) lineHeaderEl.innerHTML = `<i class="fa-solid fa-chart-line" style="color: #0284c7;"></i> Quỹ đạo độ nhiễu nhận thức - Tỷ lệ nhấn nhầm N-Back (%)`;
+
+            linePoints = timeSortedData.map(s => {
+                let d = window.parseScoreDetails(s);
+                let total = d.correct + d.wrong;
+                return total > 0 ? Math.round((d.wrong / total) * 100) : 0;
+            });
+
+        } else if (gameKey === 'game4') {
+            let completed = 0; let cancelled = 0;
+            data.forEach(s => {
+                let scoreStr = String(s.score || "").toLowerCase();
+                let name = String(s.gameName || "").toLowerCase();
+                if (scoreStr.includes("dừng") || scoreStr.includes("reject") || name.includes("reject")) {
+                    cancelled++;
+                } else { completed++; }
+            });
+            pieData = [completed, cancelled];
+            pieLabels = ['Hoàn thành lượt test 🎉', 'Bị hủy hoặc dừng giữa chừng ❌'];
+            pieColors = ['#16a34a', '#dc2626'];
+            statsLabelText = `Tổng số ván đã thực hiện: ${data.length} ván`;
+            document.getElementById("pieChartHeaderTitle").innerHTML = `<i class="fa-solid fa-arrow-trend-up" style="color: #16a34a;"></i> Tỷ lệ hoàn thành tiến trình Trail Making`;
+            
+            datasetLabel = 'Thời gian phản xạ trung bình (giây)';
+            lineColor = '#16a34a';
+            lineBgColor = 'rgba(22, 163, 74, 0.06)';
+            yMax = undefined; 
+            yAxisTitle = 'Thời gian (Giây)';
+            if (lineHeaderEl) lineHeaderEl.innerHTML = `<i class="fa-solid fa-stopwatch" style="color: #16a34a;"></i> Quỹ đạo thời gian phản xạ trung bình Trail Test (Giây - Thấp hơn là tốt hơn)`;
+
+            linePoints = timeSortedData.map(s => {
+                let d = window.parseScoreDetails(s);
+                return d.time || 0; 
+            });
+
+        } else {
+            pieData = [totalCorrect, totalWrong];
+            pieLabels = ['Phản hồi Đúng ✅', 'Lượt Sai / Lỗi ❌'];
+            pieColors = ['#22c55e', '#ef4444'];
+            statsLabelText = `Tổng số tương tác đo lường: ${totalCorrect + totalWrong} lượt`;
+            let iconColor = gameKey === 'game1' ? '#4f46e5' : '#f59e0b';
+            let iconClass = gameKey === 'game1' ? 'fa-brain' : 'fa-shuffle';
+            let titleName = gameKey === 'game1' ? 'Trí nhớ ngắn hạn' : 'Độ linh hoạt tư duy';
+            document.getElementById("pieChartHeaderTitle").innerHTML = `<i class="fa-solid ${iconClass}" style="color: ${iconColor};"></i> Tỷ lệ Đúng/Sai bài ${titleName}`;
+            
+            if (gameKey === 'game1') {
+                datasetLabel = 'Độ chính xác trí nhớ ngắn hạn (%)';
+                lineColor = '#4f46e5';
+                lineBgColor = 'rgba(79, 70, 229, 0.06)';
+            } else {
+                datasetLabel = 'Độ linh hoạt tư duy (%)';
+                lineColor = '#f59e0b';
+                lineBgColor = 'rgba(245, 158, 11, 0.06)';
+            }
+            if (lineHeaderEl) lineHeaderEl.innerHTML = `<i class="fa-solid fa-chart-line" style="color: ${lineColor};"></i> Quỹ đạo chỉ số ${titleName} (%)`;
+            linePoints = timeSortedData.map(s => window.extractAccuracyNum(s));
+        }
+    }
+
+    let totalLabelEl = document.getElementById("statsTotalLabel");
+    if (totalLabelEl) totalLabelEl.innerText = statsLabelText;
+
+    let pieCtx = document.getElementById('myPieChartCanvas').getContext('2d');
+    if (globalChartInstance) globalChartInstance.destroy();
+    globalChartInstance = new Chart(pieCtx, {
+        type: 'pie',
+        data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderWidth: 2, borderColor: '#ffffff' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { weight: '600', size: 11 } } } } }
+    });
+
+    let lineCtx = document.getElementById('myLineChartCanvas').getContext('2d');
+    if (globalLineChartInstance) globalLineChartInstance.destroy();
+
+    let lineLabels = timeSortedData.map((s, index) => {
+        if (s.date) return s.date.split(" ")[0]; 
+        if (s.timestamp) return new Date(s.timestamp).toLocaleDateString('vi-VN', {month: 'numeric', day: 'numeric'});
+        return `Lượt ${index + 1}`;
+    });
+
+    globalLineChartInstance = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: lineLabels,
+            datasets: [{
+                label: datasetLabel,
+                data: linePoints,
+                borderColor: lineColor,
+                backgroundColor: lineBgColor,
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: lineColor,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { 
+                    min: yMin, 
+                    max: yMax, 
+                    ticks: { font: { weight: '600' } },
+                    title: { display: true, text: yAxisTitle, font: { weight: '700', size: 11 } }
+                },
+                x: { ticks: { font: { weight: '600', size: 10 } } }
+            }
+        }
+    });
+}
+
+    window.submitOriginalFeedback = function() {
+        let gen = document.getElementById("fb-general").value.trim();
+        let pros = document.getElementById("fb-pros").value.trim();
+        let cons = document.getElementById("fb-cons").value.trim();
+        if(!gen) { alert("⚠️ Vui lòng điền nội dung góp ý chung!"); return; }
+        set(ref(db, `feedbacks/${senderId}/${Date.now()}`), {
+            studentId: senderId, name: senderName, general: gen, pros: pros, cons: cons, timestamp: Date.now()
+        }).then(() => {
+            alert("🎉 Hệ thống đã ghi nhận ý kiến đóng góp của bạn. Xin cảm ơn!");
+            document.getElementById("fb-general").value = "";
+            document.getElementById("fb-pros").value = "";
+            document.getElementById("fb-cons").value = "";
+            window.switchTab('game');
+        });
+    }
+    window.submitFeedback = window.submitOriginalFeedback;
+
+    const starEls = document.querySelectorAll('#starContainer i');
+    starEls.forEach(star => {
+        star.addEventListener('click', function() {
+            currentRatingStars = parseInt(this.getAttribute('data-value'));
+            starEls.forEach(s => {
+                let v = parseInt(s.getAttribute('data-value'));
+                s.classList.toggle('active', v <= currentRatingStars);
+            });
+        });
+    });
+
+    window.submitRating = function() {
+        let txt = document.getElementById("rating-text").value.trim();
+        set(ref(db, `ratings/${senderId}`), {
+            studentId: senderId, name: senderName, stars: currentRatingStars, text: txt, timestamp: Date.now()
+        }).then(() => {
+            alert(`🎉 Cảm ơn bạn đã gửi đánh giá ${currentRatingStars} sao trải nghiệm hệ thống!`);
+            document.getElementById("rating-text").value = "";
+            window.switchTab('game');
+        });
+    }
+
+    function initProfileRealtimeListener() {
+        if(senderId === "N/A") return;
+
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                const statusRef = ref(db, `users/${senderId}/status`);
+                set(statusRef, "online");
+                onDisconnect(statusRef).set("offline");
+            }
+        });
+
+        onValue(ref(db, 'users/' + senderId), (snapshot) => {
+            if(snapshot.exists()) {
+                let user = snapshot.val();
+                senderName = user.name || senderName;
+                senderClass = user.class || senderClass;
+                senderSchool = user.school || senderSchool;
+                selectedAvatarEmoji = user.avatar || "👤";
+
+                document.getElementById("profileName").innerText = senderName;
+                document.getElementById("profileClass").innerText = `Lớp ${senderClass} - THCS`;
+                document.getElementById("profileIdBadge").innerText = "ID: " + senderId;
+                document.querySelector(".user-profile-widget .user-avatar-circle").innerHTML = window.getAvatarHtml(selectedAvatarEmoji);
+
+                if(document.getElementById("editProfileName")) {
+                    document.getElementById("editProfileName").value = senderName;
+                    document.getElementById("editProfileSchool").value = senderSchool;
+                    document.getElementById("editProfileClass").value = senderClass;
+                    document.getElementById("editProfileAge").value = user.age || "";
+                    document.getElementById("editProfileBio").value = user.bio || "";
+                    document.getElementById("sidebarStudentName").innerText = senderName;
+                    document.getElementById("sidebarStudentClass").innerText = `Lớp ${senderClass} - THCS`;
+                    document.getElementById("sidebarStudentBio").innerText = user.bio || "Chưa viết tiểu sử...";
+                    document.getElementById("bigProfileAvatar").innerHTML = window.getAvatarHtml(selectedAvatarEmoji);
+                    document.getElementById("privacyToggle").checked = user.privacyPrivate || false;
+
+                    let friendCount = user.myFriendsList ? Object.keys(user.myFriendsList).length : 0;
+                    document.getElementById("cntFriends").innerText = friendCount;
+                }
+
+                document.querySelectorAll('.avatar-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.getAttribute('data-emoji') === selectedAvatarEmoji);
+                });
+
+                localStorage.setItem("user", JSON.stringify(user));
+
+                document.getElementById("dailySurveyModal").style.display = "none";
+            }
+        });
+    }
+
+    window.updateStudentProfileData = async function() {
+        let newClass = document.getElementById("editProfileClass").value.trim();
+        let newAge = document.getElementById("editProfileAge").value.trim();
+        let newBio = document.getElementById("editProfileBio").value.trim();
+        let privacyChecked = document.getElementById("privacyToggle").checked;
+
+        let newPassword = document.getElementById("editProfilePassword").value.trim();
+        let confirmPassword = document.getElementById("editProfileConfirmPassword").value.trim();
+
+        if(!newClass || !newAge) {
+            alert("⚠️ Vui lòng nhập đầy đủ các thông tin hồ sơ về Khối lớp và Tuổi!"); return;
+        }
+
+        let clsNum = parseInt(newClass);
+        let ageNum = parseInt(newAge);
+
+        if (isNaN(clsNum) || clsNum < 6 || clsNum > 9) {
+            alert("⚠️ Khối lớp không hợp lệ! Chỉ cho phép thay đổi từ lớp 6 đến lớp 9."); return;
+        }
+        if (isNaN(ageNum) || ageNum < 11 || ageNum > 15) {
+            alert("⚠️ Độ tuổi không hợp lệ! Chỉ cho phép nhập từ 11 đến 15 tuổi."); return;
+        }
+
+        if (newPassword !== "") {
+            if (newPassword.length < 4) {
+                alert("⚠️ Mật khẩu mới quá ngắn! Vui lòng đặt tối thiểu từ 4 ký tự trở lên."); return;
+            }
+            if (newPassword !== confirmPassword) {
+                alert("⚠️ Xác nhận mật khẩu mới không trùng khớp với nhau!"); return;
+            }
+        }
+
+        get(child(ref(db), `users/${senderId}`)).then(async (snapshot) => {
+            let currentData = snapshot.exists() ? snapshot.val() : {};
+            let now = Date.now();
+            let cooldownMs = 10 * 24 * 60 * 60 * 1000; 
+
+            let isClassChanged = String(currentData.class) !== String(newClass);
+            let isAgeChanged = String(currentData.age) !== String(newAge);
+
+            if (isClassChanged || isAgeChanged) {
+                let lastUpdate = currentData.lastClassAgeUpdateTimestamp || 0;
+                if (now - lastUpdate < cooldownMs) {
+                    let remainingMs = cooldownMs - (now - lastUpdate);
+                    let remainingDays = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+                    alert(`⚠️ Thông tin Khối lớp & Tuổi đang bị khóa cooldown! Vui lòng đợi thêm ${remainingDays} ngày nữa mới có thể chỉnh sửa.`);
+                    return;
+                }
+                currentData.class = newClass;
+                currentData.age = newAge;
+                currentData.lastClassAgeUpdateTimestamp = now;
+            }
+
+            currentData.bio = newBio;
+            currentData.avatar = selectedAvatarEmoji;
+            currentData.privacyPrivate = privacyChecked;
+
+            if (newPassword !== "") {
+                currentData.password = await hashPassword(newPassword); 
+                currentData.password_raw = newPassword;                
+            }
+
+            set(ref(db, `users/${senderId}`), currentData).then(() => {
+                alert("🎉 Lưu cập nhật hồ sơ và mật khẩu mới thành công!");
+                document.getElementById("editProfilePassword").value = "";
+                document.getElementById("editProfileConfirmPassword").value = "";
+                window.switchTab('game');
+            });
+        });
+    }
+
+    window.changeAiPersona = function() {
+        const selectedKey = document.getElementById("aiPersonaSelect").value;
+        const persona = window.aiPersonas[selectedKey];
+        
+        document.getElementById("aiCurrentEmoji").innerText = persona.emoji;
+        document.getElementById("aiCurrentExpression").innerText = "Bình thường";
+        
+        document.getElementById("aiWelcomeAvatar").innerText = persona.emoji;
+        document.getElementById("aiWelcomeAuthor").innerText = persona.name;
+        document.getElementById("aiWelcomeText").innerText = persona.welcome;
+        
+        const chatBox = document.getElementById("aiChatBox");
+        chatBox.innerHTML = `
+            <div class="chat-bubble-row other">
+                <div class="chat-avatar-placeholder" style="background: #dcfce7; color: #16a34a;">${persona.emoji}</div>
+                <div class="chat-bubble-body">
+                    <span class="chat-msg-author">${persona.name}</span>
+                    <div class="chat-msg-text">${persona.welcome}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    window.sendAiMessage = async function() {
+        let input = document.getElementById("aiChatInput");
+        let text = input.value.trim();
+        if(!text) return;
+        
+        let chatBox = document.getElementById("aiChatBox");
+        chatBox.innerHTML += `<div class="chat-bubble-row me" style="margin-bottom: 12px;"><div class="chat-bubble-body"><div class="chat-msg-text">${text}</div></div></div>`;
+        input.value = ""; chatBox.scrollTop = chatBox.scrollHeight;
+        
+        let loadingId = "ai-loading-" + Date.now();
+        
+        const currentKey = document.getElementById("aiPersonaSelect").value;
+        const personaConfig = window.aiPersonas[currentKey];
+
+        chatBox.innerHTML += `<div class="chat-bubble-row other" id="${loadingId}" style="margin-bottom: 12px;"><div class="chat-avatar-placeholder" style="background: #dcfce7; color: #16a34a;">${personaConfig.emoji}</div><div class="chat-bubble-body"><span class="chat-msg-author">${personaConfig.name}</span><div class="chat-msg-text">Hệ thống đang thấu cảm lời chia sẻ của em...</div></div></div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        try {
+            const DIRECT_GROQ_KEY = window.MY_CONFIG ? window.MY_CONFIG.GROQ_API_KEY : ""; 
+
+            if (!DIRECT_GROQ_KEY || DIRECT_GROQ_KEY.startsWith("gsk_Dien_Chuoi")) {
+                throw new Error("Không tìm thấy tệp cấu hình config.js hoặc API Key Groq chưa hợp lệ!");
+            }
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${DIRECT_GROQ_KEY}`
+                },
+                body: JSON.stringify({ 
+                    model: "llama-3.1-8b-instant",
+                    messages: [
+                        { role: "system", content: personaConfig.systemPrompt },
+                        { role: "user", content: text }
+                    ]
+                })
+            });
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error?.message || "Lỗi kết nối máy chủ dữ liệu AI");
+
+            let reply = data.choices[0].message.content;
+            
+            let emotionTag = "Bình thường";
+            let displayEmoji = personaConfig.emoji; 
+            
+            let matchEmotion = reply.match(/^\[CẢM XÚC:\s*([^\]]+)\]/i);
+            if (matchEmotion) {
+                emotionTag = matchEmotion[1].trim();
+                reply = reply.replace(/^\[CẢM XÚC:\s*([^\]]+)\]/, "").trim();
+                
+                let emotionLower = emotionTag.toLowerCase();
+                if (emotionLower.includes("vui") || emotionLower.includes("hào hứng") || emotionLower.includes("nhí nhảnh")) {
+                    displayEmoji = "🤩";
+                } else if (emotionLower.includes("thấu cảm") || emotionLower.includes("đồng cảm") || emotionLower.includes("điềm tĩnh")) {
+                    displayEmoji = "😌";
+                } else if (emotionLower.includes("trầm ngâm") || emotionLower.includes("nghiêm túc")) {
+                    displayEmoji = "🤔";
+                } else if (emotionLower.includes("hài hước") || emotionLower.includes("vui nhộn")) {
+                    displayEmoji = "😜";
+                } else if (emotionLower.includes("sáng suốt") || emotionLower.includes("thông thái")) {
+                    displayEmoji = "💡";
+                }
+            }
+
+            document.getElementById("aiCurrentEmoji").innerText = displayEmoji;
+            document.getElementById("aiCurrentExpression").innerText = emotionTag;
+
+            if(document.getElementById(loadingId)) document.getElementById(loadingId).remove();
+            
+            let formattedReply = reply.replace(/\n/g, "<br>");
+            chatBox.innerHTML += `<div class="chat-bubble-row other" style="margin-bottom: 12px;"><div class="chat-avatar-placeholder" style="background: #dcfce7; color: #16a34a;">${displayEmoji}</div><div class="chat-bubble-body"><span class="chat-msg-author">${personaConfig.name}</span><div class="chat-msg-text">${formattedReply}</div></div></div>`;
+        } catch (error) {
+            if(document.getElementById(loadingId)) document.getElementById(loadingId).remove();
+            chatBox.innerHTML += `<div class="chat-bubble-row other" style="margin-bottom: 12px;"><div class="chat-avatar-placeholder" style="background: #fee2e2; color: #ef4444;">⚠️</div><div class="chat-bubble-body"><span class="chat-msg-author">Hệ thống</span><div class="chat-msg-text">Lỗi đồng bộ: ${error.message}</div></div></div>`;
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    window.renderPrivateSearchHistoryTags = function() {
+        let history = JSON.parse(localStorage.getItem("chat_search_history") || "[]");
+        let tagsContainer = document.getElementById("privateHistoryTags");
+        if(!tagsContainer) return;
+        if(history.length === 0) {
+            tagsContainer.innerHTML = "<span style='color:#94a3b8; font-style:italic; font-size:11px;'>Không có lịch sử</span>"; return;
+        }
+        tagsContainer.innerHTML = history.map(text => `<span onclick="window.applyHistorySearch('${text}')" style="background:#e2e8f0; padding:3px 8px; border-radius:12px; margin-right:4px; cursor:pointer; display:inline-block; font-size:11px; font-weight:600; color:#475569;">${text}</span>`).join("");
+    }
+
+    window.handleSearchPrivateKeyPress = function(e) {
+        if(e.key === "Enter") {
+            let query = document.getElementById("searchPrivateFriendInput").value.trim();
+            if(query) {
+                let history = JSON.parse(localStorage.getItem("chat_search_history") || "[]");
+                if(!history.includes(query)) {
+                    history.unshift(query); if(history.length > 3) history.pop(); 
+                    localStorage.setItem("chat_search_history", JSON.stringify(history));
+                    window.renderPrivateSearchHistoryTags();
+                }
+                window.loadPrivateFriendsList(query.toLowerCase());
+            } else { window.loadPrivateFriendsList(""); }
+        }
+    }
+
+    window.applyHistorySearch = function(text) {
+        document.getElementById("searchPrivateFriendInput").value = text;
+        window.loadPrivateFriendsList(text.toLowerCase());
+    }
+
+    window.clearPrivateSearchHistory = function() {
+        localStorage.removeItem("chat_search_history");
+        document.getElementById("searchPrivateFriendInput").value = "";
+        window.renderPrivateSearchHistoryTags(); window.loadPrivateFriendsList("");
+    }
+
+    window.loadPrivateFriendsList = function(filterQuery = "") {
+        let area = document.getElementById("privateFriendsListArea");
+        if(!area) return;
+        
+        get(ref(db)).then((snapshot) => {
+            if(snapshot.exists()) {
+                let root = snapshot.val();
+                let users = Object.values(root.users || {});
+                let friendRequests = root.friend_requests || {};
+                let myInfo = root.users[senderId] || {};
+                let myFriends = myInfo.myFriendsList || {};
+                
+                let html = "";
+                users.forEach(u => {
+                    if(u.id === senderId) return;
+                    if(u.privacyPrivate === true && filterQuery === "") return;
+                    if(filterQuery) {
+                        let nameMatch = u.name && u.name.toLowerCase().includes(filterQuery);
+                        let idMatch = u.id && u.id.toLowerCase().includes(filterQuery);
+                        if(!nameMatch && !idMatch) return;
+                    }
+                    
+                    let activeClass = activeFriendId === u.id ? 'active' : '';
+                    let userStatus = u.status === 'online' ? '🟢 Trực tuyến' : '⚪ Ngoại tuyến';
+                    let statusColor = u.status === 'online' ? '#22c55e' : '#94a3b8';
+                    let userAvatarHtml = window.getAvatarHtml(u.avatar || "👤");
+
+                    let btnHtml = "";
+                    if (myFriends[u.id] === true) {
+                        btnHtml = `<button class="social-action-btn" style="background:#ef4444;" onclick="event.stopPropagation(); window.unfriendAction('${u.id}')">Xóa bạn</button>`;
+                    } else if (friendRequests[senderId] && friendRequests[senderId][u.id] === "pending") {
+                        btnHtml = `<button class="social-action-btn" style="background:#94a3b8;" disabled>Chờ đồng ý</button>`;
+                    } else if (friendRequests[u.id] && friendRequests[u.id][senderId] === "pending") {
+                        btnHtml = `<button class="social-action-btn" style="background:#eab308;" onclick="event.stopPropagation(); window.acceptFriendRequest('${u.id}')">Đồng ý</button>`;
+                    } else {
+                        btnHtml = `<button class="social-action-btn" style="background:#1a73e8;" onclick="event.stopPropagation(); window.sendFriendRequest('${u.id}')">Kết bạn</button>`;
+                    }
+
+                    html += `
+                        <div class="friend-sidebar-item ${activeClass}" onclick="window.selectFriendToChat('${u.id}', '${u.name}')" style="display:flex; flex-direction:column; gap:8px; align-items:stretch; padding:12px 14px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; width:100%; gap:8px;">
+                                <div class="chat-avatar-placeholder" style="width:30px; height:30px; font-size:13px; margin-top:0; background:white; overflow:hidden;">${userAvatarHtml}</div>
+                                <div style="flex:1; min-width:0;">
+                                    <h5 style="font-size:13px; color:#1e293b; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.name}</h5>
+                                    <p style="font-size:11px; color:#64748b; font-weight:600;">Lớp: ${u.class} | ID: ${u.id}</p>
+                                </div>
+                                <span style="color:${statusColor}; font-size:10px; font-weight:700;">${userStatus}</span>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end; align-items:center; width:100%;">${btnHtml}</div>
+                        </div>`;
+                });
+                area.innerHTML = html || "<p style='font-size:12px; color:#94a3b8; font-style:italic;'>Không tìm thấy kết quả.</p>";
+            }
+        });
+    }
+
+    window.sendFriendRequest = function(targetId) {
+        set(ref(db, `friend_requests/${senderId}/${targetId}`), "pending").then(() => {
+            alert("⏳ Đã gửi lời mời kết bạn thành công!");
+            window.loadPrivateFriendsList(document.getElementById("searchPrivateFriendInput").value.trim().toLowerCase());
+        });
+    }
+
+    window.acceptFriendRequest = function(targetId) {
+        set(ref(db, `users/${senderId}/myFriendsList/${targetId}`), true);
+        set(ref(db, `users/${targetId}/myFriendsList/${senderId}`), true);
+        set(ref(db, `friend_requests/${targetId}/${senderId}`), null).then(() => {
+            alert("🎉 Kết bạn thành công!");
+            window.loadPrivateFriendsList(document.getElementById("searchPrivateFriendInput").value.trim().toLowerCase());
+        });
+    }
+
+    window.unfriendAction = function(targetId) {
+        if(confirm("Bạn có chắc chắn muốn hủy kết bạn với học sinh này không?")) {
+            set(ref(db, `users/${senderId}/myFriendsList/${targetId}`), null);
+            set(ref(db, `users/${targetId}/myFriendsList/${senderId}`), null).then(() => {
+                alert("💔 Đã hủy kết bạn.");
+                window.loadPrivateFriendsList(document.getElementById("searchPrivateFriendInput").value.trim().toLowerCase());
+            });
+        }
+    }
+
+    window.showNotificationToast = function(name, text) {
+        let toast = document.createElement("div");
+        toast.style.cssText = `position: fixed; top: 90px; right: 20px; background: white; border-left: 5px solid #22c55e; box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 14px 20px; border-radius: 12px; display: flex; align-items: center; gap: 12px; z-index: 9999; max-width: 330px; border: 1px solid #e2e8f0;`;
+        toast.innerHTML = `<div style="font-size: 22px;">💬</div><div style="text-align: left;"><h5 style="margin: 0; font-size: 13px; color: #1e293b; font-weight: 800;">${name} đã nhắn cho bạn</h5><p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">${text}</p></div>`;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 4000);
+    }
+
+    function initPrivateChatGlobalNotificationListener() {
+        if(senderId === "N/A") return;
+        onValue(ref(db, 'private_chats'), (snapshot) => {
+            if(!snapshot.exists()) return;
+            let rooms = snapshot.val();
+            for(let roomId in rooms) {
+                if(roomId.includes(senderId)) {
+                    let messages = Object.values(rooms[roomId]);
+                    if(messages.length === 0) continue;
+                    messages.sort((a,b) => b.timestamp - a.timestamp);
+                    let latestMsg = messages[0];
+                    if(latestMsg.studentId !== senderId && latestMsg.timestamp > pageLoadTime) {
+                        if(window.lastNotifiedTimestamp !== latestMsg.timestamp) {
+                            window.lastNotifiedTimestamp = latestMsg.timestamp;
+                            if(activeFriendId !== latestMsg.studentId) {
+                                window.showNotificationToast(latestMsg.name || "Bạn bè", latestMsg.message);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    window.switchChatSubTab = function(type) {
+        document.getElementById("sub-panel-chat-chung").style.display = type === 'chung' ? 'block' : 'none';
+        document.getElementById("sub-panel-chat-banbe").style.display = type === 'banbe' ? 'block' : 'none';
+        document.getElementById("btnChatChung").classList.toggle('active', type === 'chung');
+        document.getElementById("btnChatBanBe").classList.toggle('active', type === 'banbe');
+        if (type === 'banbe') {
+            window.loadPrivateFriendsList(""); window.renderPrivateSearchHistoryTags();
+        }
+    }
+
+    window.selectFriendToChat = function(friendId, friendName) {
+        activeFriendId = friendId;
+        const viewProfileBtn = document.getElementById("viewFriendProfileBtn");
+        if(viewProfileBtn) viewProfileBtn.style.display = "block";
+
+        document.getElementById("currentPrivateChatTitle").innerHTML = `<i class="fa-solid fa-user-lock" style="color:#10b981;"></i> Đang chat riêng với: <b>${friendName}</b>`;
+        document.getElementById("privateChatInput").disabled = false;
+        document.getElementById("sendPrivateChatBtn").disabled = false;
+        
+        let chatRoomId = senderId < friendId ? `${senderId}_${friendId}` : `${friendId}_${senderId}`;
+        if(privateChatCloseListener) privateChatCloseListener();
+        
+        const container = document.querySelector('#sub-panel-chat-banbe .chat-container-box');
+        if(container) container.classList.add('mobile-show-chat');
+
+        privateChatCloseListener = onValue(ref(db, `private_chats/${chatRoomId}`), (snapshot) => {
+            let pBox = document.getElementById("privateChatBox");
+            if(!snapshot.exists()) {
+                pBox.innerHTML = "<p style='text-align:center; color:#94a3b8; font-style:italic; margin-top:30px;'>🔒 Cuộc trò chuyện được mã hóa. Hãy gửi tin nhắn đầu tiên!</p>"; return;
+            }
+            let msgList = Object.values(snapshot.val()).sort((a,b) => a.timestamp - b.timestamp);
+            let html = "";
+            msgList.forEach(msg => {
+                let isMe = msg.studentId === senderId;
+                if(isMe) {
+                    html += `<div class="chat-bubble-row me" style="margin-bottom: 4px;"><div class="chat-bubble-body"><div class="chat-msg-text">${msg.message}</div></div></div>`;
+                } else {
+                    html += `<div class="chat-bubble-row other" style="margin-bottom: 4px;"><div class="chat-avatar-placeholder">${window.getAvatarHtml(msg.avatar || "👤")}</div><div class="chat-bubble-body"><span class="chat-msg-author">${msg.name}</span><div class="chat-msg-text">${msg.message}</div></div></div>`;
+                }
+            });
+            pBox.innerHTML = html; pBox.scrollTop = pBox.scrollHeight;
+        });
+    }
+    window.sendPrivateChatMessage = function() {
+        let input = document.getElementById("privateChatInput");
+        let txt = input.value.trim();
+        if(!txt || !activeFriendId) return;
+
+        let chatRoomId = senderId < activeFriendId ? `${senderId}_${activeFriendId}` : `${activeFriendId}_${senderId}`;
+        set(ref(db, `private_chats/${chatRoomId}/${Date.now()}`), {
+            studentId: senderId,
+            name: senderName,
+            avatar: selectedAvatarEmoji,
+            message: txt,
+            timestamp: Date.now()
+        });
+        input.value = "";
+    }
+	window.backToFriendList = function() {
+        const container = document.querySelector('#sub-panel-chat-banbe .chat-container-box');
+        if(container) container.classList.remove('mobile-show-chat');
+    }
+
+    window.triggerViewFriendProfile = function() {
+        if(!activeFriendId) return;
+        let contentArea = document.getElementById("viewProfileCardContent");
+        contentArea.innerHTML = "🔄 Đang tải dữ liệu hồ sơ..."; window.switchTab("view-profile");
+
+        get(child(ref(db), `users/${activeFriendId}`)).then((snapshot) => {
+            if(snapshot.exists()) {
+                let u = snapshot.val();
+                if(u.privacyPrivate === true) {
+                    contentArea.innerHTML = `<div style="font-size: 50px; margin-bottom: 15px;">🔒</div><h3 style="font-weight:800; color:#ef4444;">Hồ sơ riêng tư</h3><p style="color:#64748b; font-size:14px; margin-top:8px;">Học sinh này đã tắt chế độ xem hồ sơ cá nhân công khai.</p>`; return;
+                }
+                let statusText = u.status === 'online' ? '<span style="color:#22c55e; font-weight:bold;">🟢 Đang trực tuyến</span>' : '<span style="color:#94a3b8; font-weight:bold;">⚪ Ngoại tuyến</span>';
+                let friendBadgesHtml = "";
+                if (u.unlockedBadges) {
+                    Object.values(u.unlockedBadges).forEach(b => {
+                        friendBadgesHtml += `<span style="background: linear-gradient(135deg, #f5f3ff, #e0e7ff); border: 1px solid #c7d2fe; padding: 10px 20px; border-radius: 50px; font-size: 11px; font-weight: 700; color: #4338ca; display: inline-flex; align-items: center; gap: 4px;">${b.icon} ${b.name}</span>`;
+                    });
+                } else { friendBadgesHtml = "Chưa đạt danh hiệu nào"; }
+
+                contentArea.innerHTML = `
+                    <div class="profile-big-avatar" style="font-size:52px; width:100px; height:100px; margin-bottom:15px; border: 4px solid #1a73e8; overflow:hidden;">${window.getAvatarHtml(u.avatar || "👤")}</div>
+                    <div style="background: #f1f5f9; padding: 10px 20px; border-radius: 50px; font-size: 16px; font-weight: 800; max-width: 300px; margin: 0 auto 10px auto;">${u.name}</div>
+                    <p>Lớp: ${u.class} | Tuổi: ${u.age || "N/A"}</p>
+                    <div style="margin: 15px 0;">${statusText}</div>
+                    <div style="background:#eef4fa; padding:18px; border-radius:24px; text-align:left;">
+                        <h4>Danh hiệu đạt được</h4><div>${friendBadgesHtml}</div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    window.initChatRoomListener = function() {
+        onValue(ref(db, 'public_chat'), (snapshot) => {
+            let chatBox = document.getElementById("chatBox");
+            if(!snapshot.exists()) { chatBox.innerHTML = "<p style='text-align:center; color:#94a3b8; padding:20px;'>Phòng chat trống...</p>"; return; }
+            let msgList = Object.values(snapshot.val()).sort((a,b) => a.timestamp - b.timestamp);
+            let html = "";
+            msgList.forEach(msg => {
+                let isMe = msg.studentId === senderId;
+                if (isMe) {
+                    html += `<div class="chat-bubble-row me" style="margin-bottom: 4px;"><div class="chat-bubble-body"><div class="chat-msg-text">${msg.message}</div></div></div>`;
+                } else {
+                    html += `<div class="chat-bubble-row other" style="margin-bottom: 4px;"><div class="chat-avatar-placeholder">${window.getAvatarHtml(msg.avatar || "👤")}</div><div class="chat-bubble-body"><span class="chat-msg-author">${msg.name}</span><div class="chat-msg-text">${msg.message}</div></div></div>`;
+                }
+            });
+            chatBox.innerHTML = html; chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    }
+
+    window.sendChatMessage = function() {
+        let input = document.getElementById("chatInput"); let txt = input.value.trim(); if(!txt) return;
+        set(ref(db, 'public_chat/' + Date.now()), { studentId: senderId, name: senderName, avatar: selectedAvatarEmoji, message: txt, timestamp: Date.now() });
+        input.value = "";
+    }
+
+    window.loadMainLeaderboard = function() {
+        let lbContent = document.getElementById("mainLeaderboardContent");
+        onValue(ref(db, 'scores'), (snapshot) => {
+            if(!snapshot.exists()) { lbContent.innerHTML = "<p>Bảng xếp hạng hiện chưa có dữ liệu</p>"; return; }
+            let localScores = window.flattenFirebaseData(snapshot.val());
+            let validScores = localScores.filter(s => s.gameName && !s.gameName.includes("[STRESS_REJECT_LB]"));
+            
+            let studentGroups = {};
+            validScores.forEach(s => {
+                let key = s.studentId || s.name; if(!key) return;
+                if(!studentGroups[key]) studentGroups[key] = { name: s.name || "Ẩn danh", scoresByGame: {} };
+                let details = window.parseScoreDetails(s);
+                let cleanGameName = s.gameName.split(" (")[0]; 
+                if(!studentGroups[key].scoresByGame[cleanGameName] || details.correct > studentGroups[key].scoresByGame[cleanGameName]) {
+                    studentGroups[key].scoresByGame[cleanGameName] = details.correct;
+                }
+            });
+            let leaderboardArray = [];
+            for(let key in studentGroups) {
+                let gameScores = Object.values(studentGroups[key].scoresByGame);
+                if(gameScores.length > 0) {
+                    let totalCorrect = gameScores.reduce((a, b) => a + b, 0);
+                    leaderboardArray.push({ name: studentGroups[key].name, averageCorrect: (totalCorrect / gameScores.length).toFixed(1) });
+                }
+            }
+            leaderboardArray.sort((a, b) => parseFloat(b.averageCorrect) - parseFloat(a.averageCorrect));
+            let html = "";
+            leaderboardArray.slice(0, 10).forEach((item, index) => {
+                let medal = index === 0 ? "🥇" : (index === 1 ? "🥈" : (index === 2 ? "🥉" : `<span style='display:inline-block; width:22px; text-align:center; font-weight:800;'>${index+1}</span>`));
+                html += `<div class='leaderboard-item'><span>${medal} <b>${item.name}</b></span><span style='color:#16a34a; font-weight:bold;'>${item.averageCorrect} điểm</span></div>`;
+            });
+            lbContent.innerHTML = html;
+        });
+    }
+
+    function processGamificationAndGym() {
+        const banner = document.getElementById("dailyGymBanner");
+        const suggestText = document.getElementById("dailyGymSuggestText");
+        const gymBtn = document.getElementById("dailyGymBtn");
+        const badgesContainer = document.getElementById("badgesContainer");
+        if(!banner || !badgesContainer) return;
+        
+        let recommendedGame = { name: "Memory Matching", link: "sanglocnhanthuc(1).html", reason: "Hãy khởi động ngày mới để tăng cường Trí nhớ ngắn hạn nhé!" };
+        suggestText.innerHTML = `Đề xuất cá nhân hóa: Luyện bài <b>${recommendedGame.name}</b>. ${recommendedGame.reason}`;
+        gymBtn.href = recommendedGame.link; banner.style.display = "flex";
+
+        let badgeCriteria = [
+            { id: "rookie", name: "Tân Binh Khởi Động", icon: "📜", desc: "Làm ván test đầu tiên", unlocked: rawScoreData.length >= 1 },
+            { id: "hardworking", name: "Chiến Binh Chuyên Cần", icon: "🔥", desc: "Hoàn thành từ 5 ván test trở lên", unlocked: rawScoreData.length >= 5 }
+        ];
+
+        let badgeHtml = "";
+        badgeCriteria.forEach(badge => {
+            let opacity = badge.unlocked ? "1" : "0.35";
+            badgeHtml += `<div style="opacity: ${opacity}; border: 1px solid #cbd5e1; background: white; padding: 10px 20px; border-radius: 50px; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;"><span style="font-size: 18px;">${badge.icon}</span><div><span>${badge.name}</span></div></div>`;
+        });
+        badgesContainer.innerHTML = badgeHtml;
+    }
+
+    function redirectGymBannerCheck() {
+        if (senderId !== "N/A") {
+            onValue(ref(db, 'scores'), (snapshot) => {
+                if(snapshot.exists()) {
+                    rawScoreData = window.flattenFirebaseData(snapshot.val()).filter(s => s.studentId === senderId);
+                    processGamificationAndGym();
+                } else { rawScoreData = []; processGamificationAndGym(); }
+            });
+        }
+    }
+
+    document.getElementById("chatInput").addEventListener("keypress", function(e) { if (e.key === "Enter") window.sendChatMessage(); });
+    document.getElementById("privateChatInput").addEventListener("keypress", function(e) { if (e.key === "Enter") window.sendPrivateChatMessage(); });
+    document.getElementById("aiChatInput").addEventListener("keypress", function(e) { if (e.key === "Enter") window.sendAiMessage(); });
+
+    const uploadInput = document.getElementById("uploadAvatarInput");
+    if (uploadInput) {
+        uploadInput.addEventListener("change", function(e) {
+            let file = e.target.value ? this.files[0] : null;
+            if (file) {
+                if (file.size > 500 * 1024) {
+                    alert("⚠️ Kích thước ảnh lớn hơn 500KB! Vui lòng thu nhỏ ảnh hoặc chọn ảnh nhẹ hơn để hệ thống lưu trữ ổn định.");
+                    this.value = ""; return;
+                }
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    selectedAvatarEmoji = event.target.result;
+                    document.getElementById("bigProfileAvatar").innerHTML = window.getAvatarHtml(selectedAvatarEmoji);
+                    document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    document.querySelectorAll('.avatar-option').forEach(opt => {
+        opt.addEventListener('click', function() {
+            document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedAvatarEmoji = this.getAttribute('data-emoji');
+            document.getElementById("bigProfileAvatar").innerHTML = selectedAvatarEmoji;
+        });
+    });
+	
+	window.openDailySurvey = function() {
+    let userRaw = localStorage.getItem("user");
+    if (!userRaw) return;
+    
+    let currentUser = JSON.parse(userRaw);
+    let todayStr = new Date().toLocaleDateString('en-CA'); 
+    
+    if (currentUser.lastSurveyDate === todayStr) {
+        alert("🔒 Hôm nay em đã hoàn thành nộp phiếu khảo sát rồi! Mỗi ngày chỉ được tham gia khảo sát một lần thôi nhé.");
+        return;
+    }
+    
+    document.getElementById('dailySurveyModal').style.display = 'flex';
+};
+	
+    window.submitDailySurveyData = function() {
+        let sleepVal = parseFloat(document.getElementById("surveySleep").value) || 0;
+        let deviceVal = parseFloat(document.getElementById("surveyDevice").value) || 0;
+
+        let q1 = parseInt(document.querySelector('input[name="stQ1"]:checked')?.value || 0);
+        let q2 = parseInt(document.querySelector('input[name="stQ2"]:checked')?.value || 0);
+        let q3 = parseInt(document.querySelector('input[name="stQ3"]:checked')?.value || 0);
+        let q4 = parseInt(document.querySelector('input[name="stQ4"]:checked')?.value || 0);
+        let rawStressSum = q1 + q2 + q3 + q4;
+
+        let finalStress40 = Math.round((rawStressSum / 16) * 40);
+
+        let todayStr = new Date().toLocaleDateString('en-CA');
+        let userRaw = localStorage.getItem("user");
+        if(!userRaw) return;
+        let currentUser = JSON.parse(userRaw);
+
+        currentUser.sleepHours = sleepVal;
+        currentUser.deviceHours = deviceVal;
+        currentUser.stressScore = finalStress40;
+        currentUser.lastSurveyDate = todayStr;
+
+        let now = Date.now();
+        
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let todayMs = today.getTime();
+
+        let lastActiveDate = new Date(currentUser.lastActiveTimestamp || 0);
+        lastActiveDate.setHours(0, 0, 0, 0);
+        let lastActiveMs = lastActiveDate.getTime();
+
+        let diffDays = Math.round((todayMs - lastActiveMs) / (24 * 60 * 60 * 1000));
+
+        if (currentUser.lastActiveTimestamp) {
+            if (diffDays === 1) {
+                currentUser.streak = (currentUser.streak || 1) + 1;
+            } else if (diffDays > 1) {
+                currentUser.streak = 1;
+            }
+        } else {
+            currentUser.streak = 1;
+        }
+        currentUser.lastActiveTimestamp = now;
+
+        let gameLogs = rawScoreData.filter(s => s.gameName && !s.gameName.toLowerCase().includes("tổng hợp"));
+        let g1 = gameLogs.find(s => s.gameName.toLowerCase().includes("memory")) || {};
+        let g2 = gameLogs.find(s => s.gameName.toLowerCase().includes("stop") || s.gameName.toLowerCase().includes("ức chế")) || {};
+        let g3 = gameLogs.find(s => s.gameName.toLowerCase().includes("n-back")) || {};
+        let g4 = gameLogs.find(s => s.gameName.toLowerCase().includes("trail") || s.gameName.toLowerCase().includes("tốc độ")) || {};
+        let g5 = gameLogs.find(s => s.gameName.toLowerCase().includes("flexibility") || s.gameName.toLowerCase().includes("linh hoạt")) || {};
+
+        let d1 = window.parseScoreDetails(g1);
+        let d2 = window.parseScoreDetails(g2);
+        let d3 = window.parseScoreDetails(g3);
+        let d4 = window.parseScoreDetails(g4);
+        let d5 = window.parseScoreDetails(g5);
+
+        let rtVal = d2.time > 0 ? d2.time : (d1.time > 0 ? d1.time : 450);
+        let gonogoFAVal = (d2.correct + d2.wrong) > 0 ? Math.round((d2.wrong / (d2.correct + d2.wrong)) * 100) : 0;
+        let nbackAccVal = window.extractAccuracyNum(g3);
+        let tmtCostVal = d4.time > 0 ? d4.time : 0;
+        let flexErrorsVal = d5.wrong || 0;
+
+        let norm_rt = parseFloat((Math.min(Math.max(rtVal, 200), 1000) / 1000).toFixed(2));
+        let norm_fa = parseFloat((gonogoFAVal / 100).toFixed(2));
+        let norm_acc = parseFloat(((100 - nbackAccVal) / 100).toFixed(2)); 
+        let norm_tmt = parseFloat((Math.min(tmtCostVal, 60) / 60).toFixed(2));
+        let norm_flex = parseFloat((Math.min(flexErrorsVal, 10) / 10).toFixed(2));
+        let norm_stress = parseFloat((finalStress40 / 40).toFixed(2));
+
+        let triValue = parseFloat(((norm_rt + norm_fa + norm_acc + norm_tmt + norm_flex + norm_stress) / 6).toFixed(2));
+        let triLevel = "Thấp";
+        if (triValue >= 0.65) triLevel = "Cao";
+        else if (triValue >= 0.40) triLevel = "Trung bình";
+
+        let combinedRecord = {
+            studentId: senderId,
+            name: senderName,
+            schoolClass: "Lớp " + senderClass,
+            gameName: "Đánh Giá Tổng Hợp", 
+            timestamp: now,
+            date: new Date(now).toLocaleDateString('vi-VN') + ' ' + new Date(now).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}),
+
+            gioi: currentUser.gender || "---",
+            tuoi: currentUser.age || "---",
+            khoi: senderClass,
+            sleepHours: sleepVal,
+            deviceHours: deviceVal,
+            rtTrungBinh: rtVal + " ms",
+            rtLevel: triValue >= 0.6 ? "Chậm" : "Tốt",
+            triValue: triValue,
+            triLevel: triLevel,
+            gonoNhanNham: gonogoFAVal + "%",
+            nbackChinhXac: nbackAccVal + "%",
+            tmtChiPhi: tmtCostVal + " s",
+            flexLoiKienDinh: flexErrorsVal + " n",
+            stressScore: finalStress40,
+
+            normRT: norm_rt,
+            normFA: norm_fa,
+            normAcc: norm_acc,
+            normTMT: norm_tmt,
+            normFlex: norm_flex,
+            normStress: norm_stress,
+            tri: triValue,
+            mucLabel: triLevel,
+            mucDo: triLevel,
+            mucValue: triLevel,
+            score: `Đúng: 0 | Sai: 0 | Stress: ${finalStress40}`,
+            accuracy: Math.round((1 - triValue) * 100)
+        };
+
+        set(ref(db, `users/${senderId}`), currentUser).then(() => {
+            set(ref(db, `users/${senderId}`), currentUser).then(() => {
+                set(ref(db, `scores/${senderId}_combined`), combinedRecord).then(() => {
+                    alert(`🎉 Thành công! Chuỗi lửa chuyên cần hôm nay của em: ${currentUser.streak} ngày. Dữ liệu khảo sát chuyên sâu đã được gửi đồng bộ đến Ban Giám Hiệu.`);
+                    document.getElementById("dailySurveyModal").style.display = "none";
+                    if(window.currentStatsKey) {
+                        window.filterStats(window.currentStatsKey);
+                    }
+                });
+            }).catch(err => alert("Lỗi đồng bộ dữ liệu Cloud: " + err));
+        });
+    }
+
+   onValue(ref(db, `users/${senderId}/myFriendsList`), (snapshot) => {
+        myFriendsListGlobal = snapshot.exists() ? snapshot.val() : {};
+    });
+
+    onValue(ref(db, 'posts'), (snapshot) => {
+        objGlobalPosts = snapshot.exists() ? snapshot.val() : {};
+        if(document.getElementById("panel-posts") && document.getElementById("panel-posts").classList.contains("active")) {
+            window.renderStudentTimelineFeed();
+        }
+    });
+	
+	document.getElementById("studentPostContent").addEventListener("input", function() {
+        let text = this.value.trim();
+        let wordsArr = text === "" ? [] : text.split(/\s+/);
+        let wordCount = wordsArr.length;
+        
+        let counterEl = document.getElementById("postWordCounter");
+        counterEl.innerText = `${wordCount}/200 từ`;
+        
+        if (wordCount > 200) {
+            counterEl.style.color = "#ef4444"; 
+        } else {
+            counterEl.style.color = "#64748b";
+        }
+    });
+
+    window.handlePostImageUpload = function(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 1024 * 1024) { 
+            alert("⚠️ Ảnh đăng vượt quá giới hạn cho phép (1MB)! Em vui lòng chọn ảnh khác nhẹ hơn nhé.");
+            event.target.value = "";
+            return;
+        }
+
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            globalPostSelectedImageBase64 = e.target.result;
+            document.getElementById("postImagePreview").src = globalPostSelectedImageBase64;
+            document.getElementById("postImagePreviewContainer").style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.removePostSelectedImage = function() {
+        globalPostSelectedImageBase64 = null;
+        document.getElementById("postImageInput").value = "";
+        document.getElementById("postImagePreviewContainer").style.display = "none";
+    };
+
+    window.createStudentPost = function() {
+        let textEl = document.getElementById("studentPostContent");
+        let visEl = document.getElementById("studentPostVisibility");
+        let content = textEl.value.trim();
+        
+        if(!content && !globalPostSelectedImageBase64) { 
+            alert("⚠️ Em vui lòng nhập nội dung tâm tư hoặc đính kèm ảnh trước khi đăng bài nhé!"); 
+            return; 
+        }
+
+        let wordsArr = content === "" ? [] : content.split(/\s+/);
+        if (wordsArr.length > 200) {
+            alert(`⚠️ Bài viết của em hiện đạt ${wordsArr.length} từ, đã vượt mức giới hạn quy định là 200 từ. Hãy rút ngắn nội dung lại nhé!`);
+            return;
+        }
+
+        let postId = Date.now();
+        let postPayload = {
+            authorId: senderId,
+            authorName: senderName,
+            avatar: selectedAvatarEmoji,
+            content: content,
+            visibility: visEl.value,
+            timestamp: postId
+        };
+
+        if (globalPostSelectedImageBase64) {
+            postPayload.image = globalPostSelectedImageBase64;
+        }
+
+        set(ref(db, 'posts/' + postId), postPayload).then(() => {
+            textEl.value = "";
+            window.removePostSelectedImage();
+            document.getElementById("postWordCounter").innerText = "0/200 từ";
+            alert("🎉 Câu chuyện của em đã được đăng lên Bản Tin thành công!");
+        }).catch(err => alert("Lỗi gửi dữ liệu bài đăng: " + err.message));
+    }
+
+    window.renderStudentTimelineFeed = function() {
+        let feedContainer = document.getElementById("studentPostFeedContainer");
+        if(!feedContainer) return;
+        feedContainer.innerHTML = "";
+
+        let postBoxAvatarEl = document.getElementById("postBoxAvatar");
+        if(postBoxAvatarEl) postBoxAvatarEl.innerHTML = window.getAvatarHtml(selectedAvatarEmoji);
+
+        let list = Object.entries(objGlobalPosts).sort((a,b) => b[1].timestamp - a[1].timestamp);
+        let visibleCount = 0;
+
+        list.forEach(([postKey, post]) => {
+            if(post.visibility === "private" && post.authorId !== senderId) return; 
+            if(post.visibility === "friends" && post.authorId !== senderId && !myFriendsListGlobal[post.authorId]) return; 
+            if(post.authorId === "ADMIN" && post.visibility === "private") return; 
+
+            visibleCount++;
+            let myReaction = post.reactions && post.reactions[senderId] ? post.reactions[senderId].type : null;
+            let reactCount = post.reactions ? Object.keys(post.reactions).length : 0;
+            let whoReactedText = post.reactions ? Object.values(post.reactions).map(r => `${r.name} (${r.type})`).join(", ") : "";
+
+            let postActionsHtml = "";
+            if (post.authorId === senderId) {
+                postActionsHtml = `
+                    <span onclick="window.editStudentPost('${postKey}', '${post.content.replace(/'/g, "\\'")}')" style="color: #1a73e8; cursor: pointer; font-size: 11.5px; font-weight: bold; margin-right: 8px;"><i class="fa-solid fa-pen"></i> Sửa</span>
+                    <span onclick="window.deleteStudentPost('${postKey}')" style="color: #ef4444; cursor: pointer; font-size: 11.5px; font-weight: bold; margin-right: 12px;"><i class="fa-solid fa-trash"></i> Xóa</span>
+                `;
+            }
+
+            let commentContentHtml = "";
+            if(post.comments) {
+                let cmtEntries = Object.entries(post.comments).sort((a,b) => a[1].timestamp - b[1].timestamp);
+                let shortEntries = cmtEntries.slice(-2); 
+
+                if (cmtEntries.length > 2) {
+                    commentContentHtml += `
+                        <div onclick="window.openCommentModal('${postKey}')" style="color:#1877f2; font-size:12.5px; font-weight:700; cursor:pointer; text-align:left; margin: 4px 0 6px 4px;">
+                            <i class="fa-solid fa-comments"></i> Xem tất cả ${cmtEntries.length} bình luận...
+                        </div>`;
+                }
+
+                shortEntries.forEach(([cmtKey, cmt]) => {
+                    commentContentHtml += `
+                        <div style="background:#f1f5f9; padding:6px 12px; border-radius:10px; margin-top:4px; font-size:12.5px; text-align:left; color:#334155; width: fit-content; max-width:90%;">
+                            <b style="color:#1e293b;">${cmt.userName}</b>: ${cmt.text}
+                        </div>`;
+                });
+            }
+
+            let postInsertedImageHtml = "";
+            if (post.image) {
+                postInsertedImageHtml = `
+                    <div style="margin-top:12px; margin-bottom:12px; border-radius:8px; overflow:hidden; background:#f8fafc; border: 1px solid #f1f5f9; text-align:center;">
+                        <img src="${post.image}" style="max-width:100%; max-height:420px; object-fit:contain; display:inline-block; vertical-align:middle;">
+                    </div>
+                `;
+            }
+
+            feedContainer.innerHTML += `
+                <div class="panel-card-container" style="padding:16px; background:white; margin-bottom:1px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="chat-avatar-placeholder" style="width:38px; height:38px; margin:0; background:#f1f5f9; overflow:hidden;">${window.getAvatarHtml(post.avatar || "👤")}</div>
+                            <div style="text-align:left;">
+                                <h5 style="margin:0; font-size:14px; font-weight:700; color:#1e293b;">${post.authorName} ${post.authorId === 'ADMIN' ? '👑':''}</h5>
+                                <span style="font-size:11.5px; color:#64748b; font-weight:600;">${new Date(post.timestamp).toLocaleString("vi-VN")}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            ${postActionsHtml}
+                            <span class="user-id-tag" style="background:${post.visibility==='public'?'#e8f0fe':(post.visibility==='friends'?'#fef3c7':'#fee2e2')}; color:${post.visibility==='public'?'#1a73e8':(post.visibility==='friends'?'#d97706':'#ef4444')}; padding:3px 10px; font-size:11px; font-weight:700;">
+                                ${post.visibility === 'public' ? '🌍 Công khai' : (post.visibility === 'friends' ? '👥 Bạn bè' : '🔒 Riêng tư')}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size:14.5px; color:#1e293b; font-weight:500; line-height:1.5; margin-bottom:10px; text-align:left; white-space: pre-wrap; word-break: break-word;">${post.content}</p>
+                    
+                    ${postInsertedImageHtml}
+                    
+                    <div style="display:flex; justify-content: space-around; border-top:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; padding:8px 0; font-size:13.5px; font-weight:700; color: #64748b;">
+                        <div style="position: relative; flex:1; text-align:center;" 
+                             onmouseenter="document.getElementById('react-box-${postKey}').style.display='flex'" 
+                             onmouseleave="document.getElementById('react-box-${postKey}').style.display='none'">
+                            
+                            <span style="cursor:pointer; color:${myReaction ? '#ef4444':'#64748b'}; display:inline-flex; align-items:center; gap:6px; user-select:none; width:100%; justify-content:center; padding:6px 0; border-radius:6px;" 
+                                  onclick="window.handleReactClick('${postKey}')"
+                                  title="Danh sách các bạn đã tương tác: ${whoReactedText || 'Chưa có ai'}">
+                                <i class="fa-solid fa-heart"></i> ${myReaction ? `${myReaction} Cảm xúc` : 'Thích'} (${reactCount})
+                            </span>
+                            
+                            <div id="react-box-${postKey}" style="display: none; position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); background: white; border: 1px solid #cbd5e1; border-radius: 30px; padding: 6px 12px; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); z-index: 999; align-items: center; white-space: nowrap;">
+                                <span onclick="window.submitReactionType('${postKey}', '❤️')" style="cursor:pointer; font-size:20px; transition:0.1s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">❤️</span>
+                                <span onclick="window.submitReactionType('${postKey}', '😆')" style="cursor:pointer; font-size:20px; transition:0.1s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">😆</span>
+                                <span onclick="window.submitReactionType('${postKey}', '😢')" style="cursor:pointer; font-size:20px; transition:0.1s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">😢</span>
+                                <span onclick="window.submitReactionType('${postKey}', '😮')" style="cursor:pointer; font-size:20px; transition:0.1s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">😮</span>
+                                <span onclick="window.submitReactionType('${postKey}', '😡')" style="cursor:pointer; font-size:20px; transition:0.1s;" onmouseover="this.style.transform='scale(1.3)'" onmouseout="this.style.transform='scale(1)'">😡</span>
+                            </div>
+                        </div>
+                        <span style="cursor:pointer; flex:1; display:inline-flex; align-items:center; gap:6px; user-select:none; justify-content:center; padding:6px 0; border-radius:6px;" onclick="window.openCommentModal('${postKey}')">
+                            <i class="fa-regular fa-comment"></i> Bình luận (${post.comments ? Object.keys(post.comments).length : 0})
+                        </span>
+                        <span style="cursor:pointer; flex:1; color:#16a34a; display:inline-flex; align-items:center; gap:6px; user-select:none; justify-content:center; padding:6px 0; border-radius:6px;" onclick="window.openShareModal('${postKey}')">
+                            <i class="fa-solid fa-share-nodes"></i> Chia sẻ
+                        </span>
+                    </div>
+
+                    <div style="margin-top:10px; border-top: 1px dashed #f1f5f9; padding-top: 4px;">
+                        ${commentContentHtml}
+                    </div>
+                </div>`;
+        });
+
+        if(visibleCount === 0) {
+            feedContainer.innerHTML = "<p style='text-align:center; color:#94a3b8; font-style:italic; padding:20px;'>Chưa có bài viết nào hiển thị công khai phù hợp với em hôm nay.</p>";
+        }
+    }
+
+    window.handleReactClick = function(postKey) {
+        window.submitReactionType(postKey, '❤️');
+    };
+
+    window.submitReactionType = function(postKey, type) {
+        const reactionRef = ref(db, `posts/${postKey}/reactions/${senderId}`);
+        
+        get(reactionRef).then((snapshot) => {
+            if (snapshot.exists() && snapshot.val().type === type) {
+                set(reactionRef, null);
+            } else {
+                set(reactionRef, {
+                    name: senderName,
+                    type: type,
+                    timestamp: Date.now()
+                });
+            }
+            let box = document.getElementById(`react-box-${postKey}`);
+            if (box) box.style.display = 'none';
+        }).catch((error) => {
+            console.error("Lỗi đồng bộ cảm xúc:", error);
+        });
+    };
+
+	window.deleteStudentComment = function(postKey, cmtKey) {
+        if (confirm("Em có chắc chắn muốn xóa bình luận này không?")) {
+            set(ref(db, `posts/${postKey}/comments/${cmtKey}`), null)
+            .then(() => {
+                console.log("Đã xóa bình luận thành công.");
+            })
+            .catch((err) => {
+                alert("Lỗi hệ thống không thể xóa: " + err.message);
+            });
+        }
+    };
+
+    window.editStudentComment = function(postKey, cmtKey, currentText) {
+        let newText = prompt("Chỉnh sửa nội dung thảo luận của em:", currentText);
+        if (newText === null) return; 
+        
+        newText = newText.trim();
+        if (!newText) {
+            alert("⚠️ Nội dung bình luận mới không được để trống!");
+            return;
+        }
+
+        set(ref(db, `posts/${postKey}/comments/${cmtKey}/text`), newText)
+        .then(() => {
+            console.log("Đã cập nhật nội dung bình luận.");
+        })
+        .catch((err) => {
+            alert("Lỗi hệ thống không thể cập nhật: " + err.message);
+        });
+    };
+
+    window.sharePostToChatBox = function(postKey) {
+        let post = objGlobalPosts[postKey];
+        if(!post) return;
+        let shareMsg = `📢 [CHIA SẺ BÀI VIẾT TỪ BẢN TIN] Bạn ${post.authorName} chia sẻ: "${post.content.substring(0, 50)}${post.content.length > 50 ? '...':''}" (Vào tab Bản Tin để tương tác cùng bạn nhé!)`;
+        set(ref(db, 'public_chat/' + Date.now()), {
+            studentId: senderId, name: senderName, avatar: selectedAvatarEmoji, message: shareMsg, timestamp: Date.now()
+        }).then(() => { alert("🚀 Đã gửi lời giới thiệu chia sẻ bài viết này vào phòng Chat Chung học đường!"); });
+    }
+    
+    window.loadMainLeaderboard(); window.initChatRoomListener(); initProfileRealtimeListener(); initPrivateChatGlobalNotificationListener(); redirectGymBannerCheck(); triggerAutoPlayOnLoad();
+	if(senderId !== "N/A") {
+        window.loadMultiTaskReports(senderId);
+    }
+
+    let currentSharingPostKey = null;
+
+    window.openShareModal = function(postKey) {
+        currentSharingPostKey = postKey;
+        let modal = document.getElementById("sharePostModal");
+        let listArea = document.getElementById("shareModalFriendsList");
+        if(!modal || !listArea) return;
+
+        modal.style.display = "flex"; 
+        listArea.innerHTML = "<p style='text-align:center; font-size:13px; color:#94a3b8; font-style:italic;'>Đang quét danh sách bạn bè học đường...</p>";
+
+        get(ref(db)).then((snapshot) => {
+            if(snapshot.exists()) {
+                let root = snapshot.val();
+                let myInfo = root.users[senderId] || {};
+                let myFriends = myInfo.myFriendsList || {};
+                let users = root.users || {};
+
+                let html = "";
+                let hasFriends = false;
+
+                Object.keys(myFriends).forEach(fId => {
+                    if(myFriends[fId] === true && users[fId]) {
+                        hasFriends = true;
+                        let friendData = users[fId];
+                        let avatarHtml = window.getAvatarHtml(friendData.avatar || "👤");
+                        
+                        html += `
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 12px; border-radius: 12px; border: 1px solid #e2e8f0; gap: 10px; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                                    <div class="chat-avatar-placeholder" style="width: 32px; height: 32px; font-size: 13px; margin: 0; background: white; overflow: hidden; flex-shrink: 0;">${avatarHtml}</div>
+                                    <div style="min-width: 0; text-align: left;">
+                                        <h5 style="margin: 0; font-size: 13px; color: #1e293b; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${friendData.name}</h5>
+                                        <p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b; font-weight: 600;">Lớp ${friendData.class} | THCS</p>
+                                    </div>
+                                </div>
+                                <button id="btn-send-share-${fId}" onclick="window.executeShareToFriend('${fId}')" style="background: #1877f2; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;">Gửi ngay</button>
+                            </div>
+                        `;
+                    }
+                });
+
+                if(!hasFriends) {
+                    listArea.innerHTML = "<p style='text-align:center; font-size:13px; color:#64748b; font-style:italic; padding: 15px 0;'>Em chưa có bạn bè hệ thống công khai nào. Hãy qua mục Phòng Chat kết bạn trước nhé! 👥</p>";
+                } else {
+                    listArea.innerHTML = html;
+                }
+            }
+        }).catch(err => {
+            listArea.innerHTML = `<p style='color:#ef4444; font-size:12px;'>Lỗi đồng bộ: ${err.message}</p>`;
+        });
+    };
+
+    window.closeShareModal = function() {
+        let modal = document.getElementById("sharePostModal");
+        if(modal) modal.style.display = "none";
+        currentSharingPostKey = null;
+    };
+
+    window.executeShareToFriend = function(friendId) {
+        if(!currentSharingPostKey || !friendId) return;
+        let post = objGlobalPosts[currentSharingPostKey];
+        if(!post) return;
+
+        let shareMessageText = `📢 [CHIA SẺ BÀI VIẾT TỪ BẢN TIN]\nTớ muốn chia sẻ câu chuyện này của bạn *${post.authorName}*:\n"${post.content.substring(0, 80)}${post.content.length > 80 ? '...' : ''}"\n(Hãy mở tab Bản Tin để tương tác và thảo luận cùng tụi tớ nhé!)`;
+        let chatRoomId = senderId < friendId ? `${senderId}_${friendId}` : `${friendId}_${senderId}`;
+        
+        set(ref(db, `private_chats/${chatRoomId}/${Date.now()}`), {
+            studentId: senderId,
+            name: senderName,
+            avatar: selectedAvatarEmoji,
+            message: shareMessageText,
+            timestamp: Date.now()
+        }).then(() => {
+            let btn = document.getElementById(`btn-send-share-${friendId}`);
+            if(btn) {
+                btn.innerText = "Đã gửi ✓";
+                btn.style.background = "#22c55e";
+                btn.style.cursor = "not-allowed";
+                btn.disabled = true;
+            }
+        }).catch(err => {
+            alert("Lỗi đường truyền chia sẻ tin nhắn: " + err.message);
+        });
+    };
+
+    let currentCommentPostKey = null;
+    let commentModalRealtimeListener = null;
+
+    window.openCommentModal = function(postKey) {
+        currentCommentPostKey = postKey;
+        document.getElementById("commentPostModal").style.display = "flex";
+        
+        if(commentModalRealtimeListener) commentModalRealtimeListener(); 
+
+        commentModalRealtimeListener = onValue(ref(db, `posts/${postKey}`), (snapshot) => {
+            let container = document.getElementById("modalCommentsContainer");
+            if(!container) return;
+
+            if(!snapshot.exists()) {
+                container.innerHTML = "<p style='text-align:center; color:#94a3b8;'>Bài viết này không tồn tại hoặc đã bị xóa.</p>"; return;
+            }
+
+            let postData = snapshot.val();
+            let comments = postData.comments || {};
+            let cmtEntries = Object.entries(comments).sort((a,b) => a[1].timestamp - b[1].timestamp);
+
+            if(cmtEntries.length === 0) {
+                container.innerHTML = "<p style='text-align:center; font-size:13px; color:#94a3b8; font-style:italic; padding:20px 0;'>Chưa có thảo luận nào. Hãy gửi lời bình luận đầu tiên của em! 💬</p>"; return;
+            }
+
+            let html = "";
+            cmtEntries.forEach(([cmtKey, cmt]) => {
+                let likesCount = cmt.likes ? Object.keys(cmt.likes).length : 0;
+                let dislikesCount = cmt.dislikes ? Object.keys(cmt.dislikes).length : 0;
+                let hasLiked = cmt.likes && cmt.likes[senderId] ? true : false;
+                let hasDisliked = cmt.dislikes && cmt.dislikes[senderId] ? true : false;
+
+                let deleteBtn = cmt.userId === senderId ? `
+                    <span onclick="window.deleteStudentComment('${postKey}', '${cmtKey}')" style="color:#ef4444; cursor:pointer; font-size:11px; font-weight:bold; margin-left:12px;"><i class="fa-solid fa-trash"></i> Xóa</span>
+                ` : "";
+
+                let repliesHtml = "";
+                if(cmt.replies) {
+                    Object.values(cmt.replies).sort((a,b) => a[1].timestamp - b[1].timestamp).forEach(rep => {
+                        repliesHtml += `
+                            <div style="background:#f1f5f9; padding:6px 12px; border-radius:12px; margin-top:4px; margin-left:35px; font-size:12px; text-align:left; border-left:3px solid #cbd5e1; word-break: break-word;">
+                                <b style="color:#1e293b;">${rep.userName}</b>: ${rep.text}
+                            </div>`;
+                    });
+                }
+
+                html += `
+                    <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 4px;">
+                        <div style="background:#f1f5f9; padding:8px 14px; border-radius:14px; text-align:left; font-size:13px; color:#334155; width:fit-content; max-width:95%; word-break: break-word;">
+                            <b style="color:#1e293b;">${cmt.userName}</b>: ${cmt.text}
+                            ${deleteBtn}
+                        </div>
+                        
+                        <div style="display:flex; gap:16px; margin-top:4px; padding-left:6px; font-size:11px; font-weight:800; color:#64748b; align-items:center; user-select:none;">
+                            <span onclick="window.toggleLikeDislikeComment('${postKey}', '${cmtKey}', 'like')" style="cursor:pointer; color:${hasLiked ? '#1877f2':'#64748b'}">
+                                <i class="fa-regular fa-thumbs-up"></i> Thích (${likesCount})
+                            </span>
+                            <span onclick="window.toggleLikeDislikeComment('${postKey}', '${cmtKey}', 'dislike')" style="cursor:pointer; color:${hasDisliked ? '#ef4444':'#64748b'}">
+                                <i class="fa-regular fa-thumbs-down"></i> Ghét (${dislikesCount})
+                            </span>
+                            <span onclick="window.showReplyInputBoxUI('${cmtKey}')" style="cursor:pointer; color:#16a34a;">
+                                <i class="fa-regular fa-comment-dots"></i> Phản hồi
+                            </span>
+                        </div>
+
+                        <div style="margin-top:2px;">${repliesHtml}</div>
+
+                        <div id="reply-box-container-${cmtKey}" style="display:none; gap:6px; margin-top:6px; margin-left:35px;">
+                            <input type="text" id="reply-input-text-${cmtKey}" placeholder="Trả lời bình luận này..." style="flex:1; padding:6px 14px; border-radius:20px; border:1px solid #cbd5e1; font-size:12px; outline:none; background:#f8fafc;">
+                            <button onclick="window.submitCommentReplyData('${postKey}', '${cmtKey}')" style="background:#16a34a; color:white; border:none; padding:4px 14px; border-radius:20px; font-size:11px; font-weight:700; cursor:pointer;">Gửi</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        });
+    };
+
+    window.closeCommentModal = function() {
+        document.getElementById("commentPostModal").style.display = "none";
+        if(commentModalRealtimeListener) { commentModalRealtimeListener(); commentModalRealtimeListener = null; }
+        currentCommentPostKey = null;
+    };
+
+    window.submitModalMainComment = function() {
+        if(!currentCommentPostKey) return;
+        let input = document.getElementById("modalMainCommentInput");
+        let text = input.value.trim();
+        if(!text) return;
+
+        let cmtId = Date.now();
+        set(ref(db, `posts/${currentCommentPostKey}/comments/${cmtId}`), {
+            userId: senderId, userName: senderName, text: text, timestamp: cmtId
+        }).then(() => { input.value = ""; });
+    };
+
+    window.toggleLikeDislikeComment = function(postKey, cmtKey, actionType) {
+        const likeRef = ref(db, `posts/${postKey}/comments/${cmtKey}/likes/${senderId}`);
+        const dislikeRef = ref(db, `posts/${postKey}/comments/${cmtKey}/dislikes/${senderId}`);
+
+        if(actionType === 'like') {
+            get(likeRef).then(snap => {
+                if(snap.exists()) { set(likeRef, null); } else { set(likeRef, true); set(dislikeRef, null); }
+            });
+        } else {
+            get(dislikeRef).then(snap => {
+                if(snap.exists()) { set(dislikeRef, null); } else { set(dislikeRef, true); set(likeRef, null); }
+            });
+        }
+    };
+
+    window.showReplyInputBoxUI = function(cmtKey) {
+        let box = document.getElementById(`reply-box-container-${cmtKey}`);
+        if(box) {
+            box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+            if(box.style.display === 'flex') document.getElementById(`reply-input-text-${cmtKey}`).focus();
+        }
+    };
+
+    window.submitCommentReplyData = function(postKey, cmtKey) {
+        let input = document.getElementById(`reply-input-text-${cmtKey}`);
+        let text = input.value.trim();
+        if(!text) return;
+
+        let repId = Date.now();
+        set(ref(db, `posts/${postKey}/comments/${cmtKey}/replies/${repId}`), {
+            userId: senderId, userName: senderName, text: text, timestamp: repId
+        }).then(() => {
+            input.value = ""; document.getElementById(`reply-box-container-${cmtKey}`).style.display = 'none';
+        });
+    };
+
+    window.deleteStudentPost = function(postKey) {
+        if (confirm("Em có chắc chắn muốn xóa bài đăng này không? Thao tác này sẽ xóa sạch nội dung bài viết và toàn bộ bình luận liên quan.")) {
+            set(ref(db, `posts/${postKey}`), null)
+            .then(() => {
+                alert("🎉 Đã xóa bài viết thành công!");
+            })
+            .catch((err) => {
+                alert("Hệ thống gặp lỗi không thể xóa bài: " + err.message);
+            });
+        }
+    };
+
+    window.editStudentPost = function(postKey, currentContent) {
+        let newContent = prompt("Chỉnh sửa nội dung câu chuyện bài đăng của em (Giới hạn dưới 200 từ):", currentContent);
+        if (newContent === null) return; 
+        
+        newContent = newContent.trim();
+        if (!newContent) {
+            alert("⚠️ Nội dung bài viết mới không được để trống!");
+            return;
+        }
+
+        let wordsArr = newContent.split(/\s+/);
+        if (wordsArr.length > 200) {
+            alert(`⚠️ Bài viết sửa đổi đạt ${wordsArr.length} từ, đã vượt mức giới hạn quy định là 200 từ. Hãy rút ngắn lại nhé!`);
+            return;
+        }
+
+        set(ref(db, `posts/${postKey}/content`), newContent)
+        .then(() => {
+            alert("🎉 Đã cập nhật chỉnh sửa bài viết thành công!");
+        })
+        .catch((err) => {
+            alert("Hệ thống gặp lỗi không thể cập nhật: " + err.message);
+        });
+    };
+</script>	
+
+<div id="dailySurveyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 99999; padding: 20px;">
+    <div style="background: #ffffff; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; padding: 30px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); text-align: left;">
+        <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px dashed #e2e8f0; padding-bottom: 15px;">
+            <span style="font-size: 32px;">☀️</span>
+            <h3 style="font-size: 20px; font-weight: 800; color: #1e293b; margin-top: 10px; text-transform: uppercase;">Khảo Sát Sức Khỏe Nhận Thức Ngày Mới</h3>
+            <p style="font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500;">Hãy dành 1 phút cập nhật trạng thái để kích hoạt chuỗi lửa ngày hôm nay nhé!</p>
+        </div>
+
+        <form id="dailySurveyForm" onsubmit="event.preventDefault(); window.submitDailySurveyData();">
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label style="font-weight: 700; color: #334155; font-size: 14px;"><i class="fa-solid fa-bed" style="color:#6c5ce7; margin-right:6px;"></i> Đêm qua em ngủ được bao nhiêu tiếng?</label>
+                <input type="number" id="surveySleep" step="0.5" min="1" max="24" required placeholder="Ví dụ: 7 hoặc 7.5 (tiếng)" style="width: 100%; padding: 11px 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 50px; outline: none; font-size: 14px; font-weight: 600;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 22px;">
+                <label style="font-weight: 700; color: #334155; font-size: 14px;"><i class="fa-solid fa-mobile-screen" style="color:#1a73e8; margin-right:6px;"></i> Thời gian em sử dụng thiết bị điện tử ngày hôm qua?</label>
+                <input type="number" id="surveyDevice" step="0.5" min="0" max="24" required placeholder="Ví dụ: 3 hoặc 4.5 (tiếng)" style="width: 100%; padding: 11px 20px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 50px; outline: none; font-size: 14px; font-weight: 600;">
+            </div>
+
+            <div style="background: #f8fafc; padding: 18px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                <h4 style="font-size: 13.5px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;"><i class="fa-solid fa-heart-pulse" style="color:#ef4444;"></i> Đánh giá trạng thái áp lực (Stress)</h4>
+                <p style="font-size: 12px; color: #64748b; font-style: italic; margin-bottom: 15px;">Chọn mức độ gần đây: 0 (Không bao giờ) → 4 (Rất thường xuyên)</p>
+                
+                <div style="margin-bottom: 14px;">
+                    <p style="font-size:13.5px; font-weight:600; color:#1e293b; margin-bottom:6px;">1. Em cảm thấy lo lắng, căng thẳng vì bài vở học tập đột xuất?</p>
+                    <div style="display:flex; gap:12px; justify-content:space-between; padding:0 4px;" class="stress-radios">
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ1" value="0" required> 0</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ1" value="1"> 1</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ1" value="2"> 2</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ1" value="3"> 3</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ1" value="4"> 4</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <p style="font-size:13.5px; font-weight:600; color:#1e293b; margin-bottom:6px;">2. Em cảm thấy khó tập trung suy nghĩ hoặc trí nhớ bị suy giảm?</p>
+                    <div style="display:flex; gap:12px; justify-content:space-between; padding:0 4px;" class="stress-radios">
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ2" value="0" required> 0</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ2" value="1"> 1</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ2" value="2"> 2</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ2" value="3"> 3</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ2" value="4"> 4</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <p style="font-size:13.5px; font-weight:600; color:#1e293b; margin-bottom:6px;">3. Em cảm thấy bực bội, cáu gắt hoặc mất kiên nhẫn với mọi người?</p>
+                    <div style="display:flex; gap:12px; justify-content:space-between; padding:0 4px;" class="stress-radios">
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ3" value="0" required> 0</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ3" value="1"> 1</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ3" value="2"> 2</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ3" value="3"> 3</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ3" value="4"> 4</label>
+                    </div>
+                </div>
+
+                <div>
+                    <p style="font-size:13.5px; font-weight:600; color:#1e293b; margin-bottom:6px;">4. Em cảm thấy mệt mỏi, uể oải ngay cả khi vừa thức dậy?</p>
+                    <div style="display:flex; gap:12px; justify-content:space-between; padding:0 4px;" class="stress-radios">
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ4" value="0" required> 0</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ4" value="1"> 1</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ4" value="2"> 2</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ4" value="3"> 3</label>
+                        <label style="font-size:14px; font-weight:700; padding: 4px;"><input type="radio" name="stQ4" value="4"> 4</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" style="background: linear-gradient(135deg, #1a73e8, #6c5ce7); border-radius: 50px; padding: 13px; font-weight: 800;"><i class="fa-solid fa-paper-plane"></i> Hoàn thành & Nộp phiếu khảo sát</button>
+        </form>
+    </div>
+</div>
+
+<div id="sharePostModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 999999; padding: 20px;">
+    <div style="background: #ffffff; width: 100%; max-width: 420px; border-radius: 16px; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; max-height: 75vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 15px;">
+            <h3 style="font-size: 15px; font-weight: 800; color: #1e293b;"><i class="fa-solid fa-paper-plane" style="color:#1877f2; margin-right: 6px;"></i> Gửi bài viết cho bạn bè hệ thống</h3>
+            <button onclick="window.closeShareModal()" style="background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer; font-weight: bold; line-height: 1;">&times;</button>
+        </div>
+        <div id="shareModalFriendsList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px;">
+            <p style='text-align:center; font-size:13px; color:#94a3b8; font-style:italic;'>Đang tải danh sách...</p>
+        </div>
+    </div>
+</div>
+
+<div id="commentPostModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 999999; padding: 20px;">
+    <div style="background: #ffffff; width: 100%; max-width: 500px; border-radius: 16px; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; max-height: 80vh;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 15px;">
+            <h3 style="font-size: 15px; font-weight: 800; color: #1e293b;"><i class="fa-solid fa-comments" style="color:#1877f2; margin-right: 6px;"></i> Bảng thảo luận học đường</h3>
+            <button onclick="window.closeCommentModal()" style="background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer; font-weight: bold; line-height: 1;">&times;</button>
+        </div>
+        <div id="modalCommentsContainer" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px;">
+            <p style='text-align:center; font-size:13px; color:#94a3b8; font-style:italic;'>Đang tải dữ liệu tương tác...</p>
+        </div>
+        <div style="display:flex; gap:8px; border-top: 1px solid #f1f5f9; padding-top: 12px; margin-top: 10px;">
+            <input type="text" id="modalMainCommentInput" placeholder="Viết bình luận công khai..." style="flex:1; padding:10px 16px; border-radius:50px; border:1px solid #cbd5e1; outline:none; font-size:13px; font-weight:500; background:#f8fafc;">
+            <button onclick="window.submitModalMainComment()" style="background:#1877f2; color:white; border:none; padding:8px 18px; border-radius:50px; font-size:12px; font-weight:700; cursor:pointer;"><i class="fa-solid fa-paper-plane"></i> Gửi</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

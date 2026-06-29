@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra Linh hoạt Nhận thức - Sàng lọc Nhận thức</title>
+	<link rel="icon" type="image/x-icon" href="icon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root { --shape-size: 150px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(-45deg, #ff7675, #74b9ff, #a29bfe, #fdcb6e, #55efc4); background-size: 400% 400%; animation: bgmove 15s ease infinite; color: #334155;
+        }
+        @keyframes bgmove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .container { width: 100%; max-width: 850px; margin: auto; text-align: center; position: relative; z-index: 2; }
+        
+        .screen-box { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6); border-radius: 24px; padding: 35px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06); transition: transform 0.1s; }
+        .screen { display: none; width: 100%; }
+        .screen.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        h2 { color: #1e293b; margin-bottom: 20px; font-size: 1.8em; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .btn { padding: 12px 24px; font-size: 14.5px; font-weight: bold; color: white; background-color: #1a73e8; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(26,115,232,0.15); }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); background-color: #155cb4; box-shadow: 0 6px 15px rgba(26,115,232,0.25); }
+        .btn:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-secondary { background-color: #fee2e2; color: #ef4444; box-shadow: 0 4px 12px rgba(239,68,68,0.1); }
+        .btn-secondary:hover:not(:disabled) { background-color: #fca5a5; color: #b91c1c; }
+        
+        .level-options { display: flex; flex-direction: row; justify-content: center; align-items: stretch; gap: 15px; width: 100%; margin-top: 20px; }
+        .btn-level { flex: 1; padding: 18px 10px; font-size: 15px; background-color: #ffffff; color: #334155; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.02); border-radius: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1.4; cursor: pointer; transition: 0.2s; }
+        .btn-level:hover { background-color: #f8fafc; border-color: #cbd5e1; color: #1a73e8; transform: translateY(-2px); }
+        @media (max-width: 700px) { .level-options { flex-direction: column; } }
+
+        #gameInfo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: 700; color: #475569; text-align: center; }
+        @media (min-width: 550px) { #gameInfo { grid-template-columns: repeat(4, 1fr); } }
+        .time-warning { color: #ef4444 !important; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        
+        #ruleDisplay { font-size: 1.4em; font-weight: bold; color: #fff; background-color: #ef4444; padding: 12px; border-radius: 14px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
+        
+        #stimulusArea { width: 100%; height: 260px; display: flex; justify-content: center; align-items: center; border: 3px dashed #cbd5e1; border-radius: 20px; background: #f8fafc; position: relative; margin-bottom: 25px; overflow: hidden; }
+        #stimulusShape { width: var(--shape-size); height: var(--shape-size); visibility: hidden; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15)); transition: transform 0.1s; }
+        #stimulusShape.circle { border-radius: 50%; }
+        #stimulusShape.square { border-radius: 15px; }
+
+        .turn-badge { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: #475569; color: white; font-weight: bold; padding: 6px 18px; border-radius: 20px; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 2; white-space: nowrap; }
+        #overlayBox { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); z-index: 10; align-items: center; justify-content: center; font-size: 2em; color: #d97706; font-weight: 800; border-radius: 18px; backdrop-filter: blur(5px); }
+        #overlayBox.active { display: flex; animation: fadeIn 0.3s; }
+
+        @keyframes shakeError { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-15px) rotate(-3deg); } 40%, 80% { transform: translateX(15px) rotate(3deg); } }
+        .shake-error { animation: shakeError 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        .action-buttons { display: flex; justify-content: center; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 2000; opacity: 0; transition: opacity 0.3s ease; padding: 20px; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: white; width: 100%; max-width: 550px; border-radius: 24px; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: translateY(-20px); transition: transform 0.3s ease; position: relative; text-align: center; }
+        .modal.active .modal-content { transform: translateY(0); }
+        .modal-close { position: absolute; top: 15px; right: 25px; font-size: 30px; cursor: pointer; color: #94a3b8; transition: 0.2s; }
+        .modal-close:hover { color: #ef4444; }
+        #historyContent { max-height: 250px; overflow-y: auto; text-align: left; margin-top: 15px; }
+        .history-item { border-bottom: 1px solid #f1f5f9; padding: 12px 0; color: #475569; font-size: 14px; }
+        
+        .tutorial-box { font-size: 14px; text-align: left; line-height: 1.6; color: #334155; background: #f8fafc; padding: 20px; border-radius: 14px; border-left: 5px solid #1a73e8; margin-bottom: 20px;}
+
+        /* FLOATING LEFT ĐỒNG BỘ */
+        .floating-left { position: fixed; left: 15px; bottom: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .left-item { position: relative; display: flex; align-items: center; justify-content: flex-start; cursor: pointer; }
+        .left-item .icon-wrapper { color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: all 0.3s ease; position: relative; z-index: 2; border: 2px solid white; }
+        .left-info { position: absolute; left: 40px; color: white; padding: 8px 12px 8px 20px; border-radius: 0 25px 25px 0; font-weight: bold; font-size: 13px; opacity: 0; visibility: hidden; transform: translateX(-20px); transition: all 0.4s; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 1; }
+        .left-item:hover .icon-wrapper { transform: scale(1.1); }
+        .left-item:hover .left-info { opacity: 1; visibility: visible; transform: translateX(0); left: 52px; }
+        
+        .left-item.glossary .icon-wrapper { background-color: #0d9488; box-shadow: 0 4px 15px rgba(13,148,136,0.3); }
+        .left-item.glossary .left-info { background-color: #0d9488; }
+        .left-item.leaderboard .icon-wrapper { background-color: #eab308; box-shadow: 0 4px 15px rgba(234,179,8,0.3); animation: pulse-leaderboard 2s infinite; }
+        .left-item.leaderboard .left-info { background-color: #eab308; }
+        @keyframes pulse-leaderboard { 0% { box-shadow: 0 0 0 0 rgba(234,179,8, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(234,179,8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234,179,8, 0); } }
+
+        .tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; background: #f1f5f9; padding: 6px; border-radius: 14px; }
+        .tab-btn { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-weight: 700; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 13.5px; }
+        .tab-btn:hover { color: #1e293b; }
+        .tab-btn.active { background: #ffffff; color: #eab308; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+        /* AUDIO CONTROL GÓC TRÊN TRÁI ĐỒNG BỘ */
+        .music-controls { position: fixed; top: 15px; left: 15px; display: flex; align-items: center; z-index: 1000; }
+        .music-btn { width: 38px; height: 36px; display: flex; align-items: center; justify-content: center; background-color: #ffffff; color: #16a34a; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.05); outline: none; }
+        .music-btn:hover { background-color: #16a34a; color: white; transform: scale(1.05); }
+        .music-btn.playing { color: #ef4444; }
+        .music-btn.playing:hover { background-color: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" src="Nhạc nền vui của Độ mixi.mp3" loop autoplay></audio>
+
+    <div class="music-controls">
+        <button id="bgmToggleBtn" class="music-btn" onclick="window.toggleMusic()" title="Bật/Tắt nhạc nền">
+            <i class="fa-solid fa-music"></i>
+        </button>
+    </div>
+
+    <div class="floating-left">
+        <div class="left-item glossary" onclick="window.showGlossary()">
+            <div class="icon-wrapper"><i class="fa-solid fa-circle-info"></i></div> 
+            <span class="left-info">Giải Thích Thuật Ngữ</span>
+        </div>
+        <div class="left-item leaderboard" onclick="window.showLeaderboard()">
+            <div class="icon-wrapper"><i class="fa-solid fa-trophy"></i></div> 
+            <span class="left-info">Bảng Xếp Hạng Game Này</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 style="color:white; margin-bottom:25px; font-weight:800; text-shadow:0 4px 15px rgba(0,0,0,0.15); letter-spacing:-0.5px;">🔀 LINH HOẠT NHẬN THỨC 🎮</h1>
+        <div class="screen-box">
+            
+            <div id="levelSelectScreen" class="screen active">
+                <h2>Chọn Chế Độ Đo Lường</h2>
+                
+                <div class="level-options">
+                    <button class="btn btn-level" data-mode="color">Phân loại theo MÀU SẮC</button>
+                    <button class="btn btn-level" data-mode="shape">Phân loại theo HÌNH KHỐI</button>
+                    <button class="btn btn-level" data-mode="switch" style="border-color: #e67e22; color: #e67e22;">KẾT HỢP (Chuyển đổi liên tục)</button>
+                </div>
+                
+                <div style="margin-top: 35px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn" id="showTutorialBtn" style="background-color: #f59e0b; color: white; box-shadow:none;">📖 Hướng dẫn trò chơi</button>
+                    <a href="trangchu.html" class="btn btn-secondary">🏠 Về Trang Chủ</a>
+                </div>
+            </div>
+
+            <div id="gameScreen" class="screen">
+                <div id="gameInfo">
+                    <div id="gameTimer">⏱️ Thời gian: 4:00</div>
+                    <div id="gameTrials">🔄 Lượt chơi: 0/20</div>
+                    <div id="gameScore">✅ Đúng: 0</div>
+                    <div id="gameErrors" style="color: #ef4444;">❌ Sai: 0</div>
+                </div>
+                <div id="ruleDisplay">QUY TẮC: CHUẨN BỊ</div>
+                
+                <div id="stimulusArea">
+                    <div class="turn-badge" id="turnBadge">Đang chuẩn bị...</div>
+                    <div id="stimulusShape"></div>
+                    <div id="overlayBox">3</div>
+                </div>
+                
+                <div class="action-buttons" id="gameButtons"></div>
+                
+                <div style="margin-top: 35px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn" id="pauseGameBtn" style="background-color: #f59e0b; box-shadow:none;">⏸ Tạm ngừng (P)</button>
+                    <button class="btn" id="quitGameBtn" style="background:#64748b; box-shadow:none;">🔙 Chọn mức khác</button>
+                    <a href="trangchu.html" class="btn btn-secondary">🏠 Về Trang Chủ</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="glossaryModal" class="modal">
+        <div class="modal-content" style="max-width: 580px; text-align: left;">
+            <span class="modal-close" id="closeGlossaryModal">&times;</span>
+            <h2 style="color: #0d9488; text-align: center; margin-bottom: 20px;">📊 Giải Thích Thuật Ngữ Thống Kê</h2>
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 5px; line-height: 1.6;">
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #1e293b; font-size: 14.5px;">🔄 Số lượt chơi:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Tổng số câu hỏi kích thích (Stimuli) bạn đã phản hồi trong ván đấu (Mặc định gồm 20 lượt).</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #1a73e8; font-size: 14.5px;">⚡ Tốc độ phản xạ trung bình:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Khoảng thời gian trung bình (giây) bạn đưa ra đáp án từ lúc hình khối hiện lên. Đo lường tốc độ xử lý thông tin chuyển đổi.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #16a34a; font-size: 14.5px;">🎯 Tỉ lệ chính xác đạt được:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Tỷ lệ câu trả lời đúng trên tổng số lượt chơi. Đo lường mức độ kiểm soát nhận thức để phân biệt luật chơi không bị nhầm lẫn.</p>
+                </div>
+                <div style="margin-bottom: 5px;">
+                    <strong style="color: #ef4444; font-size: 14.5px;">🧠 Mức độ nguy cơ kẹt nhận thức:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Sàng lọc khả năng linh hoạt tư duy. Khi bạn gặp khó khăn khi liên tục chuyển đổi giữa luật màu sắc/hình khối dẫn tới tỉ lệ chính xác giảm sâu, hệ thống sẽ đưa ra khuyến nghị tối ưu nghỉ ngơi.</p>
+                </div>
+            </div>
+            <button class="btn" id="closeGlossaryBtn" style="width: 100%; padding: 12px; background-color: #64748b; box-shadow:none; margin-top: 15px;">Đóng lại</button>
+        </div>
+    </div>
+
+    <div id="tutorialModal" class="modal">
+        <div class="modal-content" style="max-width: 520px; text-align: left;">
+            <span class="modal-close" id="closeTutorialX" style="font-size: 28px;">&times;</span>
+            <h2 style="color: #1a73e8; text-align: center; margin-bottom: 20px;"><i class="fa-solid fa-book-open"></i> Hướng Dẫn Cách Chơi</h2>
+            <div class="tutorial-box">
+                <p style="font-weight: 600; margin-bottom: 8px;">Nhiệm vụ của bạn là phân loại hình ảnh thật nhanh theo đúng <b>QUY TẮC</b> hiển thị trên màn hình:</p>
+                <ul style="margin-left: 20px; list-style-type: disc; padding: 0;">
+                    <li><b>QUY TẮC MÀU SẮC:</b> Chọn đúng màu của hình (Xanh hoặc Cam). <br>⌨️ Phím tắt: <b style="color:#1a73e8">X</b> (Màu Xanh), <b style="color:#e67e22">C</b> (Màu Cam)</li>
+                    <li style="margin-top: 6px;"><b>QUY TẮC HÌNH KHỐI:</b> Chọn đúng loại hình (Tròn hoặc Vuông). <br>⌨️ Phím tắt: <b style="color:#475569">T</b> (Hình Tròn), <b style="color:#475569">V</b> (Hình Vuông)</li>
+                    <li style="margin-top: 6px; color: #ef4444;"><b>CHẾ ĐỘ KẾT HỢP:</b> Hãy cực kỳ tập trung! Bảng "QUY TẮC" sẽ <b>thay đổi ngẫu nhiên liên tục</b> và bạn chỉ có tối đa <b>15 giây</b> để bấm đáp án qua mỗi lượt chơi!</li>
+                </ul>
+            </div>
+            <button class="btn" id="closeTutorialBtn" style="width: 100%; font-size: 1.1em; padding: 13px; background-color: #1a73e8; box-shadow:none; border-radius: 12px;">Đã hiểu, Bắt đầu test</button>
+        </div>
+    </div>
+
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeLeaderboardModal">&times;</span>
+            <h2 style="color: #d97706; margin-top: 0; margin-bottom: 15px;">🏆 Bảng Xếp Hạng Top 10</h2>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="Màu Sắc">Màu Sắc</button>
+                <button class="tab-btn" data-tab="Hình Khối">Hình Khối</button>
+                <button class="tab-btn" data-tab="Kết Hợp">Kết Hợp</button>
+            </div>
+
+            <div id="leaderboardContent" style="max-height: 350px; overflow-y: auto; text-align: left;">
+                Đang tải dữ liệu từ máy chủ...
+            </div>
+        </div>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeResultModal" style="position:absolute; right:20px; top:15px; font-size:30px; cursor:pointer;">&times;</span>
+            <h2 id="resultTitle" style="color:#16a34a;">🎉 Kết Quả Thử Thách</h2>
+            
+            <h3 style="color:#475569; margin-top: 15px; font-size:16px;">Thống kê lượt chơi</h3>
+            <p id="resultTime" style="font-size: 1.1em; margin: 8px 0;"></p>
+            <p id="resultTrials" style="font-size: 1.1em; margin: 8px 0;"></p>
+            <p id="resultScore" style="font-size: 1.1em; margin: 8px 0; font-weight: 600; color: #16a34a;"></p>
+            <p id="resultErrors" style="font-size: 1.1em; margin: 8px 0; font-weight: bold; color: #ef4444;"></p>
+            <p id="resultAccuracy" style="font-weight: bold; color: #1a73e8; font-size: 1.1em; margin: 8px 0;"></p>
+            <p id="resultRT" style="font-size: 1.1em; margin: 8px 0; color: #0d6efd; font-weight: bold;"></p>
+            
+            <hr style="margin: 20px 0; border-top: 1px dashed #cbd5e1;">
+            <h3 style="color:#475569; font-size:16px;">Đánh giá khả năng linh hoạt</h3>
+            <h4 id="resultRisk" style="color: #f59e0b; font-size: 1.2em; margin: 10px 0;"></h4>
+            <p id="resultAdvice" style="color: #64748b; font-style: italic;"></p>
+            
+            <div class="modal-buttons" style="margin-top:20px; display:flex; justify-content:center; gap:10px;" id="modalButtonsArea">
+                <button class="btn" id="exportPDFBtn">📥 Tải PDF</button>
+                <button class="btn" style="background:#22c55e; color:white; box-shadow:0 4px 12px rgba(34,197,94,0.2);" id="playAgainBtn">Chơi lại</button>
+                <button class="btn btn-secondary" id="viewHistoryBtn">Lịch sử</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeHistoryModal">&times;</span>
+            <h2>Lịch sử kiểm tra linh hoạt</h2>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0",
+            authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+            databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "bo-tro-cho-tam-li",
+            storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+            messagingSenderId: "150226282506",
+            appId: "1:150226282506:web:4df0cab215501b315317f3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const bgMusic = document.getElementById('bgMusic');
+            const btn = document.getElementById("bgmToggleBtn");
+            
+            // Âm nhạc đồng bộ Game 1
+            window.toggleMusic = function() {
+                if (!bgMusic || !btn) return;
+                if (bgMusic.paused) {
+                    bgMusic.play().then(() => {
+                        btn.classList.add("playing");
+                        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    }).catch(err => {
+                        alert("Hãy nhấp chuột vào bất cứ đâu trên màn hình một lần rồi bật lại nhạc nhé!");
+                    });
+                } else {
+                    bgMusic.pause();
+                    btn.classList.remove("playing");
+                    btn.innerHTML = '<i class="fa-solid fa-music"></i>';
+                }
+            };
+
+            function triggerAutoPlayOnLoad() {
+                if (!bgMusic || !btn) return;
+                bgMusic.play().then(() => {
+                    btn.classList.add("playing");
+                    btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                }).catch(err => {
+                    const runMusicOnFirstClick = () => {
+                        bgMusic.play().then(() => {
+                            btn.classList.add("playing");
+                            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                            document.removeEventListener("click", runMusicOnFirstClick);
+                        });
+                    };
+                    document.addEventListener("click", runMusicOnFirstClick);
+                });
+            }
+            triggerAutoPlayOnLoad();
+
+            // Menu giải thích thuật ngữ
+            window.showGlossary = function() { document.getElementById('glossaryModal').classList.add('active'); };
+            document.getElementById('closeGlossaryModal').onclick = () => document.getElementById('glossaryModal').classList.remove('active');
+            document.getElementById('closeGlossaryBtn').onclick = () => document.getElementById('glossaryModal').classList.remove('active');
+
+            const playApplauseSound = () => {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const bufferSize = ctx.sampleRate * 2.0; 
+                    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate); 
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                    const noise = ctx.createBufferSource(); 
+                    noise.buffer = buffer;
+                    const filter = ctx.createBiquadFilter(); 
+                    filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 1.5;
+                    const gainNode = ctx.createGain(); 
+                    gainNode.gain.setValueAtTime(0.4, ctx.currentTime); 
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+                    noise.connect(filter); filter.connect(gainNode); gainNode.connect(ctx.destination); 
+                    noise.start();
+                } catch(e){}
+            };
+
+            const playBeep = (freq, type = 'sine', duration = 0.3) => {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator(); 
+                    const gain = ctx.createGain();
+                    osc.type = type; osc.frequency.value = freq;
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(); 
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
+                    setTimeout(() => { try { osc.stop(); } catch(e){} }, duration * 1000);
+                } catch(e){}
+            };
+
+            const playTing = () => {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator(); 
+                    const gain = ctx.createGain();
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                    osc.connect(gain); gain.connect(ctx.destination);
+                    osc.start(); 
+                    gain.gain.setValueAtTime(0.4, ctx.currentTime); 
+                    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.4);
+                    setTimeout(() => { try { osc.stop(); } catch(e){} }, 400);
+                } catch(e){}
+            };
+
+            let savedUser = localStorage.getItem("user");
+            let userInfo = { name: "Người chơi ẩn danh", class: "Không xác định", school: "", age: "N/A", id: "N/A" };
+            if (savedUser) {
+                let parsed = JSON.parse(savedUser);
+                userInfo.name = parsed.name || "Người chơi ẩn danh";
+                userInfo.class = parsed.class || "Không xác định";
+                userInfo.school = parsed.school || "";
+                userInfo.age = parsed.age || "N/A";
+                userInfo.id = parsed.id || "N/A";
+            }
+
+            let testMode = 'switch', timerInterval = null, trialTimeout = null, trialTimer = null, timeRemaining = 240, totalTrials = 20, currentTrial = 0;
+            let correctCount = 0, errorCount = 0, totalReactionTime = 0, trialStartTime = 0, trialTimeRemaining = 15000, graceTrialStart = 0;
+            let currentRule = 'color', currentShape = '', currentColor = '';
+            let isPlaying = false, isPaused = false, userResponded = false;
+            let currentGameResult = {};
+            let gameResultRisk = "Thấp";
+
+            const screens = { level: document.getElementById('levelSelectScreen'), game: document.getElementById('gameScreen') };
+            const modals = { result: document.getElementById('resultModal'), history: document.getElementById('historyModal'), tutorial: document.getElementById('tutorialModal'), leaderboard: document.getElementById('leaderboardModal') };
+            const shapeEl = document.getElementById('stimulusShape');
+            const ruleDisplay = document.getElementById('ruleDisplay');
+            const btnArea = document.getElementById('gameButtons');
+            const overlayBox = document.getElementById('overlayBox');
+            const turnBadge = document.getElementById('turnBadge');
+            const pauseGameBtn = document.getElementById('pauseGameBtn');
+            
+            const showTutorialBtn = document.getElementById('showTutorialBtn');
+            const closeTutorialBtn = document.getElementById('closeTutorialBtn');
+            const closeTutorialX = document.getElementById('closeTutorialX');
+
+            showTutorialBtn.addEventListener('click', () => { modals.tutorial.classList.add('active'); });
+            closeTutorialBtn.addEventListener('click', () => { modals.tutorial.classList.remove('active'); });
+            closeTutorialX.addEventListener('click', () => { modals.tutorial.classList.remove('active'); });
+
+            document.getElementById('levelSelectScreen').addEventListener('click', (e) => {
+                if (e.target.matches('.btn-level')) {
+                    testMode = e.target.getAttribute('data-mode');
+                    startGame();
+                }
+            });
+
+            function togglePauseGame() {
+                if (!isPlaying && !isPaused) return; 
+                isPaused = !isPaused;
+
+                if (isPaused) {
+                    clearInterval(timerInterval);
+                    clearTimeout(trialTimeout);
+                    if (trialTimer) clearTimeout(trialTimer);
+                    
+                    let elapsed = performance.now() - trialStartTime;
+                    trialTimeRemaining = 15000 - elapsed;
+
+                    pauseGameBtn.innerHTML = '▶ Tiếp tục (P)';
+                    pauseGameBtn.style.backgroundColor = '#22c55e';
+                    overlayBox.textContent = "⏸ TẠM NGỪNG";
+                    overlayBox.classList.add('active');
+                } else {
+                    startTimers();
+                    pauseGameBtn.innerHTML = '⏸ Tạm ngừng (P)';
+                    pauseGameBtn.style.backgroundColor = '#f59e0b';
+                    overlayBox.classList.remove('active');
+                    
+                    if (userResponded) {
+                        nextTrial();
+                    } else {
+                        trialStartTime = performance.now() - (15000 - trialTimeRemaining);
+                        trialTimer = setTimeout(handleTrialTimeout, trialTimeRemaining > 0 ? trialTimeRemaining : 10);
+                    }
+                }
+            }
+
+            pauseGameBtn.addEventListener('click', togglePauseGame);
+
+            document.addEventListener('keydown', (e) => {
+                if (screens.game.classList.contains('active')) {
+                    const key = e.key.toLowerCase();
+                    if (e.code === 'KeyP' || key === 'p') {
+                        e.preventDefault();
+                        togglePauseGame();
+                        return;
+                    }
+
+                    if (isPlaying && !isPaused && !userResponded) {
+                        if (currentRule === 'color') {
+                            if (key === 'x') window.submitAnswer('blue');
+                            if (key === 'c') window.submitAnswer('orange');
+                        } else if (currentRule === 'shape') {
+                            if (key === 't') window.submitAnswer('circle');
+                            if (key === 'v') window.submitAnswer('square');
+                        }
+                    }
+                }
+            });
+
+            function startCountdown(callback) {
+                let count = 3;
+                isPaused = false;
+                isPlaying = false;
+                overlayBox.textContent = count;
+                overlayBox.classList.add('active');
+                pauseGameBtn.disabled = true;
+
+                const countdownInterval = setInterval(() => {
+                    if (count > 0) {
+                        overlayBox.textContent = count;
+                        playBeep(440); 
+                        count--;
+                    } else if (count === 0) {
+                        overlayBox.textContent = "GO!";
+                        playBeep(880, 'square'); 
+                        count--;
+                    } else {
+                        clearInterval(countdownInterval);
+                        overlayBox.classList.remove('active');
+                        pauseGameBtn.disabled = false;
+                        isPlaying = true;
+                        callback();
+                    }
+                }, 1000);
+            }
+
+            function startGame() {
+                currentTrial = 0; correctCount = 0; errorCount = 0; totalReactionTime = 0; timeRemaining = 240; graceTrialStart = 0;
+                updateStats();
+                shapeEl.style.visibility = 'hidden';
+                document.getElementById('gameTimer').classList.remove('time-warning');
+                pauseGameBtn.innerHTML = '⏸ Tạm ngừng (P)';
+                pauseGameBtn.style.backgroundColor = '#f59e0b';
+                
+                buildActionButtons();
+                screens.level.classList.remove('active'); 
+                screens.game.classList.add('active');
+                
+                startCountdown(() => {
+                    startTimers();
+                    nextTrial();
+                });
+            }
+
+            function startTimers() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    timeRemaining--;
+                    let m = Math.floor(timeRemaining / 60), s = timeRemaining % 60;
+                    document.getElementById('gameTimer').textContent = `⏱️ Thời gian: ${m}:${s < 10 ? '0' : ''}${s}`;
+                    if (timeRemaining <= 30) document.getElementById('gameTimer').classList.add('time-warning');
+                    if (timeRemaining <= 0) { alert("⏰ Hết thời gian ván test!"); endGame(false, true); }
+                }, 1000);
+            }
+
+            function buildActionButtons() {
+                btnArea.innerHTML = '';
+                if (testMode === 'color') {
+                    btnArea.innerHTML = `<button class="btn" style="background-color:#1a73e8;" id="btnBlue">Màu Xanh (X)</button>
+                                         <button class="btn" style="background-color:#e67e22;" id="btnOrange">Màu Cam (C)</button>`;
+                    document.getElementById('btnBlue').onclick = () => window.submitAnswer('blue');
+                    document.getElementById('btnOrange').onclick = () => window.submitAnswer('orange');
+                } else if (testMode === 'shape') {
+                    btnArea.innerHTML = `<button class="btn" style="background-color:#475569;" id="btnCircle">Hình Tròn (T)</button>
+                                         <button class="btn" style="background-color:#475569;" id="btnSquare">Hình Vuông (V)</button>`;
+                    document.getElementById('btnCircle').onclick = () => window.submitAnswer('circle');
+                    document.getElementById('btnSquare').onclick = () => window.submitAnswer('square');
+                } else {
+                    btnArea.innerHTML = `<button class="btn" style="background-color:#1a73e8;" id="btnBlue">Màu Xanh (X)</button>
+                                         <button class="btn" style="background-color:#e67e22;" id="btnOrange">Màu Cam (C)</button>
+                                         <button class="btn" style="background-color:#475569;" id="btnCircle">Hình Tròn (T)</button>
+                                         <button class="btn" style="background-color:#475569;" id="btnSquare">Hình Vuông (V)</button>`;
+                    document.getElementById('btnBlue').onclick = () => window.submitAnswer('blue');
+                    document.getElementById('btnOrange').onclick = () => window.submitAnswer('orange');
+                    document.getElementById('btnCircle').onclick = () => window.submitAnswer('circle');
+                    document.getElementById('btnSquare').onclick = () => window.submitAnswer('square');
+                }
+            }
+
+            function nextTrial() {
+                if (currentTrial >= totalTrials) { endGame(false, false); return; }
+                if (trialTimer) clearTimeout(trialTimer); 
+
+                userResponded = false;
+                currentTrial++;
+                updateStats();
+                
+                turnBadge.textContent = `Lượt thứ: ${currentTrial} / ${totalTrials}`;
+                shapeEl.classList.remove('shake-error');
+
+                currentShape = Math.random() > 0.5 ? 'circle' : 'square';
+                currentColor = Math.random() > 0.5 ? 'blue' : 'orange';
+
+                if (testMode === 'switch') {
+                    currentRule = Math.random() > 0.5 ? 'color' : 'shape';
+                } else { currentRule = testMode; }
+
+                if (currentRule === 'color') {
+                    ruleDisplay.textContent = "QUY TẮC: CHỌN MÀU SẮC"; ruleDisplay.style.backgroundColor = "#ef4444";
+                } else { 
+                    ruleDisplay.textContent = "QUY TẮC: CHỌN HÌNH KHỐI"; ruleDisplay.style.backgroundColor = "#9b59b6"; 
+                }
+
+                shapeEl.className = currentShape;
+                shapeEl.style.backgroundColor = currentColor === 'blue' ? '#1a73e8' : '#e67e22';
+                shapeEl.style.visibility = 'visible';
+                
+                trialStartTime = performance.now();
+                trialTimeRemaining = 15000;
+
+                trialTimer = setTimeout(handleTrialTimeout, 15000);
+            }
+
+            function handleTrialTimeout() {
+                if (!isPlaying || isPaused || userResponded) return;
+                userResponded = true;
+
+                totalReactionTime += 15.0; 
+                errorCount++;
+                playBeep(150, 'sawtooth', 0.25); 
+                shapeEl.classList.add('shake-error'); 
+                updateStats();
+
+                let currentAcc = (correctCount / currentTrial) * 100;
+                let trialsSinceResume = currentTrial - graceTrialStart;
+
+                if (trialsSinceResume >= 5 && currentAcc < 50) {
+                    trialTimeout = setTimeout(() => {
+                        shapeEl.style.visibility = 'hidden';
+                        endGame(false, false, true); 
+                    }, 350);
+                    return;
+                }
+
+                trialTimeout = setTimeout(() => {
+                    shapeEl.style.visibility = 'hidden';
+                    nextTrial();
+                }, 350);
+            }
+
+            window.submitAnswer = (ans) => {
+                if (!isPlaying || isPaused || userResponded) return;
+                userResponded = true;
+                if (trialTimer) clearTimeout(trialTimer); 
+
+                let rt = (performance.now() - trialStartTime) / 1000;
+                totalReactionTime += rt;
+
+                let isCorrect = false;
+                if (currentRule === 'color' && ans === currentColor) isCorrect = true;
+                if (currentRule === 'shape' && ans === currentShape) isCorrect = true;
+
+                if (isCorrect) {
+                    correctCount++;
+                    playTing(); 
+                    shapeEl.style.visibility = 'hidden';
+                } else {
+                    errorCount++;
+                    playBeep(150, 'sawtooth', 0.25); 
+                    shapeEl.classList.add('shake-error'); 
+                }
+                updateStats();
+
+                let currentAcc = (correctCount / currentTrial) * 100;
+                let trialsSinceResume = currentTrial - graceTrialStart;
+
+                if (trialsSinceResume >= 5 && currentAcc < 50) {
+                    trialTimeout = setTimeout(() => {
+                        shapeEl.style.visibility = 'hidden';
+                        endGame(false, false, true); 
+                    }, 300);
+                    return;
+                }
+
+                trialTimeout = setTimeout(() => {
+                    shapeEl.style.visibility = 'hidden';
+                    nextTrial();
+                }, isCorrect ? 250 : 350);
+            };
+
+            function updateStats() {
+                document.getElementById('gameTrials').textContent = `🔄 Lượt chơi: ${currentTrial}/${totalTrials}`;
+                document.getElementById('gameScore').textContent = `✅ Đúng: ${correctCount}`;
+                document.getElementById('gameErrors').textContent = `❌ Sai: ${errorCount}`;
+            }
+
+            function saveGameScoreToSheet(resultObj) {
+                let schoolClassInfo = "Lớp " + userInfo.class + (userInfo.school ? " - " + userInfo.school : "");
+                let elapsed = 240 - timeRemaining; 
+                let modeName = resultObj.mode === 'color' ? 'Màu Sắc' : (resultObj.mode === 'shape' ? 'Hình Khối' : 'Kết Hợp');
+                let finalGameName = `Flexibility Test (${modeName})`;
+                let scoreId = "SCORE_" + userInfo.id + "_" + Date.now();
+
+                set(ref(db, 'scores/' + scoreId), {
+                    studentId: userInfo.id || "N/A",
+                    name: userInfo.name,
+                    schoolClass: schoolClassInfo,
+                    gameName: finalGameName,
+                    score: `Đúng: ${correctCount} | Sai: ${errorCount}`,
+                    timePlayed: elapsed + " giây",
+                    accuracy: `${resultObj.accuracy}% (Nguy cơ: ${resultObj.risk})`,
+                    timestamp: Date.now()
+                }).then(() => {
+                    console.log("📊 Đã đồng bộ kết quả lên Firebase!");
+                }).catch(err => {
+                    console.error("Lỗi kết nối Firebase:", err);
+                });
+
+                let scoreRecord = {
+                    studentId: userInfo.id || "N/A",
+                    name: userInfo.name,
+                    schoolClass: schoolClassInfo,
+                    gameName: finalGameName,
+                    score: `Đúng: ${correctCount} | Sai: ${errorCount}`,
+                    timePlayed: elapsed + " giây",
+                    accuracy: `${resultObj.accuracy}% (Nguy cơ: ${resultObj.risk})`
+                };
+                let localDB = JSON.parse(localStorage.getItem("localScoresDB") || "[]");
+                localDB.push(scoreRecord);
+                localStorage.setItem("localScoresDB", JSON.stringify(localDB));
+            }
+
+            function endGame(isQuit=false, isTimeout=false, isLowAccuracy=false) {
+                isPlaying = false;
+                clearInterval(timerInterval);
+                clearTimeout(trialTimeout);
+                if (trialTimer) clearTimeout(trialTimer); 
+                if (isQuit) return;
+
+                let acc = (correctCount / currentTrial) * 100;
+                let avgRT = correctCount > 0 ? (totalReactionTime / currentTrial).toFixed(2) : 0;
+                let elapsedSeconds = 240 - timeRemaining;
+
+                let advice = "";
+                const buttonsArea = document.getElementById('modalButtonsArea');
+
+                if (isLowAccuracy) {
+                    document.getElementById('resultTitle').textContent = `⚠️ Thử Thách Tạm Dừng!`;
+                    document.getElementById('resultTitle').style.color = `#ef4444`;
+                    gameResultRisk = "Cao";
+                    advice = "Độ chính xác hiện tại của bạn đang dưới 50%. Bạn có muốn tiếp tục vượt qua các câu tiếp theo hay dừng lại để nghỉ ngơi đầu óc?";
+                    
+                    buttonsArea.innerHTML = `
+                        <button class="btn" style="background:#22c55e; color:white; box-shadow:0 4px 12px rgba(34,197,94,0.15);" id="resumeGameBtn">🔄 Chơi tiếp</button>
+                        <a href="trangchu.html" class="btn btn-secondary" style="background:#64748b; color:white; border:none; box-shadow:none;">🏠 Chơi lại lần sau</a>
+                    `;
+                    
+                    document.getElementById('resumeGameBtn').onclick = () => {
+                        modals.result.classList.remove('active');
+                        graceTrialStart = currentTrial; 
+                        isPlaying = true;
+                        isPaused = false;
+                        startTimers(); 
+                        nextTrial(); 
+                    };
+                } else {
+                    document.getElementById('resultTitle').style.color = `#16a34a`;
+                    gameResultRisk = "Thấp";
+                    advice = "Độ linh hoạt tư duy tốt, khả năng chuyển đổi quy tắc mượt mà.";
+                    if (isTimeout || acc < 60 || avgRT > 5.0) { gameResultRisk = "Cao"; advice = "Bạn gặp khó khăn khi thay đổi môi trường hoặc luật chơi. Hãy rèn luyện thêm."; }
+                    else if (acc < 85 || avgRT > 3.0) { gameResultRisk = "Trung bình"; advice = "Chính xác tương đối tốt, cần tăng tốc phân loại nhanh nhẹn hơn."; }
+
+                    buttonsArea.innerHTML = `
+                        <button class="btn" id="exportPDFBtn">📥 Tải PDF</button>
+                        <button class="btn" style="background:#22c55e; color:white; box-shadow:0 4px 12px rgba(34,197,94,0.2);" id="playAgainBtn">Chơi lại</button>
+                        <button class="btn btn-secondary" id="viewHistoryBtn">Lịch sử</button>
+                    `;
+                    
+                    document.getElementById('playAgainBtn').onclick = () => { modals.result.classList.remove('active'); screens.game.classList.remove('active'); screens.level.classList.add('active'); };
+                    document.getElementById('exportPDFBtn').onclick = exportPDFHandler;
+                    document.getElementById('viewHistoryBtn').onclick = viewHistoryHandler;
+
+                    if (!isTimeout) {
+                        document.getElementById('resultTitle').textContent = `🎉 Thử Thách Hoàn Thành!`;
+                        playApplauseSound();
+                        let duration = 1500, end = Date.now() + duration;
+                        let interval = setInterval(() => {
+                            if (Date.now() > end) return clearInterval(interval);
+                            confetti({ startVelocity: 30, spread: 360, ticks: 60, origin: { x: Math.random() * 0.3, y: Math.random() - 0.2 } });
+                            confetti({ startVelocity: 30, spread: 360, ticks: 60, origin: { x: Math.random() * 0.3 + 0.7, y: Math.random() - 0.2 } });
+                    }, 250);
+                    } else { document.getElementById('resultTitle').textContent = `⏰ Quá thời gian quy định!`; }
+                }
+
+                currentGameResult = { date: new Date().toISOString(), mode: testMode, accuracy: acc.toFixed(0), avgRT, risk: gameResultRisk, advice };
+                
+                let history = JSON.parse(localStorage.getItem('flexHistory')) || []; 
+                history.unshift(currentGameResult); 
+                localStorage.setItem('flexHistory', JSON.stringify(history));
+
+                saveGameScoreToSheet(currentGameResult);
+
+                document.getElementById('resultTime').textContent = `⏱️ Tổng thời gian test: ${elapsedSeconds} giây`;
+                document.getElementById('resultTrials').textContent = `🔄 Tổng số lượt phân loại hoàn tất: ${currentTrial}/${totalTrials}`;
+                document.getElementById('resultScore').textContent = `✅ Số lượt phản hồi chính xác: ${correctCount}`;
+                document.getElementById('resultErrors').textContent = `❌ Số lượt phân loại bị sai: ${errorCount}`;
+                document.getElementById('resultAccuracy').textContent = `🎯 Tỉ lệ chính xác đạt được: ${acc.toFixed(0)}%`;
+                document.getElementById('resultRT').textContent = `⚡ Tốc độ phản xạ trung bình: ${avgRT} giây / lượt`;
+                
+                document.getElementById('resultRisk').textContent = `Mức độ nguy cơ: ${gameResultRisk}`;
+                document.getElementById('resultAdvice').textContent = `💡 Lời khuyên: ${advice}`;
+                modals.result.classList.add('active');
+            }
+
+            function exportPDFHandler() {
+                const { jsPDF } = jspdf; 
+                const doc = new jsPDF();
+                
+                // Bộ hàm lọc bỏ dấu Tiếng Việt tự động phòng lỗi font
+                const removeAccents = (str) => {
+                    if (!str) return "N/A";
+                    return str.normalize("NFD")
+                              .replace(/[\u0300-\u036f]/g, "")
+                              .replace(/đ/g, "d").replace(/Đ/g, "D");
+                };
+
+                const nameUnsigned = removeAccents(userInfo.name);
+                const classUnsigned = removeAccents(userInfo.class);
+                const schoolUnsigned = removeAccents(userInfo.school);
+                
+                let modeName = testMode === 'color' ? 'Mau Sac' : (testMode === 'shape' ? 'Hinh Khoi' : 'Ket Hop (Chuyen doi)');
+                let elapsedSeconds = 240 - timeRemaining;
+                let accuracyVal = currentGameResult.accuracy || 0;
+                
+                const adviceText = removeAccents(currentGameResult.advice || "");
+                const riskText = removeAccents(currentGameResult.risk || gameResultRisk || "Thap");
+
+                // --- PHẦN MỸ THUẬT ĐỒ HỌA & CĂN LỀ CỐ ĐỊNH ---
+                
+                // 1. Tiêu đề (Header) bản báo cáo
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(18);
+                doc.setTextColor(26, 115, 232); // Màu xanh dương thương hiệu
+                doc.text("BAO CAO KET QUA KIEM TRA TRUONG PHO THONG", 20, 25);
+                
+                doc.setFontSize(14);
+                doc.setTextColor(71, 85, 105);
+                doc.text("DANH GIA DO LINH HOAT NHAN THUC (COGNITIVE FLEXIBILITY)", 20, 33);
+                
+                // Thanh chia cắt ngang
+                doc.setDrawColor(26, 115, 232);
+                doc.setLineWidth(0.5);
+                doc.line(20, 38, 190, 38);
+                
+                // 2. Mục I: Thông tin cá nhân học sinh
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(30, 41, 59);
+                doc.text("I. THONG TIN NGUOI THU THACH", 20, 48);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("Ho va ten hoc sinh :", 25, 56); doc.setFont("helvetica", "bold"); doc.text(nameUnsigned, 65, 56); doc.setFont("helvetica", "normal");
+                doc.text("Ma so dinh danh (ID) :", 25, 63); doc.text(userInfo.id || "N/A", 65, 63);
+                doc.text("Lop / Truong hoc :", 25, 70); doc.text(`${classUnsigned} ${schoolUnsigned ? '- ' + schoolUnsigned : ''}`, 65, 70);
+                doc.text("Tuoi he thong :", 25, 77); doc.text(userInfo.age || "N/A", 65, 77);
+                
+                // 3. Mục II: Cấu hình bài test
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.text("II. CAU HINH PHIEN DO LUONG", 20, 90);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("Che do do luong :", 25, 98); doc.setFont("helvetica", "bold"); doc.text(`Phan loai theo ${modeName}`, 65, 98); doc.setFont("helvetica", "normal");
+                doc.text("Thoi gian test :", 25, 105); doc.text(`${elapsedSeconds} giay`, 65, 105);
+                doc.text("Gioi han moi luot :", 25, 112); doc.text("Toi da 15 giay / hinh kich thich", 65, 112);
+
+                // 4. Mục III: Khung kết quả dạng Hộp (Card Box) căn thẳng lề Tab
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.text("III. CHI TIET CHI SO KET QUA", 20, 126);
+                
+                // Vẽ hộp bao quanh nền xám nhạt tinh tế
+                doc.setDrawColor(226, 232, 240);
+                doc.setFillColor(248, 250, 252);
+                doc.rect(20, 132, 170, 50, "FD");
+                
+                // Các chỉ số căn thẳng hàng theo cột X = 95
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("Tong so luot phân loai hoan tat :", 25, 141); doc.text(`${currentTrial} / ${totalTrials} luot`, 95, 141);
+                doc.text("So luot phan hoi chinh xac :", 25, 149); doc.setFont("helvetica", "bold"); doc.setTextColor(22, 197, 94); doc.text(`${correctCount} luot`, 95, 149); doc.setFont("helvetica", "normal"); doc.setTextColor(30, 41, 59);
+                doc.text("So luot phan hoi bi sai / Qua han :", 25, 157); doc.setFont("helvetica", "bold"); doc.setTextColor(239, 68, 68); doc.text(`${errorCount} luot`, 95, 157); doc.setFont("helvetica", "normal"); doc.setTextColor(30, 41, 59);
+                doc.text("Ti le chinh xac dat duoc :", 25, 165); doc.setFont("helvetica", "bold"); doc.setTextColor(26, 115, 232); doc.text(`${accuracyVal}%`, 95, 165); doc.setFont("helvetica", "normal"); doc.setTextColor(30, 41, 59);
+                doc.text("Toc do phan xa trung binh :", 25, 173); doc.setFont("helvetica", "bold"); doc.setTextColor(13, 148, 136); doc.text(`${currentGameResult.avgRT} giay / luot`, 95, 173);
+                
+                // 5. Mục IV: Kết luận đánh giá hành vi
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(30, 41, 59);
+                doc.text("IV. KET LUAN KHONG GIAN LINH HOAT TU DUY", 20, 196);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.text("Muc do nguy co ket nhan thuc :", 25, 205);
+                
+                doc.setFont("helvetica", "bold");
+                if (riskText.toUpperCase().includes("CAO")) doc.setTextColor(239, 68, 68);
+                else if (riskText.toUpperCase().includes("TRUNG BINH")) doc.setTextColor(245, 158, 11);
+                else doc.setTextColor(22, 197, 94);
+                doc.text(riskText.toUpperCase(), 95, 205);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(30, 41, 59);
+                doc.text("Loi khuyen phat trien nao bo :", 25, 213);
+                
+                doc.setFont("helvetica", "italic");
+                doc.setTextColor(100, 116, 139);
+                
+                // Hàm chia nhỏ dòng tự động ép chữ không tràn qua lề phải (Word Wrap)
+                const splitAdvice = doc.splitTextToSize(adviceText, 155);
+                doc.text(splitAdvice, 25, 221);
+                
+                // Footer chân trang
+                doc.setDrawColor(241, 245, 249);
+                doc.line(20, 268, 190, 268);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.5);
+                doc.setTextColor(148, 163, 184);
+                doc.text("Du lieu trich xuat tu He thong Do luong Linh hoat Nhan thuc - Firebase Realtime DB", 20, 274);
+                
+                const cleanFileName = nameUnsigned.replace(/\s+/g, '_');
+                doc.save(`Flexibility_Report_${userInfo.id}_${cleanFileName}.pdf`);
+            }
+
+            function viewHistoryHandler() {
+                let history = JSON.parse(localStorage.getItem('flexHistory')) || [];
+                let content = document.getElementById('historyContent'); content.innerHTML = history.length ? '' : '<p>Chưa có lịch sử.</p>';
+                history.forEach(item => {
+                    let displayMode = item.mode === 'color' ? 'Màu Sắc' : (item.mode === 'shape' ? 'Hình Khối' : 'Kết Hợp');
+                    content.innerHTML += `<div class="history-item"><b>📅 Chế độ:</b> ${displayMode} | Chính xác: ${item.accuracy}%<br>⏱️ Phản xạ: ${item.avgRT}s | <span style="color:red">Nguy cơ: ${item.risk}</span></div>`;
+                });
+                modals.result.classList.remove('active'); 
+                modals.history.classList.add('active');
+            }
+
+            let cachedLeaderboardData = []; 
+            onValue(ref(db, 'scores'), (snapshot) => {
+                if (snapshot.exists()) {
+                    let serverScores = Object.values(snapshot.val());
+                    let validScores = serverScores.filter(s => s.gameName && s.gameName.includes("Flexibility Test"));
+                    cachedLeaderboardData = validScores.map(s => {
+                        let scoreMatch = s.score ? s.score.match(/Đúng:\s*(\d+)\s*\|\s*Sai:\s*(\d+)/) : null;
+                        let correctVal = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+                        let errorVal = scoreMatch ? parseInt(scoreMatch[2]) : 0;
+                        return { 
+                            name: s.name, 
+                            studentId: s.studentId || "N/A",
+                            game: s.gameName, 
+                            score: s.score, 
+                            timeStr: s.timePlayed,
+                            rawCorrect: correctVal,
+                            rawErrors: errorVal
+                        };
+                    });
+                }
+            }, (err) => {
+                console.error("Lỗi đồng bộ bảng xếp hạng Firebase:", err);
+            });
+
+            window.showLeaderboard = function() {
+                modals.leaderboard.classList.add('active');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.tab-btn[data-tab="Màu Sắc"]').classList.add('active');
+                renderLeaderboard('Màu Sắc');
+            };
+
+            function renderLeaderboard(levelFilter) {
+                let lbContent = document.getElementById("leaderboardContent");
+                if (!cachedLeaderboardData || cachedLeaderboardData.length === 0) {
+                    lbContent.innerHTML = "<p style='text-align:center; color: #64748b; padding: 20px 0;'>Chưa có dữ liệu bảng xếp hạng.</p>";
+                    return;
+                }
+
+                let filteredData = cachedLeaderboardData.filter(item => item.game && item.game.includes(levelFilter));
+                if (filteredData.length === 0) {
+                    lbContent.innerHTML = `<p style='text-align:center; color: #64748b; padding: 20px 0;'>Chưa có dữ liệu cho chế độ <b>${levelFilter}</b>.</p>`;
+                    return;
+                }
+                
+                let uniqueStudents = {};
+                filteredData.forEach(item => {
+                    let idKey = item.studentId && item.studentId !== "N/A" ? item.studentId : item.name;
+                    if (!uniqueStudents[idKey]) {
+                        uniqueStudents[idKey] = item;
+                    } else {
+                        if (item.rawCorrect > uniqueStudents[idKey].rawCorrect) {
+                            uniqueStudents[idKey] = item;
+                        } else if (item.rawCorrect === uniqueStudents[idKey].rawCorrect) {
+                            if (item.rawErrors < uniqueStudents[idKey].rawErrors) {
+                                uniqueStudents[idKey] = item;
+                            }
+                        }
+                    }
+                });
+
+                let finalRankArray = Object.values(uniqueStudents);
+                finalRankArray.sort((a, b) => {
+                    if (b.rawCorrect !== a.rawCorrect) return b.rawCorrect - a.rawCorrect;
+                    return a.rawErrors - b.rawErrors;
+                });
+
+                let html = "<ul style='list-style-type: none; padding: 0; font-size: 1.1em; line-height: 1.8;'>";
+                finalRankArray.slice(0, 10).forEach((item, index) => {
+                    let medal = index === 0 ? "🥇" : (index === 1 ? "🥈" : (index === 2 ? "🥉" : `<span style="display:inline-block; width: 25px; text-align:center; font-weight:800; color:#64748b;">${index + 1}</span>`));
+                    html += `
+                        <li style="padding: 12px 10px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                            <span>
+                                ${medal} <b style="color:#1e293b;">${item.name}</b> 
+                                <br><small style="color: #7f8c8d; margin-left: 35px;">Thời gian hoàn tất: ${item.timeStr}</small>
+                            </span>
+                            <span style="color: #1a73e8; font-weight: bold;">${item.score}</span>
+                        </li>`;
+                });
+                html += "</ul>";
+                lbContent.innerHTML = html;
+            }
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    let selectedLevel = this.getAttribute('data-tab');
+                    renderLeaderboard(selectedLevel);
+                });
+            });
+
+            document.getElementById('quitGameBtn').addEventListener('click', () => { if(confirm('Hủy ván đo lường hiện tại?')) { endGame(true); screens.game.classList.remove('active'); screens.level.classList.add('active'); } });
+            document.getElementById('closeResultModal').addEventListener('click', () => modals.result.classList.remove('active'));
+            document.getElementById('closeHistoryModal').addEventListener('click', () => modals.history.classList.remove('active'));
+            document.getElementById('closeLeaderboardModal').addEventListener('click', () => modals.leaderboard.classList.remove('active'));
+            
+            window.addEventListener('click', (e) => { 
+                if (e.target == modals.result) modals.result.classList.remove('active'); 
+                if (e.target == modals.history) modals.history.classList.remove('active'); 
+                if (e.target == modals.leaderboard) modals.leaderboard.classList.remove('active'); 
+                if (e.target == modals.tutorial) modals.tutorial.classList.remove('active'); 
+                if (e.target == document.getElementById('glossaryModal')) document.getElementById('glossaryModal').classList.remove('active'); 
+            });
+        });
+    </script>
+</body>
+</html>

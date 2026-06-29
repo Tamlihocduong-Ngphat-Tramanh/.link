@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop the Game (Go/No-Go) - Sàng lọc Nhận thức</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root { --stimulus-size: 160px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(-45deg, #ff7675, #74b9ff, #a29bfe, #fdcb6e, #55efc4); background-size: 400% 400%; animation: bgmove 15s ease infinite; color: #334155;
+        }
+        @keyframes bgmove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .container { width: 100%; max-width: 850px; margin: auto; text-align: center; position: relative; z-index: 2; }
+        
+        .screen-box { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6); border-radius: 24px; padding: 35px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06); transition: transform 0.1s; }
+        .screen { display: none; width: 100%; }
+        .screen.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-15px) rotate(-1deg); }
+            40%, 80% { transform: translateX(15px) rotate(1deg); }
+        }
+        .shake-error {
+            animation: shakeError 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4) !important;
+        }
+        
+        h2 { color: #1e293b; margin-bottom: 20px; font-size: 1.8em; font-weight: 800; letter-spacing: -0.5px; }
+        
+        .btn { padding: 12px 24px; font-size: 14.5px; font-weight: bold; color: white; background-color: #1a73e8; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(26,115,232,0.15); }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); background-color: #155cb4; box-shadow: 0 6px 15px rgba(26,115,232,0.25); }
+        .btn:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
+        .btn-secondary { background-color: #fee2e2; color: #ef4444; box-shadow: 0 4px 12px rgba(239,68,68,0.1); }
+        .btn-secondary:hover:not(:disabled) { background-color: #fca5a5; color: #b91c1c; }
+        
+        .btn-level { width: 100%; max-width: 260px; margin: 10px; padding: 18px; font-size: 16px; background-color: #ffffff; color: #334155; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .btn-level:hover:not(:disabled) { background-color: #f8fafc; border-color: #cbd5e1; color: #1a73e8; transform: translateY(-2px); }
+        
+        #gameInfo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 25px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: 700; color: #475569; text-align: center; }
+        @media (min-width: 550px) { #gameInfo { grid-template-columns: repeat(4, 1fr); } }
+        .time-warning { color: #ef4444 !important; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
+        
+        #stimulusArea { width: 100%; height: 260px; display: flex; justify-content: center; align-items: center; border: 3px dashed #cbd5e1; border-radius: 20px; background: #f8fafc; position: relative; margin-bottom: 25px; overflow: hidden; }
+        #stimulus { font-size: 110px; transform: scale(0); transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; }
+        
+        #pauseOverlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); z-index: 10; align-items: center; justify-content: center; font-size: 2em; color: #d97706; font-weight: 800; border-radius: 15px; backdrop-filter: blur(5px); }
+        #pauseOverlay.active { display: flex; animation: fadeIn 0.3s; }
+
+        .char-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px auto 25px auto; max-width: 780px; }
+        @media (max-width: 500px) { .char-grid { grid-template-columns: 1fr; } }
+        .char-item { cursor: pointer; background: #ffffff; padding: 18px 12px; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.01); }
+        .char-item:hover { border-color: #1a73e8; transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.05); }
+        .char-icon { font-size: 36px; line-height: 1; }
+        .char-text { font-size: 14px; color: #475569; font-weight: 600; white-space: nowrap; }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 2000; opacity: 0; transition: opacity 0.3s ease; padding: 20px; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: white; width: 100%; max-width: 550px; border-radius: 24px; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: translateY(-20px); transition: transform 0.3s ease; position: relative; text-align: center; }
+        .modal.active .modal-content { transform: translateY(0); }
+        
+        .tutorial-box { font-size: 14px; text-align: left; line-height: 1.6; color: #334155; background: #f8fafc; padding: 20px; border-radius: 14px; border-left: 5px solid #1a73e8; margin-bottom: 20px;}
+
+        .floating-left { position: fixed; left: 20px; bottom: 40px; display: flex; flex-direction: column; gap: 15px; z-index: 1000; }
+        .left-item { position: relative; display: flex; align-items: center; justify-content: flex-start; cursor: pointer; }
+        
+        .left-item .icon-wrapper { color: #fff; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; transition: all 0.3s ease; position: relative; z-index: 2; border: 2px solid white; }
+        .left-info { position: absolute; left: 45px; color: white; padding: 10px 15px 10px 25px; border-radius: 0 25px 25px 0; font-weight: bold; font-size: 14px; opacity: 0; visibility: hidden; transform: translateX(-20px); transition: all 0.4s; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 1; }
+        
+        .left-item:hover .icon-wrapper { transform: scale(1.1); }
+        .left-item:hover .left-info { opacity: 1; visibility: visible; transform: translateX(0); left: 60px; }
+
+        .left-item.glossary .icon-wrapper { background-color: #0d9488; box-shadow: 0 4px 15px rgba(13,148,136,0.3); }
+        .left-item.glossary .left-info { background-color: #0d9488; }
+
+        .left-item.leaderboard .icon-wrapper { background-color: #eab308; box-shadow: 0 4px 15px rgba(234,179,8,0.3); animation: pulse-leaderboard 2s infinite; }
+        .left-item.leaderboard .left-info { background-color: #eab308; }
+        @keyframes pulse-leaderboard { 0% { box-shadow: 0 0 0 0 rgba(234,179,8, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(234,179,8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234,179,8, 0); } }
+
+        .tabs { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; background: #f1f5f9; padding: 6px; border-radius: 14px; }
+        .tab-btn { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-weight: 700; border-radius: 10px; cursor: pointer; transition: 0.2s; font-size: 13.5px; }
+        .tab-btn:hover { color: #1e293b; }
+        .tab-btn.active { background: #ffffff; color: #eab308; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+        .stress-box { text-align: left; background-color: #fffbeb; border-left: 5px solid #d97706; padding: 15px; border-radius: 12px; margin-top: 15px; }
+        .stress-box ul { margin-left: 20px; margin-top: 10px; }
+        .stress-box li { margin-bottom: 8px; color: #4b5563; font-size: 13.5px; }
+
+        .music-controls { position: fixed; top: 20px; left: 20px; display: flex; align-items: center; z-index: 1000; }
+        .music-btn { width: 38px; height: 36px; display: flex; align-items: center; justify-content: center; background-color: #ffffff; color: #16a34a; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.05); outline: none; }
+        .music-btn:hover { background-color: #16a34a; color: white; transform: scale(1.05); }
+        .music-btn.playing { color: #ef4444; }
+        .music-btn.playing:hover { background-color: #ef4444; color: white; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" src="Nhạc nền vui của Độ mixi.mp3" loop autoplay></audio>
+
+    <div class="music-controls">
+        <button id="bgmToggleBtn" class="music-btn" onclick="window.toggleMusic()" title="Bật/Tắt nhạc nền">
+            <i class="fa-solid fa-music"></i>
+        </button>
+    </div>
+
+    <div class="floating-left">
+        <div class="left-item glossary" onclick="window.showGlossary()">
+            <div class="icon-wrapper"><i class="fa-solid fa-circle-info"></i></div> 
+            <span class="left-info">Giải Thích Thuật Ngữ</span>
+        </div>
+        <div class="left-item leaderboard" onclick="window.showLeaderboard()">
+            <div class="icon-wrapper"><i class="fa-solid fa-trophy"></i></div> 
+            <span class="left-info">Bảng Xếp Hạng Game Này</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="title" style="color:white; margin-bottom:25px; font-weight:800; text-shadow:0 4px 15px rgba(0,0,0,0.15); letter-spacing:-0.5px;">🛑 STOP THE GAME 🎮</h1>
+        <div class="screen-box" id="mainScreenBox">
+            
+            <div id="characterScreen" class="screen active">
+                <h2>Chọn Nhân Vật Bạn Thích</h2>
+                
+                <div class="char-grid">
+                    <div class="char-item" onclick="window.setChars('🟢','🔴')">
+                        <div class="char-icon">🟢</div>
+                        <div class="char-text">Nhấn 🟢 / Dừng 🔴</div>
+                    </div>
+                    <div class="char-item" onclick="window.setChars('🚗','🛑')">
+                        <div class="char-icon">🚗</div>
+                        <div class="char-text">Nhấn 🚗 / Dừng 🛑</div>
+                    </div>
+                    <div class="char-item" onclick="window.setChars('🐱','🐯')">
+                        <div class="char-icon">🐱</div>
+                        <div class="char-text">Nhấn 🐱 / Dừng 🐯</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <a href="trangchu.html" class="btn btn-secondary">🏠 Về Trang Chủ</a>
+                </div>
+            </div>
+            
+            <div id="levelSelectScreen" class="screen">
+                <h2>Chọn Cấp Độ Thử Thách</h2>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:5px; margin: 15px 0;">
+                    <button class="btn btn-level" data-mode="basic">Cơ bản (Tỉ lệ dừng 20%)</button>
+                    <button class="btn btn-level" data-mode="challenge" style="border-color: #f59e0b; color: #d97706;">Thách thức (Tỉ lệ dừng 40%)</button>
+                </div>
+                
+                <div style="margin-top: 25px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn" id="showTutorialBtn" style="background-color: #f59e0b; color: white; box-shadow:none;">📖 Hướng dẫn trò chơi</button>
+                    <button class="btn" id="backToCharBtn" style="background:#64748b; box-shadow:none;">🔙 Quay lại</button>
+                    <a href="trangchu.html" class="btn btn-secondary">🏠 Về Trang Chủ</a>
+                </div>
+            </div>
+
+            <div id="gameScreen" class="screen">
+                <div id="gameInfo">
+                    <div id="gameTimer">⏱️ Thời gian: 4:00</div>
+                    <div id="gameProgress">🔄 Tiến trình: 0/30</div>
+                    <div id="gameScore">✅ Đúng: 0</div>
+                    <div id="gameErrors" style="color: #ef4444;">❌ Sai sót: 0/15</div>
+                </div>
+                
+                <div id="stimulusArea">
+                    <div id="pauseOverlay">⏸ ĐANG TẠM NGỪNG</div>
+                    <div id="stimulus">-</div>
+                </div>
+                
+                <button class="btn" id="actionBtn" style="font-size:20px; padding:15px 50px; width:85%; border-radius:50px;">BẤM NGAY! (Space)</button>
+                
+                <div style="margin-top: 35px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <button class="btn" id="pauseGameBtn" style="background-color: #f59e0b; box-shadow:none;">⏸ Tạm ngừng (P)</button>
+                    <button class="btn" id="quitGameBtn" style="background:#64748b; box-shadow:none;">Hủy ván đo lường</button>
+                    <a href="trangchu.html" class="btn btn-secondary" id="homeBtn">🏠 Về Trang Chủ</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="glossaryModal" class="modal">
+        <div class="modal-content" style="max-width: 580px; text-align: left;">
+            <span class="modal-close" id="closeGlossaryModal" style="position:absolute; right:20px; top:15px; font-size:30px; cursor:pointer;">&times;</span>
+            <h2 style="color: #0d9488; text-align: center; margin-bottom: 20px;">📊 Giải Thích Thuật Ngữ Thống Kê</h2>
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 5px; line-height: 1.6;">
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #1e293b; font-size: 14.5px;">⏱️ Thời gian thực hiện:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Tổng lượng thời gian người chơi đã trải qua trong ván đo lường (tính bằng giây). Chỉ số này hỗ trợ đánh giá tốc độ duy trì chú ý liên tục.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #16a34a; font-size: 14.5px;">✅ Phản hồi chính xác:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Bao gồm hai trạng thái: Đánh trúng kích thích hợp lệ (Go) và Nhịn thành công kích thích cấm (No-Go). Thể hiện sự phối hợp tốt giữa vận động và tư duy nhận thức.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #ef4444; font-size: 14.5px;">❌ Lỗi bốc đồng (Commission Error):</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Xảy ra khi xuất hiện tín hiệu dừng (No-Go) nhưng người chơi vẫn nhấn phím. Đây là chỉ số cốt lõi thể hiện sự thiếu kiềm chế hành vi hoặc não bộ bị kích động bộc phát.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #ea580c; font-size: 14.5px;">❌ Lỗi bỏ lỡ (Omission Error):</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Xảy ra khi xuất hiện tín hiệu đi (Go) nhưng người chơi không kịp phản hồi hoặc quên nhấn. Chỉ số này biểu thị trạng thái lơ đãng, chậm xử lý thông tin hoặc mệt mỏi nhận thức.</p>
+                </div>
+                <div style="margin-bottom: 5px;">
+                    <strong style="color: #1a73e8; font-size: 14.5px;">🧠 Mức độ nguy cơ bốc đồng:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Phân loại mức độ kiểm soát ức chế (Thấp - Trung bình - Cao) dựa trên tổng độ chính xác nhận thức chung, giúp sàng lọc sớm các dấu hiệu căng thẳng thần kinh quá tải.</p>
+                </div>
+            </div>
+            <button class="btn" id="closeGlossaryBtn" style="width: 100%; padding: 12px; background-color: #64748b; box-shadow:none; margin-top: 15px; color:white;">Đóng lại</button>
+        </div>
+    </div>
+
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeLeaderboardModal" style="position:absolute; right:20px; top:15px; font-size:30px; cursor:pointer;">&times;</span>
+            <h2 style="color: #d97706; margin-top: 0; margin-bottom: 15px;">🏆 Bảng Xếp Hạng Phản Xạ</h2>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="Cơ bản">Cơ bản</button>
+                <button class="tab-btn" data-tab="Thách thức">Thách thức</button>
+            </div>
+
+            <div id="leaderboardContent" style="max-height: 350px; overflow-y: auto; text-align: left; padding: 5px;">
+                Đang tải dữ liệu...
+            </div>
+        </div>
+    </div>
+
+    <div id="tutorialModal" class="modal">
+        <div class="modal-content" style="max-width: 550px; text-align: left;">
+            <span class="modal-close" id="closeTutorialX" style="position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #94a3b8; transition: 0.2s;">&times;</span>
+            <h2 style="color: #1a73e8; margin-top: 0; text-align: center; margin-bottom: 20px;"><i class="fa-solid fa-book-open"></i> Hướng Dẫn Cách Chơi</h2>
+            
+            <div class="tutorial-box" style="border-left-color: #1a73e8; background: #f8fafc; padding: 20px; border-radius: 14px;">
+                <p style="font-size: 15px; margin-bottom: 12px; font-weight: 600; color: #1e293b;">Nhiệm vụ của bạn là kiểm tra phản xạ nhanh và khả năng ức chế hành vi của não bộ:</p>
+                
+                <ul style="margin-left: 20px; list-style-type: none; padding: 0;">
+                    <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span id="tutGoChar" style="font-size: 2em; min-width: 45px; text-align: center;">🚗</span>
+                        <span><b>TÍN HIỆU ĐI (GO):</b> Hãy bấm nút <b>Space (Phím cách)</b> hoặc nhấp chuột thật nhanh vào nút "BẤM NGAY!" trên màn hình.</span>
+                    </li>
+                    <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px; color: #ef4444;">
+                        <span id="tutNoGoChar" style="font-size: 2em; min-width: 45px; text-align: center;">🛑</span>
+                        <span><b>TÍN HIỆU DỪNG (NO-GO):</b> <b>TUYỆT ĐỐI KHÔNG ĐƯỢC BẤM</b> bất cứ nút gì. Hãy giữ yên và đợi biểu tượng tự biến mất.</span>
+                    </li>
+                    <li style="margin-bottom: 12px; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i> <b>Giới hạn sai sót:</b> Nếu bạn bấm nhầm hoặc bỏ lỡ quá <b>50% số lượt (15 lỗi)</b>, hệ thống sẽ tự động ngắt ván đấu để bảo vệ bạn khỏi trạng thái căng thẳng nhận thức quá độ.
+                    </li>
+                    <li style="margin-bottom: 5px;">
+                        <i class="fa-solid fa-keyboard" style="color: #64748b;"></i> <b>Phím tắt tiện lợi:</b> Nhấn phím <b>P</b> trên bàn phím bất kỳ lúc nào để <b>Tạm ngừng</b> hoặc <b>Tiếp tục</b> đo lường.
+                    </li>
+                </ul>
+            </div>
+            
+            <button class="btn" id="closeTutorialBtn" style="width: 100%; font-size: 15px; padding: 13px; background-color: #1a73e8; box-shadow: none; border-radius: 12px; margin-top: 10px; color: white;">Đã hiểu, Bắt đầu thử thách</button>
+        </div>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content" style="max-width:600px;">
+            <span class="modal-close" id="closeResultModal" style="position:absolute; right:20px; top:15px; font-size:30px; cursor:pointer;">&times;</span>
+            <h2 id="resultTitle" style="color:#1a73e8;">🎉 Kết Quả Đo Lường</h2>
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; text-align: left; margin-top: 15px;">
+                <h3 style="color:#475569; font-size:15px; border-bottom:1px solid #cbd5e1; padding-bottom:5px; margin-bottom:10px;"><i class="fa-solid fa-chart-simple"></i> Thống kê chi tiết phản xạ</h3>
+                <p id="resultTime" style="font-size: 13.5px; margin: 6px 0; color:#334155;"></p>
+                <p id="resultProgress" style="font-size: 13.5px; margin: 6px 0; color:#334155;"></p>
+                <p id="resultScore" style="font-size: 13.5px; margin: 6px 0; font-weight: 600; color: #16a34a;"></p>
+                <p id="resultErrors" style="font-size: 13.5px; margin: 6px 0; font-weight: 600; color: #ef4444;"></p>
+                <p id="resultAccuracy" style="font-size: 14.5px; margin: 10px 0 0 0; font-weight: bold; color: #1a73e8; border-top: 1px dashed #cbd5e1; padding-top:8px; text-align: center;"></p>
+            </div>
+            
+            <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 16px; padding: 15px; text-align: left; margin-top: 15px;">
+                <h3 style="color:#b45309; font-size:15px; margin-bottom:5px;"><i class="fa-solid fa-brain"></i> Đánh giá khả năng ức chế</h3>
+                <h4 id="resultRisk" style="font-size: 14px; margin: 5px 0; font-weight: 700;"></h4>
+                <p id="resultAdvice" style="color: #4b5563; font-size: 13px; font-style: italic; line-height:1.4;"></p>
+            </div>
+            
+            <div class="modal-buttons" style="margin-top:20px; display:flex; justify-content:center; gap:10px;">
+                <button class="btn" id="exportPDFBtn" style="background:#475569;"><i class="fa-solid fa-file-pdf"></i> Tải PDF</button>
+                <button class="btn" style="background:#22c55e; color:white; box-shadow:0 4px 12px rgba(34,197,94,0.2);" id="playAgainBtn">Chơi lại ván mới</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stressModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <h2 style="color: #dc2626;">⚠️ Có lẽ bạn nên nghỉ ngơi để giảm stress</h2>
+            <p style="font-size: 14.5px; margin-bottom: 15px; color: #334155; line-height:1.6;">Bạn đã thực hiện bấm sai hoặc bỏ lỡ <b>vượt quá 50% (15 lỗi)</b>. Hệ thống đã tự động dừng ván đấu để điều hòa trạng thái căng thẳng trí não.</p>
+            
+            <div class="stress-box">
+                <h4 style="color: #d97706;"><i class="fa-solid fa-heart-pulse"></i> Các biện pháp giảm stress hữu hiệu ngay bây giờ:</h4>
+                <ul>
+                    <li><b>Quy tắc 20-20-20:</b> Rời mắt khỏi màn hình máy tính/điện thoại, nhìn xa khoảng 6 mét (20 feet) trong vòng 20 giây.</li>
+                    <li><b>Hít thở sâu 4-7-8:</b> Hít vào bằng mũi 4 giây, giữ lồng ngực căng 7 giây và thở ra từ từ bằng miệng giải phóng năng lượng căng thẳng trong 8 giây.</li>
+                    <li><b>Vận động nhẹ:</b> Đứng dậy đi lại nhẹ nhàng, uống một ngụm nước ấm, hoặc thực hiện vài động tác co duỗi cơ tay và vai gáy.</li>
+                    <li><b>Thay đổi âm thanh:</b> Đổi sang các giai điệu nhạc không lời Lofi nhẹ nhàng hoặc âm thanh thiên nhiên để thư giãn đầu óc nhanh chóng.</li>
+                </ul>
+            </div>
+
+            <div class="modal-buttons" style="margin-top:20px;">
+                <button class="btn" style="background-color: #64748b; width:100%; box-shadow:none;" id="closeStressBtn">Đo lường lại sau</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0",
+            authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+            databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "bo-tro-cho-tam-li",
+            storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+            messagingSenderId: "150226282506",
+            appId: "1:150226282506:web:4df0cab215501b315317f3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const bgMusic = document.getElementById('bgMusic');
+            const musicToggleBtn = document.getElementById('bgmToggleBtn');
+            
+            bgMusic.volume = 0.3; 
+
+            // ĐỒNG BỘ GAME 1: Hàm click để bật/tắt nhạc thủ công
+            window.toggleMusic = function() {
+                if (!bgMusic || !musicToggleBtn) return;
+                if (bgMusic.paused) {
+                    bgMusic.play().then(() => {
+                        musicToggleBtn.classList.add("playing");
+                        musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    }).catch(err => {
+                        console.log("Lỗi kích hoạt nhạc:", err);
+                    });
+                } else {
+                    bgMusic.pause();
+                    musicToggleBtn.classList.remove("playing");
+                    musicToggleBtn.innerHTML = '<i class="fa-solid fa-music"></i>';
+                }
+            };
+
+            // ĐỒNG BỘ GAME 1: Cơ chế chống trình duyệt chặn Autoplay (Ép chạy nhạc khi tương tác màn hình lần đầu)
+            function triggerAutoPlayOnLoad() {
+                if (!bgMusic || !musicToggleBtn) return;
+                bgMusic.play().then(() => {
+                    musicToggleBtn.classList.add("playing");
+                    musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                }).catch(err => {
+                    console.log("Autoplay bị chặn, hệ thống kích hoạt chế độ chờ tương tác.");
+                    const runMusicOnFirstClick = () => {
+                        bgMusic.play().then(() => {
+                            musicToggleBtn.classList.add("playing");
+                            musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                            document.removeEventListener("click", runMusicOnFirstClick);
+                        }).catch(e => console.log(e));
+                    };
+                    document.addEventListener("click", runMusicOnFirstClick);
+                });
+            }
+
+            const playApplauseSound = () => { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const bufferSize = ctx.sampleRate * 2.0; const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1; const noise = ctx.createBufferSource(); noise.buffer = buffer; const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 1.5; const gainNode = ctx.createGain(); gainNode.gain.setValueAtTime(0.4, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0); noise.connect(filter); filter.connect(gainNode); gainNode.connect(ctx.destination); noise.start(); } catch(e){} };
+            const playBeep = (freq, type = 'sine', duration = 0.3) => { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.type = type; osc.frequency.value = freq; osc.connect(gain); gain.connect(ctx.destination); osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration); setTimeout(() => { osc.stop(); ctx.close(); }, duration * 1000); } catch(e){} };
+            const playTing = () => { try { const ctx = new (window.AudioContext || window.webkitAudioContext)(); const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime); osc.connect(gain); gain.connect(ctx.destination); osc.start(); gain.gain.setValueAtTime(0.5, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.4); setTimeout(() => { osc.stop(); ctx.close(); }, 400); } catch(e){} };
+
+            let goChar = '🚗', noGoChar = '🛑', gameMode = 'basic';
+            let timerInterval = null, stimTimeout = null, nextStimTimeout = null, timeRemaining = 240;
+            let currentTrial = 0, totalTrials = 30, correctCount = 0, errorCount = 0, isGoTrial = true, userResponded = false;
+            let isPlaying = false, isPaused = false, isGameActive = false; 
+            let gameResultRisk = "Thấp";
+
+            let correctGo = 0;       
+            let correctNoGo = 0;     
+            let omissionErrors = 0;  
+            let commissionErrors = 0;
+
+            let savedUser = localStorage.getItem("user");
+            let userInfo = { name: "Người chơi ẩn danh", class: "Không xác định", school: "", id: "N/A" };
+            if (savedUser) {
+                let parsed = JSON.parse(savedUser);
+                userInfo.name = parsed.name || "Người chơi ẩn danh";
+                userInfo.class = parsed.class || "Không xác định";
+                userInfo.school = parsed.school || "";
+                userInfo.id = parsed.id || "N/A";
+            }
+
+            const screens = { char: document.getElementById('characterScreen'), level: document.getElementById('levelSelectScreen'), game: document.getElementById('gameScreen') };
+            const modals = { result: document.getElementById('resultModal'), leaderboard: document.getElementById('leaderboardModal'), stress: document.getElementById('stressModal'), tutorial: document.getElementById('tutorialModal'), glossary: document.getElementById('glossaryModal') };
+            const stimEl = document.getElementById('stimulus');
+            const actionBtn = document.getElementById('actionBtn');
+            const mainScreenBox = document.getElementById('mainScreenBox');
+            
+            const pauseGameBtn = document.getElementById('pauseGameBtn');
+            const pauseOverlay = document.getElementById('pauseOverlay');
+            const homeBtn = document.getElementById('homeBtn');
+            
+            const showTutorialBtn = document.getElementById('showTutorialBtn');
+            const closeTutorialBtn = document.getElementById('closeTutorialBtn');
+            const closeStressBtn = document.getElementById('closeStressBtn');
+
+            // Khi người dùng bấm nút Chọn Nhân Vật -> Trình duyệt ghi nhận Tương tác và mở nhạc ngay!
+            window.setChars = (go, nogo) => { 
+                goChar = go; noGoChar = nogo; 
+                document.getElementById('tutGoChar').textContent = go;
+                document.getElementById('tutNoGoChar').textContent = nogo;
+                screens.char.classList.remove('active'); screens.level.classList.add('active'); 
+
+                if (bgMusic && bgMusic.paused) {
+                    bgMusic.play().then(() => {
+                        musicToggleBtn.classList.add("playing");
+                        musicToggleBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    }).catch(err => console.log("Lỗi mở nhạc tại setChars:", err));
+                }
+            };
+
+            document.getElementById('backToCharBtn').addEventListener('click', () => { screens.level.classList.remove('active'); screens.char.classList.add('active'); });
+
+            showTutorialBtn.addEventListener('click', () => { modals.tutorial.classList.add('active'); });
+            closeTutorialBtn.addEventListener('click', () => { modals.tutorial.remove('active'); });
+            document.getElementById('closeTutorialX').addEventListener('click', () => { modals.tutorial.classList.remove('active'); });
+
+            window.showGlossary = function() { modals.glossary.classList.add('active'); };
+            document.getElementById('closeGlossaryModal').onclick = () => modals.glossary.classList.remove('active');
+            document.getElementById('closeGlossaryBtn').onclick = () => modals.glossary.classList.remove('active');
+
+            const closeTutX = document.getElementById('closeTutorialX');
+            closeTutX.addEventListener('mouseenter', () => closeTutX.style.color = '#ef4444');
+            closeTutX.addEventListener('mouseleave', () => closeTutX.style.color = '#94a3b8');
+
+            document.getElementById('levelSelectScreen').addEventListener('click', (e) => {
+                if (e.target.matches('.btn-level')) { 
+                    gameMode = e.target.getAttribute('data-mode'); 
+                    startGame(); 
+                }
+            });
+
+            function togglePauseGame() {
+                if (!isPlaying && !isPaused) return; 
+                isPaused = !isPaused;
+
+                if (isPaused) {
+                    clearInterval(timerInterval); clearTimeout(stimTimeout); clearTimeout(nextStimTimeout);
+                    stimEl.style.transform = 'scale(0)';
+                    if (!userResponded && currentTrial > 0) { currentTrial--; }
+                    pauseGameBtn.innerHTML = '▶ Tiếp tục (P)'; pauseGameBtn.style.backgroundColor = '#22c55e';
+                    pauseOverlay.classList.add('active'); actionBtn.disabled = true;
+                } else {
+                    startTimers(); pauseGameBtn.innerHTML = '⏸ Tạm ngừng (P)'; pauseGameBtn.style.backgroundColor = '#f59e0b';
+                    pauseOverlay.classList.remove('active'); actionBtn.disabled = false;
+                    nextStimTimeout = setTimeout(nextTrial, 800);
+                }
+            }
+
+            pauseGameBtn.addEventListener('click', togglePauseGame);
+
+            function triggerError(errorType) {
+                if (errorType === 'omission') omissionErrors++;
+                if (errorType === 'commission') commissionErrors++;
+                
+                errorCount = omissionErrors + commissionErrors;
+                updateStats(); 
+                playBeep(150, 'sawtooth', 0.4); 
+                mainScreenBox.classList.remove('shake-error'); void mainScreenBox.offsetWidth; mainScreenBox.classList.add('shake-error');
+
+                if (errorCount > 15) {
+                    isPlaying = false; isPaused = false; isGameActive = false; 
+                    clearInterval(timerInterval); clearTimeout(stimTimeout); clearTimeout(nextStimTimeout);
+                    
+                    setTimeout(() => {
+                        let totalValid = correctCount + errorCount;
+                        let acc = totalValid > 0 ? (correctCount / totalValid) * 100 : 0;
+                        let result = { date: new Date().toISOString(), mode: gameMode === 'basic' ? 'Cơ bản' : 'Thách thức', accuracy: acc.toFixed(0), risk: "Cao (Dừng do stress)", advice: "Ván đo lường tự động ngắt do tỷ lệ sai sót quá cao, hệ thống khuyến cáo nghỉ ngơi giảm áp lực nhận thức." };
+                        
+                        saveGameScoreToSheet(result, true); 
+                        modals.stress.classList.add('active');
+                    }, 400);
+                }
+            }
+
+            function startCountdown(callback) {
+                let count = 3;
+                stimEl.style.transform = 'scale(1)'; stimEl.style.fontSize = '120px';
+                actionBtn.disabled = true; isPlaying = false;
+
+                const countdownInterval = setInterval(() => {
+                    if (count > 0) {
+                        stimEl.textContent = count; playBeep(440); count--;
+                    } else if (count === 0) {
+                        stimEl.textContent = "GO!"; playBeep(880, 'square'); count--;
+                    } else {
+                        clearInterval(countdownInterval); stimEl.textContent = "-";
+                        stimEl.style.transform = 'scale(0)'; stimEl.style.fontSize = '100px'; 
+                        actionBtn.disabled = false; isPlaying = true; callback();
+                    }
+                }, 1000);
+            }
+
+            function startGame() {
+                currentTrial = 0; errorCount = 0; correctCount = 0;
+                correctGo = 0; correctNoGo = 0; omissionErrors = 0; commissionErrors = 0;
+                timeRemaining = 240; isPaused = false; isGameActive = true; 
+                pauseOverlay.classList.remove('active'); pauseGameBtn.innerHTML = '⏸ Tạm ngừng (P)'; pauseGameBtn.style.backgroundColor = '#f59e0b';
+                document.getElementById('gameTimer').textContent = `⏱️ Thời gian: 4:00`; document.getElementById('gameTimer').classList.remove('time-warning');
+                screens.level.classList.remove('active'); screens.game.classList.add('active');
+                updateStats();
+                startCountdown(() => { startTimers(); nextTrial(); });
+            }
+
+            function startTimers() {
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    timeRemaining--; let m = Math.floor(timeRemaining / 60), s = timeRemaining % 60;
+                    document.getElementById('gameTimer').textContent = `⏱️ Thời gian: ${m}:${s < 10 ? '0' : ''}${s}`;
+                    if (timeRemaining <= 30) document.getElementById('gameTimer').classList.add('time-warning');
+                    if (timeRemaining <= 0) { clearInterval(timerInterval); alert("⏰ Hết thời gian ván đấu!"); endGame(false, true); }
+                }, 1000);
+            }
+
+            function nextTrial() {
+                if (!isGameActive) return;
+                if (currentTrial >= totalTrials) { endGame(false, false); return; }
+                currentTrial++; updateStats(); userResponded = false;
+
+                let noGoChance = gameMode === 'basic' ? 0.2 : 0.4;
+                isGoTrial = Math.random() >= noGoChance;
+
+                stimEl.textContent = isGoTrial ? goChar : noGoChar;
+                stimEl.style.transform = 'scale(1)';
+
+                clearTimeout(stimTimeout);
+                stimTimeout = setTimeout(() => {
+                    stimEl.style.transform = 'scale(0)';
+                    if (isGoTrial && !userResponded) { 
+                        triggerError('omission'); 
+                    }
+                    else if (!isGoTrial && !userResponded) { 
+                        if(isGameActive) { 
+                            correctNoGo++; 
+                            correctCount = correctGo + correctNoGo;
+                            updateStats(); 
+                            playTing(); 
+                        } 
+                    }
+                    if (isGameActive) nextStimTimeout = setTimeout(nextTrial, 1000);
+                }, 1200);
+            }
+
+            function handleAction() {
+                if (!isPlaying || userResponded || isPaused) return; 
+                userResponded = true; clearTimeout(stimTimeout); stimEl.style.transform = 'scale(0)';
+
+                if (isGoTrial) { 
+                    correctGo++; 
+                    correctCount = correctGo + correctNoGo;
+                    updateStats(); 
+                    playTing(); 
+                } 
+                else { 
+                    triggerError('commission'); 
+                }
+                if (isGameActive) nextStimTimeout = setTimeout(nextTrial, 800);
+            }
+
+            actionBtn.addEventListener('click', handleAction);
+            
+            document.addEventListener('keydown', (e) => { 
+                if (screens.game.classList.contains('active')) {
+                    if (e.code === 'Space') { 
+                        e.preventDefault(); 
+                        if (!actionBtn.disabled && !isPaused) handleAction(); 
+                    } 
+                    if (e.code === 'KeyP' || e.key === 'p' || e.key === 'P') {
+                        e.preventDefault();
+                        togglePauseGame();
+                    }
+                }
+            });
+
+            homeBtn.addEventListener('click', (e) => {
+                if (screens.game.classList.contains('active') && isGameActive) {
+                    if (!confirm('Bạn chắc chắn rời khi đang chơi chứ?')) {
+                        e.preventDefault(); 
+                    }
+                }
+            });
+
+            function updateStats() {
+                document.getElementById('gameProgress').textContent = `🔄 Tiến trình: ${currentTrial}/${totalTrials}`;
+                document.getElementById('gameScore').textContent = `✅ Đúng: ${correctCount}`;
+                document.getElementById('gameErrors').textContent = `❌ Sai sót: ${errorCount}/15`;
+            }
+
+            function saveGameScoreToSheet(resultObj, isStress = false) {
+                let schoolClassInfo = "Lớp " + userInfo.class + (userInfo.school ? " - " + userInfo.school : "");
+                let elapsed = 240 - timeRemaining; 
+                let levelText = resultObj.mode === 'Cơ bản' ? 'Cơ bản' : 'Thách thức';
+                
+                let finalGameName = `Go/No-Go (${levelText})`;
+                if (isStress) {
+                    finalGameName += " [STRESS_REJECT_LB]";
+                }
+
+                let scoreId = "SCORE_" + userInfo.id + "_" + Date.now();
+                set(ref(db, 'scores/' + scoreId), {
+                    studentId: userInfo.id || "N/A",
+                    name: userInfo.name,
+                    schoolClass: schoolClassInfo,
+                    gameName: finalGameName,
+                    score: `Đúng: ${correctCount} | Sai: ${errorCount}`,
+                    timePlayed: elapsed + " giây",
+                    accuracy: `${resultObj.accuracy}% (Nguy cơ: ${resultObj.risk})`,
+                    timestamp: Date.now(),
+                    rawCorrect: correctCount,
+                    rawErrors: errorCount,
+                    rawRisk: resultObj.risk
+                }).then(() => {
+                    console.log("📊 Đồng bộ thành công kết quả Go/No-Go lên Firebase!");
+                }).catch(err => {
+                    console.error("❌ Lỗi đồng bộ Firebase:", err);
+                });
+            }
+
+            function endGame(isQuit=false, isTimeout=false) {
+                isPlaying = false; isPaused = false; isGameActive = false; 
+                clearInterval(timerInterval); clearTimeout(stimTimeout); clearTimeout(nextStimTimeout);
+                if (isQuit) return;
+
+                let totalValid = correctCount + errorCount;
+                let acc = totalValid > 0 ? (correctCount / totalValid) * 100 : 0;
+                
+                gameResultRisk = acc >= 85 ? "Thấp" : (acc >= 65 ? "Trung bình" : "Cao");
+                let advice = gameResultRisk === "Thấp" ? "Tuyệt vời! Hệ thần kinh có khả năng kiểm soát bốc đồng và tự kiềm chế hành vi rất tốt." : "Bạn có xu hướng phản xạ bốc đồng nhẹ khi gặp kích thích đột ngột. Hãy tập trung quan sát kỹ hơn.";
+                if (isTimeout) { gameResultRisk = "Cao"; advice = "Quá giới hạn thời gian 4 phút của hệ thống."; }
+
+                let modeStr = gameMode === 'basic' ? 'Cơ bản' : 'Thách thức';
+                let elapsedSeconds = 240 - timeRemaining;
+
+                let result = { date: new Date().toISOString(), mode: modeStr, accuracy: acc.toFixed(0), risk: gameResultRisk, advice };
+                
+                saveGameScoreToSheet(result, false); 
+
+                if (!isTimeout) {
+                    document.getElementById('resultTitle').textContent = `🎉 Hoàn Thành Thử Thách!`; playApplauseSound();
+                    let duration = 1500, end = Date.now() + duration;
+                    let interval = setInterval(() => {
+                        if (Date.now() > end) return clearInterval(interval);
+                        confetti({ startVelocity: 30, spread: 360, ticks: 60, origin: { x: Math.random() * 0.3, y: Math.random() - 0.2 } });
+                        confetti({ startVelocity: 30, spread: 360, ticks: 60, origin: { x: Math.random() * 0.3 + 0.7, y: Math.random() - 0.2 } });
+                    }, 250);
+                } else { document.getElementById('resultTitle').textContent = `⏰ Quá Giờ Quy Định!`; }
+
+                document.getElementById('resultTime').innerHTML = `<b>⏱️ Thời gian thực hiện:</b> <span style="color:#1e293b;">${elapsedSeconds} giây</span>`;
+                document.getElementById('resultProgress').innerHTML = `<b>🔄 Tổng số lượt kích thích:</b> <span style="color:#1e293b;">${currentTrial} lượt</span>`;
+                document.getElementById('resultScore').innerHTML = `<b>✅ Phản hồi chính xác:</b> ${correctCount} lượt <br><span style="padding-left:18px; font-size:12px; color:#64748b;">• Đánh trúng (Go): ${correctGo} | • Nhịn thành công (No-Go): ${correctNoGo}</span>`;
+                document.getElementById('resultErrors').innerHTML = `<b>❌ Số lượt sai sót (Lỗi):</b> ${errorCount} lượt <br><span style="padding-left:18px; font-size:12px; color:#64748b;">• Bấm nhầm No-Go (Bốc đồng): ${commissionErrors} | • Bỏ lỡ Go (Quên bấm): ${omissionErrors}</span>`;
+                document.getElementById('resultAccuracy').innerHTML = `🎯 ĐỘ CHÍNH XÁC NHẬN THỨC CHUNG: <span style="font-size:18px; color:#1a73e8;">${acc.toFixed(0)}%</span>`;
+                
+                document.getElementById('resultRisk').innerHTML = `Mức độ nguy cơ bốc đồng: <span style="color:${gameResultRisk==='Thấp'?'#16a34a':(gameResultRisk==='Trung bình'?'#f59e0b':'#ef4444')};">${gameResultRisk}</span>`;
+                document.getElementById('resultAdvice').textContent = `💡 Lời khuyên: ${advice}`;
+                modals.result.classList.add('active');
+            }
+            
+            let cachedLeaderboardData = []; 
+
+            window.showLeaderboard = function() {
+                modals.leaderboard.classList.add('active');
+                let lbContent = document.getElementById("leaderboardContent");
+                lbContent.innerHTML = "<p style='text-align:center; padding: 20px 0;'>🔄 Đang đồng bộ hóa dữ liệu trực tiếp từ đám mây Cloud...</p>";
+                
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.tab-btn[data-tab="Cơ bản"]').classList.add('active');
+
+                get(ref(db, 'scores')).then((snapshot) => {
+                    if (!snapshot.exists()) {
+                        lbContent.innerHTML = "<p style='text-align:center; color: #555;'>Chưa có dữ liệu người chơi nào.</p>";
+                        return;
+                    }
+                    let rawData = snapshot.val();
+                    let localScores = Object.values(rawData);
+                    
+                    let validScores = localScores.filter(s => s.gameName && s.gameName.includes("Go/No-Go") && !s.gameName.includes("[STRESS_REJECT_LB]"));
+
+                    cachedLeaderboardData = validScores.map(s => {
+                        let scoreMatch = s.score ? s.score.match(/Đúng:\s*(\d+)\s*\|\s*Sai:\s*(\d+)/) : null;
+                        let correctVal = scoreMatch ? parseInt(scoreMatch[1]) : (s.rawCorrect || 0);
+                        let errorVal = scoreMatch ? parseInt(scoreMatch[2]) : (s.rawErrors || 0);
+                        
+                        let currentRisk = "Thấp";
+                        if(s.rawRisk) { currentRisk = s.rawRisk; } 
+                        else if (s.accuracy) {
+                            let matchRisk = s.accuracy.match(/Nguy cơ:\s*([^)]+)/);
+                            currentRisk = matchRisk ? matchRisk[1] : "Thấp";
+                        }
+
+                        return {
+                            name: s.name,
+                            studentId: s.studentId || "N/A",
+                            game: s.gameName,
+                            score: s.score || `Đúng: ${correctVal} | Sai: ${errorVal}`,
+                            timeStr: s.timePlayed || "0 giây",
+                            schoolClass: s.schoolClass || "Khối lớp --",
+                            rawCorrect: correctVal,
+                            rawErrors: errorVal,
+                            displayRisk: currentRisk
+                        };
+                    });
+                    renderLeaderboard('Cơ bản');
+                }).catch((err) => {
+                    console.error(err);
+                    lbContent.innerHTML = "<p style='text-align:center; color: #ef4444;'>⚠️ Lỗi kết nối cơ sở dữ liệu Firebase đám mây.</p>";
+                });
+            };
+
+            function renderLeaderboard(levelFilter) {
+                let lbContent = document.getElementById("leaderboardContent");
+                
+                if (!cachedLeaderboardData || cachedLeaderboardData.length === 0) {
+                    lbContent.innerHTML = "<p style='text-align:center; color: #555;'>Chưa có dữ liệu người chơi nào.</p>";
+                    return;
+                }
+
+                let filteredData = cachedLeaderboardData.filter(item => item.game && item.game.includes(levelFilter));
+                filteredData = filteredData.filter(item => item.displayRisk.includes("Thấp") || item.displayRisk.includes("Trung bình"));
+
+                let noteBoxHtml = `
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 10px 14px; font-size: 11px; color: #166534; font-weight: 600; text-align: left; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-info" style="font-size:13px; color:#22c55e; flex-shrink:0;"></i> 
+                        <span>Mỗi tài khoản tự động lưu thành tích ván chơi tối ưu nhất của mình.</span>
+                    </div>
+                `;
+
+                if (filteredData.length === 0) {
+                    lbContent.innerHTML = noteBoxHtml + `<p style='padding: 15px 0; text-align:center; color:#94a3b8; font-style:italic;'>Chưa có thứ hạng đạt chuẩn mức <b>${levelFilter}</b>.</p>`;
+                    return;
+                }
+                
+                let uniqueStudents = {};
+                filteredData.forEach(item => {
+                    let idKey = item.studentId && item.studentId !== "N/A" ? item.studentId : item.name;
+                    if (!uniqueStudents[idKey]) {
+                        uniqueStudents[idKey] = item;
+                    } else {
+                        if (item.rawCorrect > uniqueStudents[idKey].rawCorrect) {
+                            uniqueStudents[idKey] = item;
+                        } else if (item.rawCorrect === uniqueStudents[idKey].rawCorrect) {
+                            if (item.rawErrors < uniqueStudents[idKey].rawErrors) {
+                                uniqueStudents[idKey] = item;
+                            }
+                        }
+                    }
+                });
+
+                let finalRankArray = Object.values(uniqueStudents);
+                finalRankArray.sort((a, b) => {
+                    if (b.rawCorrect !== a.rawCorrect) return b.rawCorrect - a.rawCorrect;
+                    return a.rawErrors - b.rawErrors;
+                });
+
+                let html = noteBoxHtml + "<div style='display: flex; flex-direction: column; gap: 10px;'>";
+                
+                finalRankArray.slice(0, 10).forEach((item, index) => {
+                    let medal = index === 0 ? "🥇" : (index === 1 ? "🥈" : (index === 2 ? "🥉" : `${index+1}`));
+                    let badgeBg = "rgba(34, 197, 94, 0.1)", badgeColor = "#22c55e";
+                    if (item.displayRisk.includes("Trung bình")) { badgeBg = "rgba(245, 158, 11, 0.1)"; badgeColor = "#f59e0b"; }
+
+                    let rawString = item.schoolClass || "Khối lớp --";
+                    let classPart = rawString.includes(" - ") ? rawString.split(" - ")[0] : rawString;
+                    let schoolPart = rawString.includes(" - ") ? rawString.split(" - ")[1] : "Trường học";
+                    
+                    html += `
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 15px; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                                <div style="font-size: 16px; font-weight: 800; width: 25px; text-align: center; color: #64748b; flex-shrink: 0;">${medal}</div>
+                                <div style="min-width: 0; flex: 1;">
+                                    <div style="font-weight: 700; color: #1e293b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                                    <div style="color: #64748b; font-size: 11px; margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                        <span style="background: #e0f2fe; color: #0369a1; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;"><i class="fa-solid fa-school"></i> ${schoolPart}</span>
+                                        <span style="background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">${classPart}</span>
+                                        <span style="font-weight: 500; color: #94a3b8;">• ⏱️ ${item.timeStr}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                <div style="font-weight: 800; font-size: 12px; color: #475569;">
+                                    <span style="color:#22c55e;">✅ ${item.rawCorrect}</span>
+                                    <span style="color:#cbd5e1; margin: 0 2px;">|</span>
+                                    <span style="color:#ef4444;">❌ ${item.rawErrors}</span>
+                                </div>
+                                <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 50px; font-size: 10px; font-weight: 700; display: inline-block;">Mức: ${item.displayRisk}</span>
+                            </div>
+                        </div>`;
+                });
+                html += "</div>";
+                
+                lbContent.innerHTML = html;
+            }
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    let selectedLevel = this.getAttribute('data-tab');
+                    renderLeaderboard(selectedLevel);
+                });
+            });
+
+            document.getElementById('quitGameBtn').addEventListener('click', () => { if(confirm('Hủy ván đo lường?')) { endGame(true); screens.game.classList.remove('active'); screens.level.classList.add('active'); } });
+            document.getElementById('playAgainBtn').addEventListener('click', () => { modals.result.classList.remove('active'); screens.game.classList.remove('active'); screens.char.classList.add('active'); });
+            document.getElementById('closeResultModal').addEventListener('click', () => modals.result.classList.remove('active'));
+            document.getElementById('closeLeaderboardModal').addEventListener('click', () => modals.leaderboard.classList.remove('active'));
+            closeStressBtn.addEventListener('click', () => { modals.stress.classList.remove('active'); screens.game.classList.remove('active'); screens.level.classList.add('active'); });
+            
+            function removeAccents(str) { if (!str) return "---"; return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D'); };
+
+            document.getElementById('exportPDFBtn').addEventListener('click', () => {
+                const { jsPDF } = jspdf; const doc = new jsPDF();
+                let safeName = removeAccents(userInfo.name);
+                let safeRisk = removeAccents(gameResultRisk);
+
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(15);
+                doc.text(`BAO CAO KIEM TRA UC CHE HANH VI - ${safeName.toUpperCase()}`, 10, 20);
+                
+                doc.setFont("Helvetica", "normal");
+                doc.setFontSize(12);
+                doc.text(`Dung: ${correctCount} (Go: ${correctGo} | No-Go: ${correctNoGo})`, 10, 35);
+                doc.text(`Loi: ${errorCount} (Boc dong: ${commissionErrors} | Bo lo: ${omissionErrors})`, 10, 45);
+                doc.text(`Phan loai nguy co: Muc do ${safeRisk}`, 10, 60);
+                doc.save(`Inhibition_Report_${userInfo.id}.pdf`);
+            });
+            
+            window.addEventListener('click', (e) => { 
+                if (e.target == modals.result) modals.result.classList.remove('active'); 
+                if (e.target == modals.leaderboard) modals.leaderboard.classList.remove('active'); 
+                if (e.target == modals.tutorial) modals.tutorial.classList.remove('active'); 
+                if (e.target == modals.glossary) modals.glossary.classList.remove('active'); 
+                if (e.target == modals.stress) { modals.stress.classList.remove('active'); screens.game.classList.remove('active'); screens.level.classList.add('active'); }
+            });
+            window.addEventListener('blur', () => {
+                if (isPlaying && !isPaused) {
+                    togglePauseGame();
+                }
+            });
+
+            // Kích hoạt nạp bộ lắng nghe autoplay chống chặn nhận thức lúc đầu
+            triggerAutoPlayOnLoad();
+        });
+    </script>
+</body>
+</html>

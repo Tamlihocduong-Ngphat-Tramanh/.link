@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game - Sàng lọc Nhận thức (Edge-Cloud Version)</title>
+	<link rel="icon" type="image/x-icon" href="icon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --card-size: 95px;
+            --cols: 4; 
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(-45deg, #ff7675, #74b9ff, #a29bfe, #fdcb6e, #55efc4); background-size: 400% 400%; animation: bgmove 15s ease infinite;
+        }
+
+        @keyframes bgmove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        .container { width: 100%; max-width: 750px; margin: auto; text-align: center; z-index: 2; position: relative; }
+        .title { text-align: center; color: white; margin-bottom: 20px; text-shadow: 0 4px 15px rgba(0,0,0,0.15); font-size: 2.2em; font-weight: 800; letter-spacing: -0.5px; }
+
+        .screen-box { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6); border-radius: 24px; padding: 30px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06); text-align: center; width: 100%; }
+
+        .screen { display: none; width: 100%; }
+        .screen.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @media (max-width: 500px) {
+            body { padding: 10px; }
+            .title { font-size: 1.6em; margin-bottom: 12px; }
+            .screen-box { padding: 15px 12px; border-radius: 16px; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { color: #1e293b; margin-bottom: 15px; font-size: 1.6em; font-weight: 800; letter-spacing: -0.5px; }
+
+        .btn { padding: 12px 24px; font-size: 14.5px; font-weight: bold; color: white; background-color: #1a73e8; border: none; border-radius: 12px; cursor: pointer; transition: 0.2s; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(26,115,232,0.15); }
+        .btn:hover { background-color: #155cb4; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(26,115,232,0.25); }
+        .btn-secondary { background-color: #fee2e2; color: #ef4444; box-shadow: 0 4px 12px rgba(239,68,68,0.1); }
+        .btn-secondary:hover { background-color: #fca5a5; color: #b91c1c; }
+        
+        .btn-level { width: 100%; max-width: 250px; margin: 8px; padding: 15px; font-size: 15px; background-color: #ffffff; color: #334155; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.02); border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+        .btn-level:hover { background-color: #f8fafc; border-color: #cbd5e1; color: #1a73e8; transform: translateY(-2px); }
+
+        #gameInfo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 16px; font-size: 13px; font-weight: 700; color: #475569; text-align: center; }
+        @media (min-width: 550px) { #gameInfo { grid-template-columns: repeat(4, 1fr); font-size: 14px; } }
+        
+        #boardWrapper { position: relative; width: 100%; display: flex; justify-content: center; align-items: center; }
+
+        #pauseOverlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); z-index: 10; align-items: center; justify-content: center; font-size: 1.8em; color: #d97706; font-weight: 800; border-radius: 16px; backdrop-filter: blur(5px); }
+        #pauseOverlay.active { display: flex; animation: fadeIn 0.3s; }
+
+        #gameBoard { display: grid; gap: 10px; grid-template-columns: repeat(var(--cols), 1fr); perspective: 1000px; justify-items: center; padding: 5px 0; width: 100%; max-width: 100%; margin: 0 auto; }
+        @media (min-width: 550px) { #gameBoard { gap: 14px; } }
+
+        .card { width: 100%; max-width: var(--card-size); aspect-ratio: 1 / 1; position: relative; cursor: pointer; transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card.is-flipped { transform: rotateY(180deg); }
+
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 26px; transition: all 0.2s; }
+        @media (min-width: 550px) { .card-face { font-size: 32px; border-radius: 16px; } }
+        .card-front { background-color: #ffffff; color: #1e293b; transform: rotateY(180deg); border: 2px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .card-back { background: linear-gradient(135deg, #1a73e8, #00d2ff); color: white; font-size: 30px; box-shadow: 0 4px 12px rgba(26,115,232,0.25); border: 2px solid white; }
+        @media (min-width: 550px) { .card-back { font-size: 38px; } }
+
+        @keyframes shakeError { 0%, 100% { transform: rotateY(180deg) translateX(0); } 20%, 60% { transform: rotateY(180deg) translateX(-6px) rotate(-2deg); } 40%, 80% { transform: rotateY(180deg) translateX(6px) rotate(2deg); } }
+        .shake-error { animation: shakeError 0.4s cubic-bezier(.36,.07,.19,.97) both !important; }
+        .shake-error .card-front { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); border-color: #ef4444; }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 2000; opacity: 0; transition: opacity 0.3s ease; padding: 20px; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 24px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: translateY(-20px); transition: transform 0.3s ease; position: relative; text-align: center; }
+        .modal.active .modal-content { transform: translateY(0); }
+        
+        .modal-close { position: absolute; top: 12px; right: 20px; font-size: 26px; font-weight: bold; color: #94a3b8; cursor: pointer; transition: 0.2s; z-index: 10; }
+        .modal-close:hover { color: #ef4444; }
+        .modal-buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+
+        .tutorial-box { font-size: 14px; text-align: left; line-height: 1.6; color: #334155; background: #f8fafc; padding: 16px; border-radius: 14px; border-left: 5px solid #1a73e8; margin-bottom: 15px;}
+
+        .floating-left { position: fixed; left: 15px; bottom: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .left-item { position: relative; display: flex; align-items: center; justify-content: flex-start; cursor: pointer; }
+        
+        .left-item .icon-wrapper { color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: all 0.3s ease; position: relative; z-index: 2; border: 2px solid white; }
+        .left-info { position: absolute; left: 40px; color: white; padding: 8px 12px 8px 20px; border-radius: 0 25px 25px 0; font-weight: bold; font-size: 13px; opacity: 0; visibility: hidden; transform: translateX(-20px); transition: all 0.4s; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 1; }
+        
+        .left-item:hover .icon-wrapper { transform: scale(1.1); }
+        .left-item:hover .left-info { opacity: 1; visibility: visible; transform: translateX(0); left: 52px; }
+
+        .left-item.glossary .icon-wrapper { background-color: #0d9488; box-shadow: 0 4px 15px rgba(13,148,136,0.3); }
+        .left-item.glossary .left-info { background-color: #0d9488; }
+
+        .left-item.leaderboard .icon-wrapper { background-color: #eab308; box-shadow: 0 4px 15px rgba(234,179,8,0.3); animation: pulse-leaderboard 2s infinite; }
+        .left-item.leaderboard .left-info { background-color: #eab308; }
+        @keyframes pulse-leaderboard { 0% { box-shadow: 0 0 0 0 rgba(234,179,8, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(234,179,8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234,179,8, 0); } }
+
+        .music-controls { position: fixed; top: 15px; left: 15px; display: flex; align-items: center; z-index: 1000; }
+        .music-btn { width: 38px; height: 36px; display: flex; align-items: center; justify-content: center; background-color: #ffffff; color: #16a34a; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.05); outline: none; }
+        .music-btn:hover { background-color: #16a34a; color: white; transform: scale(1.05); }
+        .music-btn.playing { color: #ef4444; }
+        .music-btn.playing:hover { background-color: #ef4444; color: white; }
+
+        .tabs { display: flex; justify-content: center; gap: 4px; margin-bottom: 15px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+        .tab-btn { padding: 8px 14px; border: none; background: transparent; color: #64748b; font-weight: 700; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 13px; }
+        .tab-btn.active { background: #ffffff; color: #eab308; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+
+        .stress-box { text-align: left; background-color: #fffbeb; border-left: 5px solid #d97706; padding: 12px; border-radius: 12px; margin-top: 12px; }
+        .stress-box ul { margin-left: 18px; margin-top: 8px; }
+        .stress-box li { margin-bottom: 6px; color: #4b5563; font-size: 13px; }
+        
+        .btn-continue-play { background-color: #22c55e !important; color: white !important; font-size: 14.5px; font-weight: bold; width: 100%; padding: 12px; border-radius: 12px; border: none; cursor: pointer; transition: 0.2s; margin-bottom: 10px; display: block; box-shadow: 0 4px 12px rgba(34,197,94,0.2); }
+        .btn-continue-play:hover { background-color: #16a34a !important; transform: translateY(-1px); }
+
+        .custom-level-box { margin-top: 12px; background: #ffffff; border: 1px solid #cbd5e1; padding: 12px 16px; border-radius: 16px; width: 100%; max-width: 240px; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .custom-level-box label { font-weight: 800; font-size: 11px; color: #475569; display: block; margin-bottom: 6px; text-align: center; text-transform: uppercase; letter-spacing: 0.3px; }
+        .custom-inputs-row { display: flex; gap: 6px; margin-bottom: 8px; }
+        .custom-inputs-row input { width: 50%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; text-align: center; font-size: 13px; outline: none; background: #f8fafc; transition: all 0.2s; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" src="Nhạc nền vui của Độ mixi.mp3" loop autoplay></audio>
+
+    <div class="music-controls">
+        <button id="bgmToggleBtn" class="music-btn" onclick="window.toggleMusic()" title="Bật/Tắt nhạc nền vui nhộn">
+            <i class="fa-solid fa-music"></i>
+        </button>
+    </div>
+
+    <div class="floating-left">
+        <div class="left-item glossary" onclick="window.showGlossary()">
+            <div class="icon-wrapper"><i class="fa-solid fa-circle-info"></i></div> 
+            <span class="left-info">Giải Thích Thuật Ngữ</span>
+        </div>
+        <div class="left-item leaderboard" onclick="window.showLeaderboard()">
+            <div class="icon-wrapper"><i class="fa-solid fa-trophy"></i></div> 
+            <span class="left-info">Bảng Xếp Hạng Game Này</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="title">🧠 MEMORY MATCHING 🎮</h1>
+
+        <div class="screen-box" id="mainScreenBox">
+            
+            <div id="levelSelectScreen" class="screen active">
+                <h2>Chọn Cấp Độ Thử Thách</h2>
+                <p style="margin-bottom: 15px; color: #64748b; font-weight: 500;">Xin chào <b id="displayPlayerName" style="color:#1a73e8;"></b>! Sẵn sàng rèn luyện trí nhớ chưa?</p>
+                
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <button class="btn btn-level" data-level="basic">Cơ bản (3x4)</button>
+                    <button class="btn btn-level" data-level="medium">Bình thường (4x5)</button>
+                    <button class="btn btn-level" data-level="advanced">Nâng cao (4x6)</button>
+                    
+                    <div class="custom-level-box">
+                        <label>⚙️ Chế độ tự chọn (Max 36 ô)</label>
+                        <div class="custom-inputs-row">
+                            <input type="number" id="customRows" placeholder="Hàng" min="2" max="6" value="4">
+                            <input type="number" id="customCols" placeholder="Cột" min="2" max="6" value="5">
+                        </div>
+                        <button class="btn" id="startCustomBtn" style="width: 100%; background: #10b981; box-shadow: 0 4px 12px rgba(16,185,129,0.15);">Vào chơi tự chọn</button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn" id="showTutorialBtn" style="background-color: #f59e0b; box-shadow: 0 4px 12px rgba(245,158,11,0.15); color: white;">📖 Hướng dẫn</button>
+                    <a href="trangchu.html" class="btn btn-secondary">🏠 Về Trang Chủ</a>
+                </div>
+            </div>
+
+            <div id="countdownScreen" class="screen">
+                <div id="countdownText" style="font-size: 6em; color: #1a73e8; font-weight: 800; text-shadow: 0 4px 15px rgba(0,0,0,0.1);">3</div>
+            </div>
+
+            <div id="gameScreen" class="screen">
+                <div id="gameInfo">
+                    <div id="gameTimer">⏱️ 4:00</div>
+                    <div id="gameProgress">🔄 0/0</div>
+                    <div id="gamePairs">✅ Đúng: 0</div>
+                    <div id="gameErrors" style="color: #ef4444;">❌ Sai: 0/20</div>
+                </div>
+                
+                <div id="boardWrapper">
+                    <div id="pauseOverlay">⏸ ĐANG TẠM NGỪNG</div>
+                    <div id="gameBoard"></div>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn" id="pauseGameBtn" style="background-color: #f59e0b; font-weight: 700; padding: 10px 16px; font-size: 13px;">⏸ Tạm ngừng</button>
+                    <button class="btn" id="quitGameBtn" style="background:#64748b; padding: 10px 16px; font-size: 13px;">Thử lại</button>
+                    <a href="trangchu.html" class="btn btn-secondary" id="homeBtn" style="padding: 10px 16px; font-size: 13px;">🏠 Thoát</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="glossaryModal" class="modal">
+        <div class="modal-content" style="max-width: 580px; text-align: left;">
+            <span class="modal-close" id="closeGlossaryModal">&times;</span>
+            <h2 style="color: #0d9488; text-align: center; margin-bottom: 20px;">📊 Giải Thích Thuật Ngữ Thống Kê</h2>
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 5px; line-height: 1.6;">
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #1e293b; font-size: 14.5px;">⏱️ Tổng thời gian chơi:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Thời gian thực hiện (giây) từ lúc các thẻ úp xuống đến lúc hoàn thành ván đấu. Chỉ số này đo lường tổng tốc độ ghi nhớ và định vị thông tin ngắn hạn.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #1e293b; font-size: 14.5px;">⚡ T.gian trung bình / cặp:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Được tính bằng: <span style="font-family:monospace; background:#f1f5f9; padding:1px 4px; border-radius:4px;">Tổng thời gian / Số cặp hình</span>. Con số này phản ánh tốc độ tư duy trung bình để não bộ tái hiện thông tin và ghép đôi thành công một cặp thẻ.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #1e293b; font-size: 14.5px;">🔄 Tổng lượt lật:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Mỗi lần bạn mở đủ 2 thẻ bài sẽ được tính là một lượt lật (bao gồm cả lượt đúng và sai). Chỉ số này thể hiện mức độ nhất quán và chọn lọc của hành vi thao tác.</p>
+                </div>
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #ef4444; font-size: 14.5px;">❌ Số lần lật sai:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Số lần mở 2 thẻ không khớp nhau. Đây là chỉ số cốt lõi thể hiện sự nhiễu loạn của bộ nhớ tạm thời hoặc mức độ mất tập trung ngắn hạn.</p>
+                </div>
+                
+                <div style="margin-bottom: 14px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <strong style="color: #f59e0b; font-size: 14.5px;">😰 Mức độ / Chỉ số Stress (%):</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px; margin-bottom: 8px;">Được tính bằng tỷ lệ: <span style="font-family:monospace; background:#fffbeb; padding:1px 4px; border-radius:4px;">(Số lần lật sai / Tổng lượt lật) × 100</span>. Chỉ số này phản ánh áp lực tâm lý thực tế qua các mốc phân loại trạng thái:</p>
+                    <ul style="margin-left: 15px; color: #475569; font-size: 12.5px; line-height: 1.6; list-style-type: none;">
+                        <li style="margin-bottom: 5px; padding-left: 10px; border-left: 3px solid #16a34a;"><b style="color: #16a34a;">Dưới 20% - Thấp:</b> Điềm tĩnh (Zen) - Tập trung tốt, thao tác chuẩn xác, gần như không bấm nhầm.</li>
+                        <li style="margin-bottom: 5px; padding-left: 10px; border-left: 3px solid #eab308;"><b style="color: #d97706;">20% - 50% - Trung bình:</b> Hơi căng thẳng - Bắt đầu chịu áp lực thời gian hoặc nhớ nhầm, nhưng vẫn kiểm soát được.</li>
+                        <li style="margin-bottom: 5px; padding-left: 10px; border-left: 3px solid #ea580c;"><b style="color: #ea580c;">51% - 80% - Cao:</b> Căng thẳng (Stress) - Tâm lý bắt đầu cuống, lật sai nhiều hơn lật đúng.</li>
+                        <li style="margin-bottom: 2px; padding-left: 10px; border-left: 3px solid #dc2626;"><b style="color: #dc2626;">Trên 80% - Nghiêm trọng:</b> Hoảng loạn (Panic) - Người chơi hoàn toàn mất bình tĩnh, bấm loạn xạ theo cảm tính.</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 5px;">
+                    <strong style="color: #1a73e8; font-size: 14.5px;">🧠 Mức độ nguy cơ:</strong>
+                    <p style="color: #475569; font-size: 13px; margin-top: 3px;">Phân loại sàng lọc tổng hợp (Thấp - Trung bình - Cao) giữa tốc độ xử lý thời gian và tần suất lỗi, hỗ trợ phát hiện sớm trạng thái mỏi mệt nhận thức hoặc quá tải thần kinh.</p>
+                </div>
+            </div>
+            <button class="btn" id="closeGlossaryBtn" style="width: 100%; padding: 12px; background-color: #64748b; box-shadow:none; margin-top: 15px;">Đóng lại</button>
+        </div>
+    </div>
+
+    <div id="tutorialModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <span class="modal-close" id="closeTutorialX">&times;</span>
+            <h2 style="color: #1a73e8; margin-top: 0;">📖 Hướng dẫn cách chơi</h2>
+            <div class="tutorial-box">
+                <p>Nhiệm vụ của bạn là tìm các cặp hình giống nhau!</p>
+                <ul style="margin-left: 15px; margin-top: 8px; line-height: 1.5; font-size: 13px;">
+                    <li>Hệ thống sẽ lật toàn bộ các thẻ trong một thời gian ngắn để bạn ghi nhớ.</li>
+                    <li>Sau khi các thẻ úp xuống, hãy lật từng cặp thẻ giống nhau.</li>
+                    <li>Mỗi lần lật sai, thẻ sẽ rung lên và bạn sẽ bị tính một lỗi.</li>
+                    <li style="color: #ef4444; font-weight:600;">Nếu bạn lật sai <b>quá 20 lần</b>, trò chơi sẽ dừng để nhắc nhở sức khỏe nhận thức. Bạn có quyền chọn chơi tiếp nhưng nếu sai thêm 5 lần liên tiếp, hệ thống sẽ dừng hẳn.</li>
+                </ul>
+            </div>
+            <button class="btn" id="closeTutorialBtn" style="width: 100%; padding: 12px; background-color: #64748b; box-shadow:none;">Đã hiểu, Đóng lại</button>
+        </div>
+    </div>
+
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeLeaderboardModal">&times;</span>
+            <h2 style="color: #d97706; margin-top: 0; margin-bottom: 15px;">🏆 Bảng Xếp Hạng Trí Nhớ</h2>
+            <div class="tabs" id="lbTabsContainer">
+                <button class="tab-btn active" data-tab="Cơ bản">Cơ bản</button>
+                <button class="tab-btn" data-tab="Bình thường">Bình thường</button>
+                <button class="tab-btn" data-tab="Nâng cao">Nâng cao</button>
+            </div>
+            <div id="leaderboardContent" style="max-height: 300px; overflow-y: auto; padding: 5px;">Đang tải dữ liệu từ đám mây...</div>
+        </div>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="closeResultModal" style="font-size:30px; cursor:pointer;">&times;</span>
+            <h2 id="resultTitle" style="color:#16a34a;">🎉 Tuyệt vời! Hoàn thành!</h2>
+            <h3 style="color:#475569; font-size:15px; margin-top: 12px;">Thống kê lượt chơi</h3>
+            <div style="text-align:left; background:#f8fafc; border:1px solid #e2e8f0; padding:12px; border-radius:16px; margin:12px 0; line-height:1.6; font-size:13.5px;">
+                <p id="resultTime"></p>
+                <p id="resultAvgTime" style="font-weight: 600; color: #16a34a;"></p>
+                <p id="resultMoves"></p>
+                <p id="resultErrorsStat" style="font-weight: bold; color: #ef4444;"></p>
+                <p id="resultStressStat" style="font-weight: bold; color: #f59e0b;"></p>
+            </div>
+            <hr style="margin: 15px 0; border-top: 1px dashed #cbd5e1;">
+            <h3 style="color:#475569; font-size:15px;">Đánh giá Trí nhớ</h3>
+            <h4 id="resultRisk" style="color: #f59e0b; font-size: 1.1em; margin: 6px 0;"></h4>
+            <p id="resultAdvice" style="color: #64748b; font-style: italic; font-size: 13px;"></p>
+            
+            <div class="modal-buttons">
+                <button class="btn" id="exportPDFBtn" style="padding: 10px 16px; font-size:13px;">📥 Tải PDF</button>
+                <button class="btn" style="background:#22c55e; color:white; box-shadow:0 4px 12px rgba(34,197,94,0.2); padding: 10px 16px; font-size:13px;" id="playAgainBtn">🔄 Chơi lại</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stressModal" class="modal">
+        <div class="modal-content" style="max-width: 460px;">
+            <h2 style="color: #64748b;">⚠️ Hãy nghỉ ngơi để giảm bớt stress</h2>
+            <p style="font-size: 13.5px; margin-bottom: 12px; color: #334155; line-height:1.5;">Bạn đã thực hiện lật sai liên tiếp <b>chạm mốc 20 lần</b>. Hệ thống đã tạm dừng trò chơi để giúp trí não điều hòa trở lại.</p>
+            
+            <div class="stress-box" style="margin-bottom: 15px;">
+                <h4 style="color: #d97706; font-size: 13.5px;"><i class="fa-solid fa-heart-pulse"></i> Biện pháp thư giãn ngay bây giờ:</h4>
+                <ul>
+                    <li><b>Quy tắc 20-20-20:</b> Rời mắt khỏi màn hình, nhìn xa khoảng 6 mét trong vòng 20 giây.</li>
+                    <li><b>Hít thở sâu 4-7-8:</b> Hít vào 4 giây, giữ hơi 7 giây và thở ra từ từ bằng miệng giải phóng căng thẳng trong 8 giây.</li>
+                </ul>
+            </div>
+
+            <button class="btn-continue-play" id="continuePlayBtn"><i class="fa-solid fa-gamepad"></i> Tiếp tục làm bài</button>
+            <div class="modal-buttons" style="margin-top: 5px;">
+                <button class="btn" style="background-color: #64748b; width: 100%; box-shadow:none;" id="closeStressBtn">Đo lường lại sau</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0",
+        authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+        databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "bo-tro-cho-tam-li",
+        storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+        messagingSenderId: "150226282506",
+        appId: "1:150226282506:web:4df0cab215501b315317f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.flattenDynamicNodes = function(snapshotValue, identifierKey) {
+        let list = [];
+        if (!snapshotValue || typeof snapshotValue !== 'object') return list;
+        if (identifierKey in snapshotValue || 'answers' in snapshotValue) {
+            list.push(snapshotValue); return list;
+        }
+        Object.keys(snapshotValue).forEach(key1 => {
+            let sub = snapshotValue[key1];
+            if (sub && typeof sub !== 'object') return;
+            if (identifierKey in sub || 'answers' in sub) {
+                if(!sub.id) sub.id = key1; list.push(sub);
+            } else {
+                Object.keys(sub).forEach(key2 => {
+                    let inner = sub[key2];
+                    if (inner && typeof inner === 'object') {
+                        if(!inner.id) inner.id = key2;
+                        if(!inner.studentId) inner.studentId = key1; list.push(inner);
+                    }
+                });
+            }
+        });
+        return list;
+    };
+
+    let cachedLeaderboardData = []; 
+    let currentGameResult = {};
+    let userInfo = {};
+
+    let savedUser = localStorage.getItem("user");
+    if(savedUser) {
+        let userObj = JSON.parse(savedUser);
+        userInfo = { id: userObj.id || "N/A", hoTen: userObj.name || "Người chơi ẩn danh", nickname: userObj.nickname || "N/A", truong: userObj.school || "Không xác định", lop: userObj.class || "Không xác định", namSinh: userObj.age || "Không xác định" };
+        document.getElementById('displayPlayerName').innerText = userInfo.nickname !== "N/A" ? userInfo.nickname : userInfo.hoTen;
+    } else {
+        alert("Vui lòng đăng nhập hệ thống trước!"); window.location.href = "../index.html";
+    }
+
+    window.toggleMusic = function() {
+        const audio = document.getElementById("bgMusic");
+        const btn = document.getElementById("bgmToggleBtn");
+        if (!audio || !btn) return;
+        if (audio.paused) {
+            audio.play().then(() => {
+                btn.classList.add("playing");
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+            }).catch(err => {
+                alert("Hãy nhấp chuột vào bất cứ đâu trên màn hình một lần rồi bật lại nhạc nhé!");
+            });
+        } else {
+            audio.pause();
+            btn.classList.remove("playing");
+            btn.innerHTML = '<i class="fa-solid fa-music"></i>';
+        }
+    };
+
+    function triggerAutoPlayOnLoad() {
+        const audio = document.getElementById("bgMusic");
+        const btn = document.getElementById("bgmToggleBtn");
+        if (!audio || !btn) return;
+        
+        audio.play().then(() => {
+            btn.classList.add("playing");
+            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        }).catch(err => {
+            console.log("Autoplay bị chặn bởi hệ thống bảo mật trình duyệt. Nhạc sẽ tự bật ở click đầu tiên.");
+            const runMusicOnFirstClick = () => {
+                audio.play().then(() => {
+                    btn.classList.add("playing");
+                    btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                    document.removeEventListener("click", runMusicOnFirstClick);
+                });
+            };
+            document.addEventListener("click", runMusicOnFirstClick);
+        });
+    }
+
+    const playBeep = (freq, type = 'sine', duration = 0.15) => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(); const gainNode = ctx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+            gainNode.gain.setValueAtTime(0.5, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+            osc.connect(gainNode); gainNode.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + duration);
+        } catch (e) {}
+    };
+
+    const playTing = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(1200, ctx.currentTime); 
+            osc.connect(gain); gain.connect(ctx.destination); osc.start();
+            gain.gain.setValueAtTime(0.5, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.4); 
+            setTimeout(() => { osc.stop(); ctx.close(); }, 400);
+        } catch(e){}
+    };
+
+    const playApplauseSound = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const bufferSize = ctx.sampleRate * 2.0; const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+            const noise = ctx.createBufferSource(); noise.buffer = buffer;
+            const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1000; filter.Q.value = 1.5;
+            const gainNode = ctx.createGain(); gainNode.gain.setValueAtTime(0.4, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2.0);
+            noise.connect(filter); filter.connect(gainNode); gainNode.connect(ctx.destination); noise.start();
+        } catch(e) {}
+    };
+
+    const screens = { level: document.getElementById('levelSelectScreen'), countdown: document.getElementById('countdownScreen'), game: document.getElementById('gameScreen') };
+    const modals = { result: document.getElementById('resultModal'), tutorial: document.getElementById('tutorialModal'), leaderboard: document.getElementById('leaderboardModal'), stress: document.getElementById('stressModal'), glossary: document.getElementById('glossaryModal') };
+    
+    const gameBoard = document.getElementById('gameBoard');
+    const quitGameBtn = document.getElementById('quitGameBtn');
+    const pauseGameBtn = document.getElementById('pauseGameBtn');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const countdownText = document.getElementById('countdownText');
+    
+    const closeResultModal = document.getElementById('closeResultModal');
+    const closeLeaderboardModal = document.getElementById('closeLeaderboardModal');
+    const closeStressBtn = document.getElementById('closeStressBtn');
+    const continuePlayBtn = document.getElementById('continuePlayBtn'); 
+    
+    const exportPDFBtn = document.getElementById('exportPDFBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+
+    let currentLevel = 'basic', firstCard = null, secondCard = null, lockBoard = false, isPaused = false; 
+    let matchedPairs = 0, totalPairs = 0, timerInterval = null, timeRemaining = 240, timeSpent = 0, moves = 0, errors = 0, isGameActive = false;
+    
+    let hasResumed = false;
+    let consecutiveErrorsPostResume = 0;
+
+    const allIcons = ['🎨','🧩','🚀','💡','🎵','📚','🧬','🤖','🌍','🧭','🔬','⏳','⭐','🧠','✏️','🏆','🎯','🔑']; 
+    const levelConfig = {
+        basic: { pairs: 6, cols: 4, rows: 3, size: 95, memorizeTime: 800 },
+        medium: { pairs: 10, cols: 5, rows: 4, size: 85, memorizeTime: 1500 },
+        advanced: { pairs: 12, cols: 6, rows: 4, size: 80, memorizeTime: 2000 }
+    };
+    window.customLevelConfig = null;
+
+    function showScreen(screenId) { 
+        Object.values(screens).forEach(screen => screen.classList.remove('active')); 
+        screens[screenId].classList.add('active'); 
+    }
+    
+    function showModal(modalId) { modals[modalId].classList.add('active'); }
+    function hideModal(modalId) { modals[modalId].classList.remove('active'); }
+
+    document.getElementById('showTutorialBtn').addEventListener('click', () => { showModal('tutorial'); });
+    document.getElementById('closeTutorialBtn').addEventListener('click', () => { hideModal('tutorial'); });
+    document.getElementById('closeTutorialX').addEventListener('click', () => { hideModal('tutorial'); });
+
+    window.showGlossary = function() { showModal('glossary'); };
+    document.getElementById('closeGlossaryModal').onclick = () => hideModal('glossary');
+    document.getElementById('closeGlossaryBtn').onclick = () => hideModal('glossary');
+
+    document.getElementById('levelSelectScreen').addEventListener('click', (e) => { if (e.target.matches('.btn-level')) { currentLevel = e.target.getAttribute('data-level'); startCountdownAndGame(); } });
+
+    document.getElementById('startCustomBtn').addEventListener('click', () => {
+        let r = parseInt(document.getElementById('customRows').value);
+        let c = parseInt(document.getElementById('customCols').value);
+        if (isNaN(r) || isNaN(c)) { alert("⚠️ Vui lòng nhập đầy đủ hàng và cột!"); return; }
+        if (r < 2 || c < 2) { alert("⚠️ Số hàng và cột tối thiểu phải từ 2!"); return; }
+        let totalCards = r * c;
+        if (totalCards % 2 !== 0) { alert("⚠️ Tổng số ô chơi phải là số chẵn!"); return; }
+        let pairsNeeded = totalCards / 2;
+        if (pairsNeeded > allIcons.length) { alert(`⚠️ Tối đa hỗ trợ cấu hình ${allIcons.length} cặp hình.`); return; }
+
+        let dynamicSize = c === 5 ? 85 : (c >= 6 ? 80 : 95);
+        currentLevel = 'custom';
+        window.customLevelConfig = { pairs: pairsNeeded, cols: c, rows: r, size: dynamicSize, memorizeTime: 1000 + (pairsNeeded * 100) };
+        startCountdownAndGame();
+    });
+
+    function startCountdownAndGame() {
+        showScreen('countdown'); let count = 3; countdownText.textContent = count; playBeep(440); 
+        let countInterval = setInterval(() => {
+            count--;
+            if (count > 0) { countdownText.textContent = count; playBeep(440); } 
+            else if (count === 0) { countdownText.textContent = "GO!"; playBeep(880, 'square', 0.4); } 
+            else { clearInterval(countInterval); showScreen('game'); startGame(currentLevel); }
+        }, 1000);
+    }
+    
+    function togglePauseGame() {
+        if (!timerInterval && !isPaused) return; if (lockBoard && !isPaused) return; 
+        isPaused = !isPaused;
+        if (isPaused) {
+            clearInterval(timerInterval); pauseGameBtn.innerHTML = '▶ Tiếp tục';
+            pauseGameBtn.style.backgroundColor = '#22c55e'; pauseOverlay.classList.add('active'); 
+        } else {
+            startTimer(); pauseGameBtn.innerHTML = '⏸ Tạm ngừng';
+            pauseGameBtn.style.backgroundColor = '#f59e0b'; pauseOverlay.classList.remove('active'); 
+        }
+    }
+    pauseGameBtn.addEventListener('click', togglePauseGame);
+    document.addEventListener('keydown', (e) => { if ((e.code === 'KeyP' || e.key === 'p' || e.key === 'P') && screens.game.classList.contains('active')) { e.preventDefault(); togglePauseGame(); } });
+
+    quitGameBtn.addEventListener('click', () => { if (confirm('Bạn chắc chắn muốn hủy ván đo lường này?')) { endGame(true); showScreen('level'); } });
+
+    function startGame(level) {
+        const config = (level === 'custom') ? window.customLevelConfig : levelConfig[level];
+        totalPairs = config.pairs; matchedPairs = 0; moves = 0; errors = 0; timeRemaining = 240; timeSpent = 0;
+        firstCard = null; secondCard = null; lockBoard = true; isPaused = false; isGameActive = true;
+        
+        hasResumed = false;
+        consecutiveErrorsPostResume = 0;
+
+        pauseOverlay.classList.remove('active');
+        pauseGameBtn.innerHTML = '⏸ Tạm ngừng'; pauseGameBtn.style.backgroundColor = '#f59e0b';
+
+        document.documentElement.style.setProperty('--cols', config.cols);
+        document.documentElement.style.setProperty('--card-size', `${config.size}px`);
+        updateStats();
+
+        let icons = allIcons.slice(0, config.pairs);
+        let cardsArray = [...icons, ...icons].sort(() => 0.5 - Math.random()); 
+
+        gameBoard.innerHTML = '';
+        cardsArray.forEach(icon => {
+            const card = document.createElement('div'); card.classList.add('card'); card.dataset.icon = icon;
+            card.innerHTML = `<div class="card-face card-front">${icon}</div><div class="card-face card-back">🧠</div>`;
+            card.addEventListener('click', flipCard); gameBoard.appendChild(card);
+        });
+
+        setTimeout(() => {
+            const allCards = document.querySelectorAll('.card'); allCards.forEach(card => card.classList.add('is-flipped'));
+            setTimeout(() => { allCards.forEach(card => card.classList.remove('is-flipped')); lockBoard = false; startTimer(); }, config.memorizeTime);
+        }, 100);
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (isPaused) return;
+            timeRemaining--; timeSpent++;
+            let m = Math.floor(timeRemaining / 60), s = timeRemaining % 60;
+            document.getElementById('gameTimer').textContent = `⏱️ ${m}:${s < 10 ? '0' : ''}${s}`;
+            if (timeRemaining <= 0) { clearInterval(timerInterval); alert("⏰ Đã hết thời gian ván đấu!"); endGame(false, true); }
+        }, 1000);
+    }
+
+    function flipCard() {
+        if (isPaused || lockBoard || this === firstCard || this.classList.contains('is-flipped')) return; 
+        this.classList.add('is-flipped');
+        if (!firstCard) { firstCard = this; return; }
+        secondCard = this; moves++; updateStats(); lockBoard = true; checkForMatch();
+    }
+
+    function checkForMatch() { firstCard.dataset.icon === secondCard.dataset.icon ? disableCards() : unflipCards(); }
+
+    function disableCards() {
+        firstCard.removeEventListener('click', flipCard); secondCard.removeEventListener('click', flipCard);
+        matchedPairs++; playTing(); updateStats(); resetBoard();
+        
+        if (hasResumed) {
+            consecutiveErrorsPostResume = 0;
+        }
+        
+        if (matchedPairs === totalPairs) { setTimeout(() => endGame(false, false), 500); }
+    }
+
+    function unflipCards() {
+        errors++; updateStats();
+        firstCard.classList.add('shake-error'); secondCard.classList.add('shake-error');
+
+        if (!hasResumed && errors === 20) {
+            setTimeout(() => {
+                clearInterval(timerInterval); isGameActive = false;
+                currentGameResult = { date: new Date().toISOString(), level: currentLevel, time: timeSpent, moves: moves, correct: matchedPairs, errors: errors, risk: "Cao", stressLevel: "100% - Nghiêm trọng (Não bộ bị quá tải cực hạn)", advice: "Hệ thống tự động bảo vệ nhận thức ngắn hạn." };
+                saveGameScoreToSheet(currentGameResult, true); showModal('stress'); 
+            }, 400); return;
+        }
+        
+        if (hasResumed) {
+            consecutiveErrorsPostResume++;
+            if (consecutiveErrorsPostResume >= 5) {
+                setTimeout(() => {
+                    endGame(false, false, true); 
+                }, 400); return;
+            }
+        }
+
+        setTimeout(() => {
+            firstCard.classList.remove('shake-error'); secondCard.classList.remove('shake-error');
+            firstCard.classList.remove('is-flipped'); secondCard.classList.remove('is-flipped'); resetBoard();
+        }, 600); 
+    }
+
+    function resetBoard() { [firstCard, secondCard, lockBoard] = [null, null, false]; }
+    
+    function updateStats() {
+        document.getElementById('gameProgress').textContent = `🔄 ${matchedPairs}/${totalPairs}`;
+        document.getElementById('gamePairs').textContent = `✅ Đúng: ${matchedPairs}`;
+        document.getElementById('gameErrors').textContent = `❌ Sai: ${errors}`;
+    }
+
+    function saveGameScoreToSheet(resultObj, isStress = false) {
+        let levelText = resultObj.level === 'basic' ? 'Cơ bản' : (resultObj.level === 'medium' ? 'Bình thường' : (resultObj.level === 'advanced' ? 'Nâng cao' : 'Tự chọn'));
+        let schoolClassInfo = "Lớp " + userInfo.lop + " - " + userInfo.truong;
+        let finalGameName = `Memory Matching (${levelText})` + (isStress ? " [STRESS_REJECT_LB]" : "");
+        let scoreId = "SCORE_" + userInfo.id + "_" + Date.now();
+
+        set(ref(db, 'scores/' + scoreId), {
+            studentId: userInfo.id, name: userInfo.hoTen, schoolClass: schoolClassInfo, gameName: finalGameName,
+            score: `Đúng: ${resultObj.correct}/${totalPairs} | Lỗi: ${resultObj.errors} | Stress: ${resultObj.stressLevel}`, timePlayed: resultObj.time + " giây",
+            accuracy: `Nguy cơ: ${resultObj.risk}`, timestamp: Date.now(),
+            rawCorrect: resultObj.correct, rawErrors: resultObj.errors, rawRisk: resultObj.risk, rawTime: resultObj.time,
+            stressLevel: resultObj.stressLevel
+        }).then(() => console.log('Đã lưu dữ liệu lên Cloud Firebase')).catch(e => console.error(e));
+    }
+
+    function endGame(isQuit = false, isTimeout = false, isForcedStop = false) {
+        clearInterval(timerInterval); isGameActive = false; if (isQuit) return; 
+        const avgCorrectTime = totalPairs > 0 ? (timeSpent / totalPairs).toFixed(2) : 0;
+        const assessment = calculateRisk(timeSpent, errors, currentLevel);
+        
+        let stressPercent = moves > 0 ? parseFloat(((errors / moves) * 100).toFixed(2)) : 0;
+        let evaluatedStress = "";
+
+        if (isTimeout) {
+            evaluatedStress = "100% - Nghiêm trọng (Quá tải kiệt quệ do hết giờ)";
+        } else if (isForcedStop) {
+            evaluatedStress = "100% - Nghiêm trọng (Quá tải cực hạn - Hệ thống dừng hẳn)";
+        } else {
+            if (stressPercent < 20) {
+                evaluatedStress = `${stressPercent}% - Thấp (Điềm tĩnh - Zen)`;
+            } else if (stressPercent <= 50) {
+                evaluatedStress = `${stressPercent}% - Trung bình (Hơi căng thẳng)`;
+            } else if (stressPercent <= 80) {
+                evaluatedStress = `${stressPercent}% - Cao (Căng thẳng / Stress)`;
+            } else {
+                evaluatedStress = `${stressPercent}% - Nghiêm trọng (Hoảng loạn / Panic)`;
+            }
+        }
+
+        let finalRisk = (isTimeout || isForcedStop) ? "Cao" : assessment.risk;
+        let finalAdvice = isForcedStop ? "Dừng hẳn ván đấu do liên tục lật sai 5 lần sau khi hệ thống đã cảnh báo stress." : assessment.advice;
+
+        currentGameResult = { date: new Date().toISOString(), level: currentLevel, time: timeSpent, avgTime: avgCorrectTime, moves: moves, correct: matchedPairs, errors: errors, risk: finalRisk, advice: finalAdvice, stressLevel: evaluatedStress };
+        saveGameScoreToSheet(currentGameResult, false);
+
+        if (!isTimeout && !isForcedStop) {
+            document.getElementById('resultTitle').textContent = `🎉 Tuyệt vời! Hoàn thành!`; playApplauseSound(); 
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        } else if (isTimeout) { 
+            document.getElementById('resultTitle').textContent = `⏰ Hết giờ mất rồi!`; 
+        } else if (isForcedStop) {
+            document.getElementById('resultTitle').textContent = `🛑 Dừng cuộc chơi do quá tải!`;
+        }
+
+        document.getElementById('resultTime').textContent = `⏱️ Tổng thời gian chơi: ${timeSpent} giây`;
+        document.getElementById('resultAvgTime').textContent = `⏱️ T.gian trung bình: ${avgCorrectTime} giây / cặp`;
+        document.getElementById('resultMoves').textContent = `🔄 Tổng lượt lật: ${moves}`;
+        document.getElementById('resultErrorsStat').textContent = `❌ Số lần lật sai: ${errors}`;
+        document.getElementById('resultStressStat').textContent = `😰 Mức độ stress hiện tại: ${evaluatedStress}`;
+        document.getElementById('resultRisk').textContent = `Mức độ nguy cơ: ${currentGameResult.risk}`;
+        document.getElementById('resultAdvice').textContent = `💡 Lời khuyên: ${currentGameResult.advice}`;
+        showModal('result');
+    }
+
+    function calculateRisk(time, errors, level) {
+        let risk = "Thấp", advice = "Trí nhớ ngắn hạn rất tuyệt vời!";
+        let errorThreshold = level === 'basic' ? 4 : (level === 'medium' ? 8 : 12);
+        let timeThreshold = level === 'basic' ? 45 : (level === 'medium' ? 100 : 180);
+        if (errors > errorThreshold || time > timeThreshold) { risk = "Trung bình"; advice = "Hãy nghỉ ngơi đủ giấc và rèn luyện điều hòa thêm."; }
+        if (errors > errorThreshold * 1.5 || time > timeThreshold * 1.5) { risk = "Cao"; advice = "Thả lỏng đầu óc để tránh các dấu hiệu căng thẳng quá tải."; }
+        return { risk, advice };
+    }
+
+    window.showLeaderboard = function() {
+        showModal('leaderboard'); 
+        let lbContent = document.getElementById("leaderboardContent");
+        lbContent.innerHTML = "<p style='text-align:center; padding: 20px 0;'>🔄 Đang đồng bộ hóa dữ liệu trực tiếp từ đám mây Cloud...</p>";
+        
+        document.querySelectorAll('#lbTabsContainer .tab-btn').forEach(b => b.classList.remove('active'));
+        const firstTab = document.querySelector('#lbTabsContainer .tab-btn[data-tab="Cơ bản"]');
+        if(firstTab) firstTab.classList.add('active');
+
+        get(ref(db, 'scores')).then((snapshot) => {
+            if (!snapshot.exists()) { lbContent.innerHTML = "<p>Chưa có dữ liệu lịch sử đo lường.</p>"; return; }
+            let rawData = snapshot.val();
+            cachedLeaderboardData = window.flattenDynamicNodes(rawData, 'gameName').filter(s => s.gameName && s.gameName.includes("Memory Matching") && !s.gameName.includes("[STRESS_REJECT_LB]"));
+            renderLeaderboard('Cơ bản');
+        }).catch((err) => { 
+            console.error(err);
+            lbContent.innerHTML = "<p style='text-align:center; color:#ef4444;'>⚠️ Lỗi kết nối cơ sở dữ liệu Firebase đám mây.</p>"; 
+        });
+    };
+
+    function removeAccents(str) { if (!str) return "---"; return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D'); };
+
+    function renderLeaderboard(levelFilter) {
+        let lbContent = document.getElementById("leaderboardContent");
+        if (!cachedLeaderboardData || cachedLeaderboardData.length === 0) { lbContent.innerHTML = "<p>Chưa có dữ liệu đạt chuẩn.</p>"; return; }
+
+        let filteredData = cachedLeaderboardData.filter(item => item.gameName && item.gameName.includes(levelFilter));
+        
+        filteredData.forEach(item => {
+            item.displayCorrect = item.rawCorrect !== undefined ? item.rawCorrect : (parseInt(item.score?.match(/Đúng:\s*(\d+)/)?.[1]) || 0);
+            item.displayErrors = item.rawErrors !== undefined ? item.rawErrors : (parseInt(item.score?.match(/Lỗi sai:\s*(\d+)/)?.[1]) || 0);
+            
+            if (item.rawRisk !== undefined) { item.displayRisk = item.rawRisk; } 
+            else {
+                let matchRisk = item.accuracy ? item.accuracy.match(/Nguy cơ:\s*([^)]+)/) : null;
+                item.displayRisk = matchRisk ? matchRisk[1] : "Thấp";
+            }
+        });
+
+        filteredData = filteredData.filter(item => item.displayRisk.includes("Thấp") || item.displayRisk.includes("Trung bình"));
+
+        let uniqueStudents = {};
+        filteredData.forEach(item => {
+            let idKey = item.studentId && item.studentId !== "N/A" ? item.studentId : item.name;
+            if (!uniqueStudents[idKey]) { uniqueStudents[idKey] = item; } 
+            else {
+                if (item.displayErrors < uniqueStudents[idKey].displayErrors) { uniqueStudents[idKey] = item; } 
+                else if (item.displayErrors === uniqueStudents[idKey].displayErrors) {
+                    if ((item.rawTime || 999) < (uniqueStudents[idKey].rawTime || 999)) { uniqueStudents[idKey] = item; }
+                }
+            }
+        });
+
+        let finalRankArray = Object.values(uniqueStudents);
+
+        let noteBoxHtml = `
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 10px 14px; font-size: 11px; color: #166534; font-weight: 600; text-align: left; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-info" style="font-size:13px; color:#22c55e; flex-shrink:0;"></i> 
+                <span>Mỗi tài khoản tự động lưu thành tích ván chơi tối ưu nhất của mình.</span>
+            </div>
+        `;
+
+        if (finalRankArray.length === 0) { lbContent.innerHTML = noteBoxHtml + `<p style='padding: 15px 0; text-align:center; color:#94a3b8; font-style:italic;'>Chưa có thứ hạng đạt chuẩn mức <b>${levelFilter}</b>.</p>`; return; }
+        
+        finalRankArray.sort((a, b) => { if (a.displayErrors !== b.displayErrors) return a.displayErrors - b.displayErrors; return (parseInt(a.timePlayed) || 999) - (parseInt(b.timePlayed) || 999); });
+
+        let html = noteBoxHtml + "<div style='display: flex; flex-direction: column; gap: 10px;'>";
+        finalRankArray.slice(0, 10).forEach((item, index) => {
+            let medal = index === 0 ? "🥇" : (index === 1 ? "🥈" : (index === 2 ? "🥉" : `${index+1}`));
+            let badgeBg = "rgba(34, 197, 94, 0.1)", badgeColor = "#22c55e";
+            if (item.displayRisk.includes("Trung bình")) { badgeBg = "rgba(245, 158, 11, 0.1)"; badgeColor = "#f59e0b"; }
+
+            let rawString = item.schoolClass || "Khối lớp --";
+            let classPart = rawString.includes(" - ") ? rawString.split(" - ")[0] : rawString;
+            let schoolPart = rawString.includes(" - ") ? rawString.split(" - ")[1] : "Trường học";
+
+            html += `
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 15px; text-align: left;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                        <div style="font-size: 16px; font-weight: 800; width: 25px; text-align: center; color: #64748b; flex-shrink: 0;">${medal}</div>
+                        <div style="min-width: 0; flex: 1;">
+                            <div style="font-weight: 700; color: #1e293b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                            <div style="color: #64748b; font-size: 11px; margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                <span style="background: #e0f2fe; color: #0369a1; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;"><i class="fa-solid fa-school"></i> ${schoolPart}</span>
+                                <span style="background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 10px;">${classPart}</span>
+                                <span style="font-weight: 500; color: #94a3b8;">• ⏱️ ${item.timePlayed}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <div style="font-weight: 800; font-size: 12px; color: #475569;">
+                            <span style="color:#22c55e;">✅ ${item.displayCorrect}</span>
+                            <span style="color:#cbd5e1; margin: 0 2px;">|</span>
+                            <span style="color:#ef4444;">❌ ${item.displayErrors}</span>
+                        </div>
+                        <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 50px; font-size: 10px; font-weight: 700; display: inline-block;">Mức: ${item.displayRisk}</span>
+                    </div>
+                </div>`;
+        });
+        html += "</div>"; lbContent.innerHTML = html;
+    }
+
+    document.querySelectorAll('#lbTabsContainer .tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#lbTabsContainer .tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            renderLeaderboard(this.getAttribute('data-tab'));
+        });
+    });
+
+    continuePlayBtn.addEventListener('click', () => {
+        hideModal('stress'); const allCards = document.querySelectorAll('.card');
+        allCards.forEach(card => { if (card.classList.contains('shake-error')) card.classList.remove('shake-error', 'is-flipped'); });
+        
+        hasResumed = true;
+        consecutiveErrorsPostResume = 0; 
+        
+        updateStats(); isGameActive = true; lockBoard = false; startTimer(); 
+    });
+
+    document.getElementById('exportPDFBtn').addEventListener('click', () => {
+        const { jsPDF } = jspdf; 
+        const doc = new jsPDF();
+        
+        let safeName = removeAccents(userInfo.hoTen);
+        let safeRisk = removeAccents(currentGameResult.risk);
+        let safeAdvice = removeAccents(currentGameResult.advice);
+        let safeStress = removeAccents(currentGameResult.stressLevel);
+        
+        const marginX = 20;
+        let currentY = 25;
+        const maxLineWidth = doc.internal.pageSize.width - (marginX * 2);
+
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(15);
+        doc.text("BAO CAO KET QUA LUYEN TAP - MEMORY MATCHING", marginX, currentY);
+        
+        currentY += 6;
+        doc.setLineWidth(0.4);
+        doc.line(marginX, currentY, marginX + maxLineWidth, currentY);
+        
+        currentY += 12;
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(11);
+        doc.text(`Hoc sinh: ${safeName}   |   Ma so ID: ${userInfo.id}`, marginX, currentY);
+        
+        currentY += 12;
+        doc.text(`- Tong thoi gian hoan thanh: ${currentGameResult.time} giay`, marginX, currentY);
+        
+        currentY += 9;
+        doc.text(`- Tong so luot thuc hien bam: ${currentGameResult.moves} lan`, marginX, currentY);
+
+        currentY += 9;
+        doc.text(`- So lan lat sai (Loi vi pham): ${currentGameResult.errors} lan`, marginX, currentY);
+        
+        currentY += 9;
+        let stressLines = doc.splitTextToSize(`- Chi so Stress nao bo thoi gian thuc: ${safeStress}`, maxLineWidth);
+        doc.text(stressLines, marginX, currentY);
+        currentY += (stressLines.length * 6);
+        
+        currentY += 4;
+        doc.setFont("Helvetica", "bold");
+        doc.text(`Phan loai muc do nguy co: MUC DO ${safeRisk.toUpperCase()}`, marginX, currentY);
+        
+        currentY += 10;
+        doc.setFont("Helvetica", "normal");
+        let adviceLines = doc.splitTextToSize(`Khuyen nghi cua he thong: ${safeAdvice}`, maxLineWidth);
+        doc.text(adviceLines, marginX, currentY);
+        
+        doc.save(`MemoryGame_Report_${userInfo.id}.pdf`);
+    });
+
+    document.getElementById('playAgainBtn').onclick = () => { hideModal('result'); showScreen('level'); };
+    closeResultModal.onclick = () => hideModal('result'); 
+    closeLeaderboardModal.onclick = () => hideModal('leaderboard'); closeStressBtn.onclick = () => { hideModal('stress'); showScreen('level'); };
+    
+    window.addEventListener('click', (e) => { 
+        if (e.target == modals.result) hideModal('result'); 
+        if (e.target == modals.leaderboard) hideModal('leaderboard'); 
+        if (e.target == modals.tutorial) hideModal('tutorial'); 
+        if (e.target == modals.glossary) hideModal('glossary'); 
+        if (e.target == modals.stress) { hideModal('stress'); showScreen('level'); }
+    });
+
+    triggerAutoPlayOnLoad();
+</script>
+</body>
+</html>

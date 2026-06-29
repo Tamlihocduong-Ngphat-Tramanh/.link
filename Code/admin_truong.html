@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Hệ Thống Quản Lý & Báo Cáo Thống Kê - Cấp Trường Học</title>
+	<link rel="icon" type="image/x-icon" href="icon.ico">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+body { 
+    min-height: 100vh;
+    background: linear-gradient(-45deg, #74b9ff, #a29bfe, #55efc4, #ffeaa7); 
+    background-size: 400% 400%; 
+    animation: bgmove 15s ease infinite; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: flex-start; 
+    overflow-x: hidden;
+}
+
+@keyframes bgmove { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+
+#authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 20px; overflow-y: auto; }
+.auth-box { background: #ffffff; width: 100%; max-width: 460px; padding: 35px 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center; margin: auto; }
+.auth-icon { font-size: 40px; color: #6c5ce7; margin-bottom: 15px; }
+.auth-box h2 { font-size: 20px; color: #1e293b; margin-bottom: 20px; font-weight: 800; text-transform: uppercase; }
+
+.input-group { margin-bottom: 12px; text-align: left; }
+.input-group label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; padding-left: 8px; }
+.input-group input { width: 100%; padding: 11px 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14.5px; outline: none; transition: 0.2s; color: #1e293b; font-weight: 600; background: #f8fafc; }
+.input-group input:focus { border-color: #6c5ce7; background: white; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.12); }
+
+.btn-auth { width: 100%; padding: 13px; background: #6c5ce7; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+.btn-auth:hover { background: #5b4cc4; }
+.auth-toggle-link { margin-top: 15px; font-size: 13.5px; color: #4f46e5; font-weight: 700; cursor: pointer; display: block; text-decoration: underline; }
+
+.container { display: none; width: 100%; max-width: 1550px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 35px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin: 40px 20px; border: 1px solid rgba(255,255,255,0.6); }
+
+h2.main-title { color: #1e293b; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; font-size: 21px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+.school-badge { font-size: 13.5px; background: #e0e7ff; color: #4338ca; padding: 6px 16px; border-radius: 50px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.location-badge { font-size: 13.5px; background: #fef3c7; color: #d97706; padding: 6px 16px; border-radius: 50px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+
+.admin-tabs { display: flex; gap: 8px; margin-bottom: 25px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; flex-wrap: wrap; }
+.tab-btn { padding: 12px 22px; border: none; background: transparent; color: #64748b; font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 14.5px; display: flex; align-items: center; gap: 8px; }
+.tab-btn:hover { background: rgba(0, 0, 0, 0.04); color: #1e293b; }
+.tab-btn.active { background: #6c5ce7; color: white; box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2); }
+
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; }
+.btn { padding: 11px 20px; border: none; border-radius: 50px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13.5px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); white-space: nowrap; }
+.btn-primary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.btn-primary:hover { background: #e2e8f0; color: #1e293b; }
+.btn-success { background: #22c55e; color: white; }
+.btn-success:hover { background: #16a34a; }
+.btn-danger { background: linear-gradient(135deg, #ff9f43, #ff6b6b); color: white; }
+.btn-danger:hover { filter: brightness(1.05); }
+
+.table-responsive { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 16px; margin-bottom: 20px; background: white; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 100%; }
+th, td { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; word-break: break-word; vertical-align: middle; }
+th { background: #f8fafc; color: #64748b; font-weight: 700; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+tr:hover { background: #f8fafc; }
+
+.id-text { font-family: monospace; font-weight: 700; color: #6c5ce7; background: #f3f2ff; padding: 3px 12px; border-radius: 6px; font-size: 13.5px; white-space: nowrap; display: inline-block; border: 1px solid #e0dbff; }
+.badge { padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-block; }
+.badge-danger { background: #fee2e2; color: #ef4444; border: 1px solid #fee2e2; }
+.badge-warning { background: #fef3c7; color: #d97706; }
+.badge-success { background: #dcfce7; color: #16a34a; }
+
+.dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; margin-bottom: 25px; }
+@media (max-width: 950px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+.summary-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; }
+.summary-box h3 { font-size: 15px; color: #1e293b; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; }
+.stats-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.summary-box .stats-card { background: #f8fafc; padding: 16px; border-radius: 12px; border-left: 5px solid #6c5ce7; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+.summary-box .stats-card h4 { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+.summary-box .stats-card p { font-size: 26px; font-weight: 800; color: #1e293b; }
+
+.rank-panel { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 22px; }
+.rank-panel h3 { font-size: 15px; color: #d97706; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #fffbeb; border-radius: 10px; font-size: 13.5px; border: 1px solid #fef3c7; width: 100%; }
+
+.scores-workspace-layout { display: grid; grid-template-columns: 320px 1fr; gap: 25px; margin-top: 15px; align-items: start; }
+@media (max-width: 950px) { .scores-workspace-layout { grid-template-columns: 1fr; } }
+
+.student-list-sidebar { max-height: 650px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+.student-sidebar-item { padding: 12px 16px; border-radius: 14px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; gap: 5px; }
+.student-sidebar-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+.student-sidebar-item.active { background: #f3f2ff; border-color: #6c5ce7; }
+
+.game-filter-btn { padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 700; border-radius: 50px; cursor: pointer; transition: all 0.2s ease; }
+.game-filter-btn:hover { background: rgba(0,0,0,0.04); color: #1e293b; }
+.game-filter-btn.active { background: #6c5ce7; color: #ffffff !important; box-shadow: 0 4px 10px rgba(108, 92, 231, 0.2); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.empty-message { padding: 40px; text-align: center; color: #94a3b8; font-style: italic; font-size: 15px; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+.modal-content { background: #ffffff; width: 100%; max-width: 440px; padding: 30px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+.modal-header { font-size: 18px; font-weight: 800; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; color: #1e293b; }
+
+.auth-tabs-login {
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 22px;
+    border: 1px solid #e2e8f0;
+}
+.auth-tab-item {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+.auth-tab-item.active {
+    background: #ffffff;
+    color: #6c5ce7;
+    box-shadow: 0 4px 10px rgba(108, 92, 231, 0.1);
+}
+</style>
+</head>
+<body>
+
+<div id="authOverlay">
+    <div class="auth-box" id="loginWrapper">
+        <div class="auth-icon"><i class="fa-solid fa-school-lock"></i></div>
+        <h2>Đăng Nhập Admin Trường</h2>
+
+        <div class="auth-tabs-login">
+            <button type="button" class="auth-tab-item" onclick="window.location.href='../admin.html'">Admin Hệ thống</button>
+            <button type="button" class="auth-tab-item active" onclick="window.location.href='admin_truong.html'">Admin Trường</button>
+        </div>
+
+        <div class="input-group">
+            <label>Email hoặc Số điện thoại Admin</label>
+            <input type="text" id="loginIdField" placeholder="Nhập số điện thoại hoặc email đã tạo" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="loginPwdField" placeholder="••••••••">
+        </div>
+        <button class="btn-auth" onclick="window.handleAdminLogin()">Vào Hệ Thống</button>
+        <span class="auth-toggle-link" onclick="window.toggleAuthMode('register')">Chưa có tài khoản? Đăng ký trường học mới tại đây</span>
+    </div>
+
+    <div class="auth-box" id="registerWrapper" style="display:none;">
+        <div class="auth-icon"><i class="fa-solid fa-file-signature"></i></div>
+        <h2>Đăng Ký Khối Quản Lý Trường</h2>
+        <div class="input-group">
+            <label>Họ và tên Thầy/Cô (BGH)</label>
+            <input type="text" id="regName" placeholder="Ví dụ: Nguyễn Văn Lộc" autocomplete="off">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="input-group">
+                <label>Số điện thoại Admin (Mã Khóa ID)</label>
+                <input type="text" id="regPhone" placeholder="0905xxxxxx" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>Email liên hệ</label>
+                <input type="email" id="regEmail" placeholder="bgh@nguyenkhuyen.edu.vn" autocomplete="off">
+            </div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:10px;">
+            <div class="input-group">
+                <label>Tỉnh / Thành phố</label>
+                <input type="text" id="regCity" placeholder="Đà Nẵng" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>Tên Trường (Nhập đúng đủ)</label>
+                <input type="text" id="regSchool" placeholder="Trường THCS-THPT Nguyễn Khuyến" autocomplete="off">
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Địa chỉ trường học</label>
+            <input type="text" id="regAddress" placeholder="Địa chỉ cơ sở" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>Mật khẩu quản trị</label>
+            <input type="password" id="regPwd" placeholder="Đặt mật khẩu bảo mật">
+        </div>
+        <button class="btn-auth" style="background:#22c55e" onclick="window.handleAdminRegistration()">Gửi Y Cầu Đăng Ký</button>
+        <span class="auth-toggle-link" onclick="window.toggleAuthMode('login')" style="color:#64748b">Quay lại khung Đăng nhập</span>
+    </div>
+</div>
+
+<div class="container" id="adminContainer">
+    <h2 class="main-title">
+        <span><i class="fa-solid fa-toolbox" style="color: #6c5ce7;"></i> Trung Tâm Kiểm Soát Khảo Sát Trường Học</span>
+        <div>
+            <span class="school-badge" id="displaySchoolName"><i class="fa-solid fa-school"></i> Trường: Đang tải...</span>
+            <span class="location-badge" id="displayCityName"><i class="fa-solid fa-location-dot"></i> Tỉnh/TP: Đang tải...</span>
+        </div>
+    </h2>
+
+    <div class="admin-tabs">
+        <button class="tab-btn active" id="btn-tab-students" onclick="window.switchMainTab('students')"><i class="fa-solid fa-users"></i> Danh sách học sinh</button>
+        <button class="tab-btn" id="btn-tab-scores" onclick="window.switchMainTab('scores')"><i class="fa-solid fa-star"></i> Kho điểm trò chơi</button>
+        <button class="tab-btn" id="btn-tab-results" onclick="window.switchMainTab('results')"><i class="fa-solid fa-square-poll-horizontal"></i> Báo Cáo Thống Kê (TRI)</button>
+        <button class="tab-btn" id="btn-tab-profile" onclick="window.switchMainTab('profile')"><i class="fa-solid fa-user-gear"></i> Hồ sơ Admin</button>
+    </div>
+
+    <div id="panel-students" class="tab-panel active">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.syncSchoolIsolatedData()"><i class="fa-solid fa-rotate"></i> Làm mới dữ liệu</button>
+            <button class="btn btn-success" onclick="window.exportTableToExcel('studentsTable', 'Danh_Sach_Hoc_Sinh_Truong')"><i class="fa-solid fa-file-excel"></i> Xuất dữ liệu học sinh (Excel)</button>
+        </div>
+        <div class="table-responsive">
+            <table id="studentsTable"> 
+                <thead>
+                    <tr>
+                        <th>Mã Học Sinh ID (001 -> VV)</th>
+                        <th>Họ và Tên</th>
+                        <th>Số điện thoại</th>
+                        <th>Mật khẩu truy cập</th>
+                        <th>Nơi ở (Tỉnh/TP)</th>
+                        <th>Tuổi</th>
+                        <th>Trường Học</th>
+                        <th>Khối Lớp</th>
+                        <th>Giới tính</th>
+                        <th>Thao tác</th> 
+                    </tr>
+                </thead>
+                <tbody id="studentsBody">
+                    <tr><td colspan="10" class="empty-message">Đang quét danh sách tài khoản học sinh thuộc trường...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="panel-scores" class="tab-panel">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.syncSchoolIsolatedData()"><i class="fa-solid fa-rotate"></i> Làm mới dữ liệu</button>
+            <button class="btn btn-success" onclick="window.exportTableToExcel('scoresTable', 'Kho_Diem_Khao_Sat_Truong')"><i class="fa-solid fa-file-excel"></i> Tải dữ liệu (Excel)</button>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="summary-box">
+                <h3>📊 Thống kê hiệu suất nội bộ trường</h3>
+                <div class="stats-cards">
+                    <div class="stats-card">
+                        <h4>Học sinh tham gia game</h4>
+                        <p id="totalRegisteredStudents">0</p>
+                    </div>
+                    <div class="stats-card" style="border-left-color: #e67e22;">
+                        <h4>Tổng số lượt chơi đạt được</h4>
+                        <p id="totalPlayedRecords">0</p>
+                    </div>
+                    <div class="stats-card" style="border-left-color: #27ae60;">
+                        <h4>Lượt hoàn thành an toàn</h4>
+                        <p id="safePlayedRecords">0</p>
+                    </div>
+                    <div class="stats-card" style="border-left-color: #dc3545;">
+                        <h4>Lượt bị ngưng khi làm bài</h4>
+                        <p id="stoppedPlayedRecords">0</p>
+                    </div>
+                </div>
+                <div style="position:relative; width:100%; height:220px; margin-top:25px; border-top:1px dashed #cbd5e1; padding-top:15px;">
+                    <h4 style="font-size:13px; color:#6c5ce7; font-weight:700; margin-bottom:10px; text-transform:uppercase;"><i class="fa-solid fa-chart-bar"></i> Phân bổ số lượt chơi của trường theo từng game</h4>
+                    <canvas id="scoresBarChart"></canvas>
+                </div>
+            </div>
+            <div class="rank-panel">
+                <h3>🏆 TOP 5 Học sinh trường xuất sắc</h3>
+                <div class="rank-list" id="adminRankList"></div>
+            </div>
+        </div>
+
+        <div class="scores-workspace-layout">
+            <div class="summary-box" style="padding: 16px;">
+                <h3 style="font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; color:#6c5ce7;"><i class="fa-solid fa-id-badge"></i> Danh sách học sinh</h3>
+                <div class="student-list-sidebar" id="studentScoreSidebarList"></div>
+            </div>
+
+            <div>
+                <div style="display: flex; gap: 6px; margin-bottom: 15px; background: #f1f5f9; padding: 6px; border-radius: 50px; width: fit-content; align-items: center; flex-wrap: wrap;">
+                    <button class="game-filter-btn active" id="score-filter-all" onclick="window.filterAdminScores('all')">☀️ Tất cả</button>
+                    <button class="game-filter-btn" id="score-filter-combined" onclick="window.filterAdminScores('combined')">📋 Đánh Giá Tổng Hợp</button>
+                    <button class="game-filter-btn" id="score-filter-game1" onclick="window.filterAdminScores('game1')">🧠 1. Memory</button>
+                    <button class="game-filter-btn" id="score-filter-game2" onclick="window.filterAdminScores('game2')">✋ 2. Stop Game</button>
+                    <button class="game-filter-btn" id="score-filter-game3" onclick="window.filterAdminScores('game3')">🔄 3. N-Back</button>
+                    <button class="game-filter-btn" id="score-filter-game4" onclick="window.filterAdminScores('game4')">✏️ 4. Trail Test</button>
+                    <button class="game-filter-btn" id="score-filter-game5" onclick="window.filterAdminScores('game5')">🔀 5. Flexibility</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="scoresTable"> 
+                        <thead>
+                            <tr>
+                                <th>Mã học sinh ID</th>
+                                <th>Họ và Tên</th>
+                                <th>Bài khảo sát (Trò chơi)</th>
+                                <th>Thông số đạt được</th>
+                                <th>Thời điểm thực hiện</th>
+                                <th>Đánh giá nguy cơ</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoresBody">
+                            <tr><td colspan="7" class="empty-message">Bấm chọn học sinh để truy xuất lịch sử kho điểm.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-results" class="tab-panel">
+        <div class="summary-box" style="margin-bottom: 25px; border-left: 5px solid #a29bfe;">
+            <h3><i class="fa-solid fa-filter"></i> Bộ lọc trích xuất kết quả kết hợp (Nội bộ trường)</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; text-align: left; margin-top: 15px;">
+                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <label style="font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; color: #475569;">
+                        <input type="checkbox" id="filterAgeActive" onchange="window.filterResultsData()"> Khớp theo độ tuổi
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="number" id="filterAgeMin" value="11" min="1" max="99" style="width:75px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; text-align:center; font-weight:600;" oninput="window.filterResultsData()">
+                        <span style="font-size:13px; font-weight:600; color:#64748b;">đến</span>
+                        <input type="number" id="filterAgeMax" value="15" min="1" max="99" style="width:75px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; text-align:center; font-weight:600;" oninput="window.filterResultsData()">
+                    </div>
+                </div>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <label style="font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; color: #475569;">
+                        <input type="checkbox" id="filterGradeActive" onchange="window.filterResultsData()"> Khớp theo khối lớp
+                    </label>
+                    <select id="filterGradeVal" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600;" onchange="window.filterResultsData()">
+                        <option value="6">Khối lớp 6</option>
+                        <option value="7">Khối lớp 7</option>
+                        <option value="8">Khối lớp 8</option>
+                        <option value="9">Khối lớp 9</option>
+                    </select>
+                </div>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <label style="font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; color: #475569;">
+                        <input type="checkbox" id="filterGenderActive" onchange="window.filterResultsData()"> Khớp theo giới tính
+                    </label>
+                    <select id="filterGenderVal" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600;" onchange="window.filterResultsData()">
+                        <option value="Nam">Học sinh Nam</option>
+                        <option value="Nữ">Học sinh Nữ</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="window.filterResultsData()"><i class="fa-solid fa-sync"></i> Áp dụng bộ lọc</button>
+                <button class="btn btn-success" onclick="window.exportTableToExcel('resultsTable', 'Bao_Cao_Ma_Tran_Truong')"><i class="fa-solid fa-file-excel"></i> Xuất Excel Ma Trận</button>
+            </div>
+        </div>
+
+        <div id="pdfExportArea" style="background: white; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; color:#1e293b;">
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px dashed #cbd5e1; padding-bottom: 15px;">
+                <h3 style="font-size: 18px; font-weight: 800; text-transform: uppercase;">BẢNG TỔNG HỢP KẾT QUẢ KHẢO SÁT & CHỈ SỐ NHẬN THỨC TRƯỜNG</h3>
+                <div style="margin-top: 5px; font-size: 12px; font-weight: bold; color: #6c5ce7;">
+                    Số lượng tìm thấy sau bộ lọc: <span id="resTotalCount">0 em</span>
+                </div>
+            </div>
+            <div style="width: 100%; max-width: 480px; margin: 0 auto 30px auto; height: 260px; position: relative;">
+                <canvas id="resultsChart"></canvas>
+            </div>
+            <div class="table-responsive" style="border: 1px solid #cbd5e1;">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Mã Học Sinh ID</th><th>Giới</th><th>Tuổi</th><th>Khối</th><th>Ngủ (giờ)</th><th>Thiết bị (giờ)</th>
+                            <th>RT TB (ms)</th><th>Go/No-Go (%)</th><th>N-back (%)</th>
+                            <th>TMT Cost (s)</th><th>Flex Error (n)</th><th>Stress (0-40)</th>
+                            <th>Norm_RT</th><th>Norm_FA</th><th>Norm_Acc</th><th>Norm_TMT</th><th>Norm_Flex</th><th>Norm_Stress</th>
+                            <th>TRI</th><th>Mức Nguy Cơ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <tr><td colspan="20" class="empty-message">Vui lòng chờ tải dữ liệu trường...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-profile" class="tab-panel">
+        <div class="summary-box" style="max-width: 650px; margin: 0 auto; text-align: left;">
+            <h3><i class="fa-solid fa-user-gear"></i> Thiết Lập Hồ Sơ Quản Lý</h3>
+            <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <div class="input-group">
+                    <label>Họ và tên Thầy/Cô (BGH)</label>
+                    <input type="text" id="profName">
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div class="input-group">
+                        <label>Số điện thoại Admin (Mã Khóa ID)</label>
+                        <input type="text" id="profPhone" readonly style="background:#e2e8f0; color:#64748b; cursor:not-allowed;">
+                    </div>
+                    <div class="input-group">
+                        <label>Email liên hệ</label>
+                        <input type="email" id="profEmail">
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:10px;">
+                    <div class="input-group">
+                        <label>Tỉnh / Thành phố</label>
+                        <input type="text" id="profCity">
+                    </div>
+                    <div class="input-group">
+                        <label>Tên Trường Học</label>
+                        <input type="text" id="profSchool">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Địa chỉ trường học</label>
+                    <input type="text" id="profAddress">
+                </div>
+                <div class="input-group">
+                    <label>Mật khẩu mới (Để trống nếu giữ nguyên)</label>
+                    <input type="password" id="profPwd">
+                </div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn btn-success" style="background:#6c5ce7; flex:1; justify-content:center;" onclick="window.submitUpdateAdminProfile()"><i class="fa-solid fa-floppy-disk"></i> Lưu thay đổi cấu hình</button>
+                    <button class="btn btn-primary" style="background:#64748b; color:white;" onclick="window.handleAdminLogout()"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
+                </div>
+                <div style="margin-top: 30px; border-top: 1px dashed #ef4444; padding-top: 20px;">
+                    <h4 style="color:#ef4444; font-size:13px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> VÙNG NGUY HIỂM</h4>
+                    <button class="btn btn-danger" style="margin-top:12px; border-radius:10px;" onclick="window.deleteAdminAccountSelf()"><i class="fa-solid fa-user-minus"></i> Hủy đăng ký & Xóa tài khoản vĩnh viễn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="editStudentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">📝 Chỉnh sửa thông tin học sinh trường</div>
+        <input type="hidden" id="editStudentId">
+        <div class="group">
+            <label>Họ và Tên</label>
+            <input type="text" id="editStudentName">
+        </div>
+        <div class="group">
+            <label>Số điện thoại</label>
+            <input type="text" id="editStudentPhone">
+        </div>
+        <div class="group">
+            <label>Mật khẩu đăng nhập (Thô)</label>
+            <input type="text" id="editStudentPwd">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="group">
+                <label>Tuổi</label>
+                <input type="number" id="editStudentAge">
+            </div>
+            <div class="group">
+                <label>Khối Lớp</label>
+                <input type="number" id="editStudentClass">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" style="background:#64748b; color:white;" onclick="document.getElementById('editStudentModal').style.display='none'">Hủy bỏ</button>
+            <button class="btn btn-success" style="background:#6c5ce7; color:white;" onclick="window.submitEditStudent()">Cập nhật dữ liệu</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+	import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+	
+    const firebaseConfig = {
+		apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0", 
+		authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+		databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+		projectId: "bo-tro-cho-tam-li",
+		storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+		messagingSenderId: "150226282506",
+		appId: "1:150226282506:web:4df0cab215501b315317f3"
+	};
+
+	const app = initializeApp(firebaseConfig);
+	const db = getDatabase(app);
+
+    let objStudents = {};
+    let objScores = {};
+    
+    window.currentAdminId = "";
+    window.currentAdminSchool = ""; 
+    window.currentAdminCity = "";
+
+    window.schoolStudentMapping = {};
+
+    let currentActiveTab = 'students';
+    let globalScoresChart = null;
+    let globalResultsChart = null; 
+    window.selectedStudentScoreId = 'all';
+    window.currentAdminScoreGameFilter = 'all';
+
+    async function hashPasswordSHA256(password) {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    window.toggleAuthMode = function(mode) {
+        if(mode === 'register') {
+            document.getElementById("loginWrapper").style.display = "none";
+            document.getElementById("registerWrapper").style.display = "block";
+        } else {
+            document.getElementById("loginWrapper").style.display = "block";
+            document.getElementById("registerWrapper").style.display = "none";
+        }
+    }
+
+    // ĐĂNG KÝ ADMIN TRƯỜNG
+    window.handleAdminRegistration = async function() {
+        const name = document.getElementById("regName").value.trim();
+        const phone = document.getElementById("regPhone").value.trim();
+        const email = document.getElementById("regEmail").value.trim();
+        const city = document.getElementById("regCity").value.trim();
+        const school = document.getElementById("regSchool").value.trim();
+        const address = document.getElementById("regAddress").value.trim();
+        const pwd = document.getElementById("regPwd").value.trim();
+
+        if(!name || !phone || !email || !city || !school || !address || !pwd) {
+            alert("⚠️ Vui lòng điền đầy đủ tất cả thông tin đăng ký!");
+            return;
+        }
+
+        try {
+            const checkSnapshot = await get(ref(db, `admins/${phone}`));
+            if(checkSnapshot.exists()) {
+                alert("⚠️ Số điện thoại này đã được đăng ký quyền quản trị trường học!");
+                return;
+            }
+            const encryptedPassword = await hashPasswordSHA256(pwd);
+            const payload = {
+                id: phone, name, phone, email, city, school, address, pwd,
+                encrypted_pwd: encryptedPassword, 
+                status: "pending", 
+                role: "school_admin", 
+                timestamp: Date.now()
+            };
+            await set(ref(db, `admins/${phone}`), payload);
+            alert("🎉 Đăng ký tài khoản Admin Trường thành công!");
+            window.toggleAuthMode('login');
+            document.getElementById("loginIdField").value = phone;
+        } catch (error) { alert("❌ Lỗi đăng ký: " + error.message); }
+    }
+
+    // ĐĂNG NHẬP ADMIN TRƯỜNG
+    window.handleAdminLogin = async function() {
+        const inputId = document.getElementById("loginIdField").value.trim();
+        const inputPwd = document.getElementById("loginPwdField").value.trim();
+
+        if(!inputId || !inputPwd) {
+            alert("⚠️ Vui lòng điền thông tin đăng nhập!");
+            return;
+        }
+
+        try {
+            const snapshot = await get(ref(db, 'admins'));
+            if(snapshot.exists()) {
+                const allAdmins = snapshot.val();
+                let matchedAdmin = null;
+
+                for(let key in allAdmins) {
+                    let admin = allAdmins[key];
+                    if(admin && (String(admin.phone) === inputId || String(admin.email) === inputId)) {
+                        if(String(admin.pwd).trim() === inputPwd) { matchedAdmin = admin; break; }
+                    }
+                }
+
+                if(matchedAdmin) {
+                    if (matchedAdmin.status !== 'active') {
+                        alert("⚠️ Tài khoản quản trị cấp trường này CHƯA ĐƯỢC PHÊ DUYỆT hoặc đang bị TẠM KHÓA!\nVui lòng liên hệ Master Admin (Ban Giám Hiệu tối cao) để được kích hoạt.");
+                        return;
+                    }
+
+                    window.currentAdminId = matchedAdmin.phone;
+                    window.currentAdminSchool = matchedAdmin.school;
+                    window.currentAdminCity = matchedAdmin.city;
+
+                    document.getElementById("authOverlay").style.display = "none";
+                    document.getElementById("adminContainer").style.display = "block";
+                    document.getElementById("displaySchoolName").innerHTML = `<i class="fa-solid fa-school"></i> Trường: ${window.currentAdminSchool}`;
+                    document.getElementById("displayCityName").innerHTML = `<i class="fa-solid fa-location-dot"></i> Tỉnh/TP: ${window.currentAdminCity}`;
+                    
+                    window.switchMainTab('students');
+                    window.syncSchoolIsolatedData();
+                } else { alert("❌ Tài khoản hoặc Mật khẩu không chính xác!"); }
+            } else {
+                alert("❌ Hệ thống chưa có tài khoản admin nào! Thầy cô vui lòng chuyển qua mục 'Đăng ký' bên dưới để tạo tài khoản trường học mới nhé.");
+            }
+        } catch (error) { alert("Lỗi kết nối đám mây: " + error.message); }
+    }
+
+    // CHUẨN HÓA FLAT NODE KHO ĐIỂM
+    function flattenNodes(snapshotValue) {
+        let list = [];
+        if (!snapshotValue || typeof snapshotValue !== 'object') return list;
+        if ('gameName' in snapshotValue || 'score' in snapshotValue || 'studentId' in snapshotValue) {
+            list.push(snapshotValue); return list;
+        }
+        Object.keys(snapshotValue).forEach(key1 => {
+            let sub = snapshotValue[key1];
+            if (sub && typeof sub === 'object') {
+                if ('gameName' in sub || 'score' in sub || 'studentId' in sub) {
+                    if(!sub.id) sub.id = key1; list.push(sub);
+                } else {
+                    Object.keys(sub).forEach(key2 => {
+                        let inner = sub[key2];
+                        if (inner && typeof inner === 'object') {
+                            if(!inner.id) inner.id = key2;
+                            if(!inner.studentId) inner.studentId = key1;
+                            list.push(inner);
+                        }
+                    });
+                }
+            }
+        });
+        return list;
+    }
+
+    function getRelativeStudentId(realId) {
+        return window.schoolStudentMapping && window.schoolStudentMapping[realId]
+            ? window.schoolStudentMapping[realId]
+            : realId;
+    }
+
+    window.syncSchoolIsolatedData = function() {
+        onValue(ref(db, 'users'), (snapshot) => {
+            objStudents = snapshot.exists() ? snapshot.val() : {};
+            
+            window.schoolStudentMapping = {};
+            let keys = Object.keys(objStudents);
+            let filteredKeys = keys.filter(k => objStudents[k].school && objStudents[k].school.trim() === window.currentAdminSchool.trim() &&
+                                               objStudents[k].city && objStudents[k].city.trim() === window.currentAdminCity.trim());
+            
+            filteredKeys.sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+            
+            filteredKeys.forEach((realId, idx) => {
+                window.schoolStudentMapping[realId] = String(idx + 1).padStart(3, '0');
+            });
+
+            if(currentActiveTab === 'students') renderStudentsView();
+            if(currentActiveTab === 'scores') renderScoresView();
+            if(currentActiveTab === 'results') window.filterResultsData();
+        });
+
+        onValue(ref(db, 'scores'), (snapshot) => {
+            objScores = snapshot.exists() ? snapshot.val() : {};
+            if(currentActiveTab === 'scores') renderScoresView();
+            if(currentActiveTab === 'results') window.filterResultsData();
+        });
+    }
+
+    // TAB 1: DANH SÁCH HỌC SINH TRƯỜNG NỘI BỘ
+    function renderStudentsView() {
+        let body = document.getElementById("studentsBody"); if(!body) return; body.innerHTML = "";
+        let keys = Object.keys(objStudents);
+        
+        let filteredKeys = keys.filter(k => objStudents[k].school && objStudents[k].school.trim() === window.currentAdminSchool.trim() &&
+                                           objStudents[k].city && objStudents[k].city.trim() === window.currentAdminCity.trim());
+
+        if(filteredKeys.length === 0) { 
+            body.innerHTML = `<tr><td colspan="10" class="empty-message">Trường chưa ghi nhận tài khoản học sinh đăng ký tại khu vực này.</td></tr>`; 
+            return; 
+        }
+
+        filteredKeys.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+        
+        filteredKeys.forEach(key => {
+            let u = objStudents[key]; let rawPwd = u.password_raw || "";
+            let displayId = getRelativeStudentId(key);
+
+            let pwdActionHtml = rawPwd 
+                ? `<div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                    <span id="pwd-${key}" style="font-family: monospace; font-weight:700;">•••••</span>
+                    <i class="fa-solid fa-eye" id="eye-${key}" style="cursor:pointer; color:#64748b;" onclick="window.togglePasswordDisplay('${key}', '${rawPwd}')"></i>
+                   </div>`
+                : `<span style="color:#94a3b8; font-style:italic; font-size:12px;">Mã hóa SHA-256</span>`;
+
+            body.innerHTML += `<tr>
+                <td><span class="id-text" style="background: #e8f0fe; color: #1a73e8;">${displayId}</span></td>
+                <td><b>${u.name || '---'}</b></td>
+                <td><span style="color:#16a34a; font-weight:700;"><i class="fa-solid fa-phone"></i> ${u.phone || '---'}</span></td>
+                <td>${pwdActionHtml}</td>
+                <td>${u.city || '---'}</td>
+                <td style="font-weight: 600;">${u.age || '---'} tuổi</td>
+                <td>${u.school || '---'}</td>
+                <td><span class="badge" style="background:#f1f5f9; color:#475569;">Lớp ${u.class || '---'}</span></td>
+                <td>${u.gender || '---'}</td>
+                <td>
+                    <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                        <button class="btn btn-primary" style="padding: 6px 12px; font-size:12px;" onclick="window.openEditStudentModal('${key}')"><i class="fa-solid fa-user-pen"></i> Sửa</button>
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size:12px;" onclick="window.deleteStudentAccount('${key}')"><i class="fa-solid fa-user-xmark"></i> Xóa</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // TAB 2: KHO ĐIỂM TRÒ CHƠI CẤP TRƯỜNG
+    function renderScoresView() {
+        let body = document.getElementById("scoresBody"); if(!body) return; body.innerHTML = "";
+        let allScores = flattenNodes(objScores);
+        
+        let localStudentKeys = Object.keys(objStudents).filter(k => objStudents[k].school && objStudents[k].school.trim() === window.currentAdminSchool.trim() &&
+                                                                   objStudents[k].city && objStudents[k].city.trim() === window.currentAdminCity.trim());
+
+        let schoolScores = allScores.filter(s => localStudentKeys.includes(s.studentId));
+
+        let sidebar = document.getElementById("studentScoreSidebarList");
+        if(sidebar) {
+            let sortedStudentKeys = localStudentKeys.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+            let sidebarHtml = `
+                <div class="student-sidebar-item ${window.selectedStudentScoreId === 'all' ? 'active' : ''}" onclick="window.selectStudentScore('all')">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800;">
+                        <span>🌟 TOÀN BỘ TRƯỜNG</span>
+                        <span class="badge" style="background:#6c5ce7; color:white;">${schoolScores.length} bài</span>
+                    </div>
+                </div>
+            `;
+            sortedStudentKeys.forEach(stKey => {
+                let stInfo = objStudents[stKey];
+                let scoreCount = schoolScores.filter(s => s.studentId === stKey).length;
+                let prettyId = getRelativeStudentId(stKey);
+                sidebarHtml += `
+                    <div class="student-sidebar-item ${window.selectedStudentScoreId === stKey ? 'active' : ''}" onclick="window.selectStudentScore('${stKey}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="id-text">${prettyId}</span>
+                            <span class="badge ${scoreCount > 0 ? 'badge-success' : 'badge-danger'}">${scoreCount} lượt</span>
+                        </div>
+                        <div style="font-size:13.5px; font-weight:700; color:#1e293b; margin-top:2px;">${stInfo.name || 'N/A'}</div>
+                        <div style="font-size:11px; color:#64748b;">Lớp ${stInfo.class || '?'}</div>
+                    </div>
+                `;
+            });
+            sidebar.innerHTML = sidebarHtml;
+        }
+
+        let filtered = (window.selectedStudentScoreId === 'all') ? schoolScores : schoolScores.filter(s => s.studentId === window.selectedStudentScoreId);
+
+        if (window.currentAdminScoreGameFilter && window.currentAdminScoreGameFilter !== 'all') {
+            if (window.currentAdminScoreGameFilter === 'combined') {
+                filtered = filtered.filter(s => s.gameName && s.gameName.toLowerCase().includes("tổng hợp"));
+            } else {
+                filtered = filtered.filter(s => {
+                    if (!s.gameName || s.gameName.toLowerCase().includes("tổng hợp")) return false;
+                    let name = s.gameName.toLowerCase();
+                    if (window.currentAdminScoreGameFilter === 'game1' && name.includes("memory")) return true;
+                    if (window.currentAdminScoreGameFilter === 'game2' && (name.includes("stop") || name.includes("ức chế"))) return true;
+                    if (window.currentAdminScoreGameFilter === 'game3' && name.includes("n-back")) return true;
+                    if (window.currentAdminScoreGameFilter === 'game4' && (name.includes("trail") || name.includes("tốc độ"))) return true;
+                    if (window.currentAdminScoreGameFilter === 'game5' && (name.includes("flexibility") || name.includes("linh hoạt"))) return true;
+                    return false;
+                });
+            }
+        }
+
+        let studentsSet = new Set(); filtered.forEach(s => { if(s.studentId) studentsSet.add(s.studentId); });
+        document.getElementById("totalRegisteredStudents").innerText = studentsSet.size;
+        document.getElementById("totalPlayedRecords").innerText = filtered.length;
+        document.getElementById("safePlayedRecords").innerText = filtered.filter(s => s.gameName && !s.gameName.includes("[STRESS_REJECT_LB]")).length;
+        document.getElementById("stoppedPlayedRecords").innerText = filtered.filter(s => s.gameName && s.gameName.includes("[STRESS_REJECT_LB]")).length;
+        
+        let c1 = schoolScores.filter(s => s.gameName?.toLowerCase().includes("memory")).length;
+        let c2 = schoolScores.filter(s => s.gameName?.toLowerCase().includes("stop") || s.gameName?.toLowerCase().includes("ức chế")).length;
+        let c3 = schoolScores.filter(s => s.gameName?.toLowerCase().includes("n-back")).length;
+        let c4 = schoolScores.filter(s => s.gameName?.toLowerCase().includes("trail") || s.gameName?.toLowerCase().includes("tốc độ")).length;
+        let c5 = schoolScores.filter(s => s.gameName?.toLowerCase().includes("flexibility") || s.gameName?.toLowerCase().includes("linh hoạt")).length;
+
+        if (document.getElementById('scoresBarChart')) {
+            if (globalScoresChart) globalScoresChart.destroy();
+            globalScoresChart = new Chart(document.getElementById('scoresBarChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Memory', 'Stop Game', 'N-Back', 'Trail', 'Flexibility'],
+                    datasets: [{ label: 'Số lượt chơi', data: [c1, c2, c3, c4, c5], backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6'], borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        if(filtered.length === 0) { body.innerHTML = `<tr><td colspan="7" class="empty-message">Không có dữ liệu điểm khớp với bộ lọc.</td></tr>`; return; }
+        filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        filtered.forEach(s => {
+            let accuracyStr = String(s.accuracy || "Bình thường");
+            let badgeClass = accuracyStr.includes("Cao") ? "badge-danger" : (accuracyStr.includes("Trung bình") ? "badge-warning" : "badge-success");
+            let displayId = getRelativeStudentId(s.studentId);
+            body.innerHTML += `<tr>
+                <td><span class="id-text">${displayId}</span></td>
+                <td><b>${s.name || '---'}</b></td>
+                <td><span style="font-weight:700; color:#6c5ce7;"><i class="fa-solid fa-gamepad"></i> ${s.gameName || 'Bài test'}</span></td>
+                <td><code>${s.score || s.timePlayed || '---'}</code></td>
+                <td style="color:#64748b; font-size:13px;">${s.timestamp ? new Date(s.timestamp).toLocaleString("vi-VN") : "---"}</td>
+                <td><span class="badge ${badgeClass}">${s.accuracy || "Bình thường"}</span></td>
+                <td><button class="btn btn-danger" style="padding: 6px 12px; font-size:12px; margin:0;" onclick="window.deleteScoreRecord('${s.id}')">Xóa</button></td>
+            </tr>`;
+        });
+        buildLeaderboardRank(schoolScores);
+    }
+
+    function buildLeaderboardRank(schoolScores) {
+        let rankContainer = document.getElementById("adminRankList"); if(!rankContainer) return; rankContainer.innerHTML = "";
+        let studentGroups = {};
+        schoolScores.filter(s => s.gameName && !s.gameName.includes("[STRESS_REJECT_LB]")).forEach(s => {
+            let key = s.studentId; if(!key) return;
+            if(!studentGroups[key]) studentGroups[key] = { name: s.name || "Ẩn danh", id: s.studentId, vals: [] };
+            let match = String(s.score||"").match(/(\d+)/); if(match) studentGroups[key].vals.push(parseInt(match[1]));
+        });
+        let arr = []; for(let k in studentGroups) { if(studentGroups[k].vals.length>0) arr.push({ name: studentGroups[k].name, id: studentGroups[k].id, avg: (studentGroups[k].vals.reduce((a,b)=>a+b,0)/studentGroups[k].vals.length).toFixed(1) }); }
+        arr.sort((a,b)=>b.avg - a.avg).slice(0,5).forEach((item, idx) => {
+            let prettyId = getRelativeStudentId(item.id);
+            rankContainer.innerHTML += `<div class="rank-item">
+                <span>${idx===0?"🥇":(idx===1?"🥈":(idx===2?"🥉":`#${idx+1}`))} <b>${item.name}</b> <small class="id-text">[${prettyId}]</small></span>
+                <span style="font-weight:700; color:#16a34a;">${item.avg} điểm</span>
+            </div>`;
+        });
+    }
+
+    window.filterResultsData = function() {
+        let body = document.getElementById("resultsTableBody"); if (!body) return; body.innerHTML = "";
+
+        let ageActive = document.getElementById("filterAgeActive")?.checked || false;
+        let ageMin = parseInt(document.getElementById("filterAgeMin")?.value) || 0;
+        let ageMax = parseInt(document.getElementById("filterAgeMax")?.value) || 999;
+        let gradeActive = document.getElementById("filterGradeActive")?.checked || false;
+        let gradeVal = document.getElementById("filterGradeVal")?.value || "";
+        let genderActive = document.getElementById("filterGenderActive")?.checked || false;
+        let genderVal = document.getElementById("filterGenderVal")?.value || "";
+
+        let allScores = flattenNodes(objScores);
+        let matchedStudentsCount = 0;
+        let keys = Object.keys(objStudents);
+        let levelCounts = { m1: 0, m2: 0, m3: 0 };
+
+        let localKeys = keys.filter(k => objStudents[k].school && objStudents[k].school.trim() === window.currentAdminSchool.trim() &&
+                                         objStudents[k].city && objStudents[k].city.trim() === window.currentAdminCity.trim());
+
+        if(localKeys.length === 0) {
+            body.innerHTML = `<tr><td colspan="20" class="empty-message">Không tìm thấy dữ liệu học sinh để phân tích ma trận.</td></tr>`;
+            return;
+        }
+
+        localKeys.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+        localKeys.forEach(stKey => {
+            let u = objStudents[stKey];
+            let ageNum = parseInt(u.age) || 0;
+            let clsStr = String(u.class || "");
+            let genderStr = String(u.gender || "");
+
+            if (ageActive && (ageNum < ageMin || ageNum > ageMax)) return;
+            if (gradeActive && clsStr !== gradeVal) return;
+            if (genderActive && genderStr.toLowerCase() !== genderVal.toLowerCase()) return;
+
+            matchedStudentsCount++;
+
+            let stScores = allScores.filter(s => s.studentId === stKey);
+            let combinedRec = stScores.find(s => s.gameName && s.gameName.toLowerCase().includes("tổng hợp")) || {};
+            let g1 = stScores.find(s => s.gameName && s.gameName.toLowerCase().includes("memory")) || {};
+            let g2 = stScores.find(s => s.gameName && (s.gameName.toLowerCase().includes("stop") || s.gameName.toLowerCase().includes("ức chế") || s.gameName.toLowerCase().includes("go"))) || {};
+            let g3 = stScores.find(s => s.gameName && s.gameName.toLowerCase().includes("n-back")) || {};
+            let g4 = stScores.find(s => s.gameName && (s.gameName.toLowerCase().includes("trail") || s.gameName.toLowerCase().includes("tốc độ"))) || {};
+            let g5 = stScores.find(s => s.gameName && (s.gameName.toLowerCase().includes("flexibility") || s.gameName.toLowerCase().includes("linh hoạt"))) || {};
+
+            let parseMetrics = (gameObj) => {
+                let res = { correct: 0, wrong: 0, rt: 0, duration: 0 };
+                if (!gameObj) return res;
+                res.duration = parseInt(gameObj.timePlayed) || 0;
+                
+                if (gameObj.score !== undefined && gameObj.score !== null) {
+                    if (typeof gameObj.score === 'object') {
+                        res.correct = gameObj.score.correct || gameObj.score.right || gameObj.score.score || 0;
+                        res.wrong = gameObj.score.wrong || gameObj.score.errors || gameObj.score.failed || 0;
+                        res.rt = gameObj.score.rt || gameObj.score.rtAvg || gameObj.score.reactionTime || 0;
+                    } else {
+                        let scoreStr = String(gameObj.score);
+                        let nums = scoreStr.match(/\d+/g);
+                        
+                        let matchDung = scoreStr.match(/(?:đúng|chính xác|correct|right)[:\s]*(\d+)/i) || scoreStr.match(/(\d+)\s*(?:câu đúng|đúng)/i);
+                        let matchSai = scoreStr.match(/(?:sai|lỗi|wrong|error|fail)[:\s]*(\d+)/i) || scoreStr.match(/(\d+)\s*(?:câu sai|lỗi|sai)/i);
+                        let matchRt = scoreStr.match(/(?:rt|phản hồi|ms|time)[:\s]*(\d+)/i);
+                        
+                        if (matchDung) res.correct = parseInt(matchDung[1]);
+                        if (matchSai) res.wrong = parseInt(matchSai[1]);
+                        if (matchRt) res.rt = parseInt(matchRt[1]);
+                        
+                        if (nums && nums.length > 0) {
+                            let firstNum = parseInt(nums[0]);
+                            if (!matchDung) res.correct = firstNum;
+                            if (nums.length > 1 && !matchSai) res.wrong = parseInt(nums[1]);
+                            if (nums.length > 2 && !matchRt) res.rt = parseInt(nums[2]);
+                        }
+                    }
+                }
+                
+                if (gameObj.rtAvg) res.rt = parseInt(gameObj.rtAvg);
+                if (gameObj.rt) res.rt = parseInt(gameObj.rt);
+                if (gameObj.reactionTime) res.rt = parseInt(gameObj.reactionTime);
+                
+                return res;
+            };
+
+            let d1 = parseMetrics(g1); let d2 = parseMetrics(g2); let d3 = parseMetrics(g3); let d4 = parseMetrics(g4); let d5 = parseMetrics(g5);
+
+            let sleepExcel = parseFloat(combinedRec.sleepHours || u.sleepHours || 7);
+            let deviceExcel = parseFloat(combinedRec.deviceHours || u.deviceHours || 2);
+            
+            let gonogoFA = 0;
+            if (combinedRec.gonogoFA !== undefined && combinedRec.gonogoFA !== "---") {
+                gonogoFA = parseFloat(combinedRec.gonogoFA);
+            } else {
+                gonogoFA = (d2.correct + d2.wrong > 0) ? Math.round((d2.wrong / (d2.correct + d2.wrong)) * 100) : 0;
+                if (gonogoFA === 0 && g2.score) {
+                    let m = String(g2.score).match(/(\d+)%/);
+                    if (m) gonogoFA = parseInt(m[1]);
+                }
+            }
+
+            let nbackAcc = 0;
+            if (g3.accuracy) {
+                nbackAcc = parseInt(g3.accuracy);
+            } else {
+                nbackAcc = (d3.correct + d3.wrong > 0) ? Math.round((d3.correct / (d3.correct + d3.wrong)) * 100) : 0;
+                if (nbackAcc === 0 && g3.score) {
+                    let m = String(g3.score).match(/(\d+)%/);
+                    if (m) nbackAcc = parseInt(m[1]);
+                    else {
+                        let nums = String(g3.score).match(/\d+/g);
+                        if (nums && nums.length > 0) nbackAcc = parseInt(nums[0]);
+                    }
+                }
+            }
+            if (nbackAcc > 100) nbackAcc = 100;
+
+            let tmtCost = d4.duration || d4.correct || 0;
+            if (tmtCost === 0 && g4.score) {
+                let m = String(g4.score).match(/\d+/);
+                if (m) tmtCost = parseInt(m[0]);
+            }
+
+            let flexErrors = d5.wrong || 0;
+            if (flexErrors === 0 && g5.score) {
+                let m = String(g5.score).match(/(?:lỗi|sai|wrong|error)[:\s]*(\d+)/i);
+                if (m) flexErrors = parseInt(m[1]);
+                else {
+                    let nums = String(g5.score).match(/\d+/);
+                    if (nums) flexErrors = parseInt(nums[0]);
+                }
+            }
+
+            let stressScoreNum = parseInt(combinedRec.stressScore || u.stressScore || 12);
+            
+            let rtAvgNum = parseInt(combinedRec.rtAvg || combinedRec.rt || 0) || d2.rt || d1.rt || d3.rt || d4.rt || d5.rt || 0;
+            if (rtAvgNum < 100) {
+                stScores.forEach(s => {
+                    if (s.score && rtAvgNum < 100) {
+                        let m = String(s.score).match(/(?:rt|phản hồi|ms)[:\s]*(\d+)/i);
+                        if (m && parseInt(m[1]) >= 100) rtAvgNum = parseInt(m[1]);
+                    }
+                });
+            }
+            if (rtAvgNum < 100) rtAvgNum = 435;
+
+            let norm_rt = Math.min(Math.max((rtAvgNum - 322) / (622 - 322), 0), 1);
+            let norm_fa = Math.min(Math.max((gonogoFA - 0.2) / (19.2 - 0.2), 0), 1);
+            let norm_acc = Math.min(Math.max((97.2 - nbackAcc) / (97.2 - 60), 0), 1);
+            let norm_tmt = Math.min(Math.max((tmtCost - 10) / (68 - 10), 0), 1);
+            let norm_flex = Math.min(Math.max((flexErrors - 0) / (8 - 0), 0), 1);
+            let norm_slate = Math.min(Math.max((stressScoreNum - 0) / (33 - 0), 0), 1);
+
+            let triFinal = (norm_rt * 0.2) + (norm_fa * 0.15) + (norm_acc * 0.2) + (norm_tmt * 0.15) + (norm_flex * 0.1) + (norm_slate * 0.2);
+
+            let triLevelVal = "Mức 1 (Thấp)";
+            if (triFinal >= 0.65) { triLevelVal = "Mức 3 (Hỗ trợ)"; levelCounts.m3++; }
+            else if (triFinal >= 0.45) { triLevelVal = "Mức 2 (Theo dõi)"; levelCounts.m2++; }
+            else { levelCounts.m1++; }
+
+            let displayId = getRelativeStudentId(stKey);
+
+            body.innerHTML += `<tr>
+                <td><b>${displayId}</b></td><td>${u.gender || '---'}</td><td>${u.age || '---'}</td><td>Lớp ${u.class || '---'}</td>
+                <td>${sleepExcel}</td><td>${deviceExcel}</td><td>${rtAvgNum}</td><td>${gonogoFA}%</td><td>${nbackAcc}%</td>
+                <td>${tmtCost}s</td><td>${flexErrors}</td><td>${stressScoreNum}</td>
+                <td>${norm_rt.toFixed(3)}</td><td>${norm_fa.toFixed(3)}</td><td>${norm_acc.toFixed(3)}</td>
+                <td>${norm_tmt.toFixed(3)}</td><td>${norm_flex.toFixed(3)}</td><td>${norm_slate.toFixed(3)}</td>
+                <td style="font-weight:700; color:#6c5ce7;">${triFinal.toFixed(3)}</td>
+                <td><span class="badge ${triFinal>=0.65?'badge-danger':(triFinal>=0.45?'badge-warning':'badge-success')}">${triLevelVal}</span></td>
+            </tr>`;
+        });
+
+        document.getElementById("resTotalCount").innerText = matchedStudentsCount + " em";
+
+        if (document.getElementById('resultsChart')) {
+            if (globalResultsChart) globalResultsChart.destroy();
+            globalResultsChart = new Chart(document.getElementById('resultsChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mức 1 (Nguy cơ Thấp)', 'Mức 2 (Cần theo dõi)', 'Mức 3 (Cần hỗ trợ)'],
+                    datasets: [{ data: [levelCounts.m1, levelCounts.m2, levelCounts.m3], backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'], borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+    };
+
+    window.deleteStudentAccount = async function(studentId) {
+        if (!confirm(`⚠️ Xác nhận XÓA VĨNH VIỄN tài khoản học sinh này?`)) return;
+        await set(ref(db, `users/${studentId}`), null);
+        alert("Đã xóa xong dữ liệu tài khoản học sinh."); renderStudentsView();
+    }
+
+    window.deleteScoreRecord = function(scoreId) {
+        if(!confirm(`⚠️ Xóa bản ghi điểm số khảo sát này của học sinh?`)) return;
+        set(ref(db, 'scores/' + scoreId), null).then(() => { alert("Đã xóa ván chơi."); });
+    }
+
+    window.openEditStudentModal = function(studentId) {
+        let u = objStudents[studentId]; if(!u) return;
+        document.getElementById("editStudentId").value = studentId;
+        document.getElementById("editStudentName").value = u.name || "";
+        document.getElementById("editStudentPhone").value = u.phone || "";
+        document.getElementById("editStudentPwd").value = u.password_raw || "";
+        document.getElementById("editStudentAge").value = u.age || "";
+        document.getElementById("editStudentClass").value = u.class || "";
+        document.getElementById("editStudentModal").style.display = "flex";
+    }
+
+    window.submitEditStudent = async function() {
+        let id = document.getElementById("editStudentId").value;
+        let pwd = document.getElementById("editStudentPwd").value.trim();
+        let hashedPwd = objStudents[id].password;
+        if(pwd !== objStudents[id].password_raw) { hashedPwd = await hashPasswordSHA256(pwd); }
+
+        let payload = {
+            ...objStudents[id],
+            name: document.getElementById("editStudentName").value.trim(),
+            phone: document.getElementById("editStudentPhone").value.trim(),
+            password: hashedPwd, password_raw: pwd,
+            age: document.getElementById("editStudentAge").value.trim(),
+            class: document.getElementById("editStudentClass").value.trim()
+        };
+        await set(ref(db, `users/${id}`), payload);
+        alert("🎉 Cập nhật và đồng bộ thông tin học sinh thành công!");
+        document.getElementById("editStudentModal").style.display = "none";
+    }
+
+    window.renderAdminProfileDataView = function() {
+        get(ref(db, `admins/${window.currentAdminId}`)).then((snapshot) => {
+            if(snapshot.exists()) {
+                let data = snapshot.val();
+                document.getElementById("profName").value = data.name || "";
+                document.getElementById("profPhone").value = data.phone || "";
+                document.getElementById("profEmail").value = data.email || "";
+                document.getElementById("profCity").value = data.city || "";
+                document.getElementById("profSchool").value = data.school || "";
+                document.getElementById("profAddress").value = data.address || "";
+            }
+        });
+    }
+
+    window.submitUpdateAdminProfile = async function() {
+        let updates = {
+            name: document.getElementById("profName").value.trim(),
+            email: document.getElementById("profEmail").value.trim(),
+            city: document.getElementById("profCity").value.trim(),
+            school: document.getElementById("profSchool").value.trim(),
+            address: document.getElementById("profAddress").value.trim()
+        };
+        let newPwd = document.getElementById("profPwd").value.trim();
+        if(newPwd) { updates.pwd = newPwd; updates.encrypted_pwd = await hashPasswordSHA256(newPwd); }
+
+        await update(ref(db, `admins/${window.currentAdminId}`), updates);
+        alert("🎉 Cập nhật cấu hình quản trị viên thành công! Vui lòng đăng nhập lại.");
+        window.handleAdminLogout();
+    }
+
+    window.deleteAdminAccountSelf = function() {
+        if(!confirm("⚠️ Xóa vĩnh viễn tài khoản quản lý trường học này khỏi hệ thống Cloud?")) return;
+        set(ref(db, `admins/${window.currentAdminId}`), null).then(() => { window.handleAdminLogout(); });
+    }
+
+    window.handleAdminLogout = function() {
+        window.currentAdminId = ""; window.currentAdminSchool = ""; window.currentAdminCity = "";
+        document.getElementById("adminContainer").style.display = "none";
+        document.getElementById("authOverlay").style.display = "flex";
+        window.toggleAuthMode('login');
+    }
+
+    window.togglePasswordDisplay = function(key, rawPwd) {
+        const pwdSpan = document.getElementById(`pwd-${key}`);
+        pwdSpan.innerText = pwdSpan.innerText === "•••••" ? rawPwd : "•••••";
+    }
+
+    window.selectStudentScore = function(stId) { window.selectedStudentScoreId = stId; renderScoresView(); }
+    window.filterAdminScores = function(gameKey) {
+        window.currentAdminScoreGameFilter = gameKey;
+        document.querySelectorAll('.game-filter-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('score-filter-' + gameKey).classList.add('active');
+        renderScoresView();
+    }
+
+    window.switchMainTab = function(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.getElementById('btn-tab-' + tabId).classList.add('active');
+        document.getElementById('panel-' + tabId).classList.add('active');
+        currentActiveTab = tabId;
+        if(tabId === 'students') renderStudentsView();
+        if(tabId === 'scores') renderScoresView();
+        if(tabId === 'results') window.filterResultsData();
+        if(tabId === 'profile') window.renderAdminProfileDataView();
+    }
+
+    window.flattenDynamicNodes = function(snapshotValue, identifierKey) { return flattenNodes(snapshotValue); }
+
+    window.exportTableToExcel = function(tableId, filename = '') {
+        let tableElement = document.getElementById(tableId); if (!tableElement) return;
+        let html = tableElement.outerHTML;
+        let blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+        let a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = filename ? filename + '.xls' : 'Export.xls'; a.click();
+    }
+</script>
+</body>
+</html>
