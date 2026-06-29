@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Hệ Thống Quản Lý & Cơ Sở Dữ Liệu Tập Trung</title>
+	<link rel="icon" type="image/x-icon" href="icon.ico">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+	<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+body { 
+    min-height: 100vh;
+    background: linear-gradient(-45deg, #ff7675, #74b9ff, #a29bfe, #fdcb6e, #55efc4); 
+    background-size: 400% 400%; 
+    animation: bgmove 15s ease infinite; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: flex-start; 
+    overflow-x: hidden;
+}
+
+@keyframes bgmove { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+
+#authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: flex; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+.auth-box { background: #ffffff; width: 100%; max-width: 420px; padding: 45px 35px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); text-align: center; border: 1px solid rgba(255,255,255,0.7); }
+.auth-icon { font-size: 42px; color: #1a73e8; margin-bottom: 20px; animation: pulse 2s infinite alternate; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+.auth-box h2 { font-size: 20px; color: #1e293b; margin-bottom: 25px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase; }
+.input-group { margin-bottom: 15px; text-align: left; }
+.input-group input { width: 100%; padding: 14px 18px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 15px; outline: none; transition: 0.2s; text-align: center; color: #1e293b; font-weight: 600; background: #f8fafc; }
+.input-group input:focus { border-color: #1a73e8; background: white; box-shadow: 0 0 0 4px rgba(26,115,232,0.15); }
+.btn-auth { width: 100%; padding: 14px; background: #1a73e8; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2); }
+.btn-auth:hover { background: #155cb4; }
+.error-msg { color: #ef4444; font-size: 13.5px; margin-top: 14px; font-weight: 700; display: none; }
+
+.container { display: none; width: 100%; max-width: 1550px; background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 35px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin: 40px 20px; border: 1px solid rgba(255,255,255,0.6); }
+
+h2 { color: #1e293b; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; font-size: 22px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; flex-wrap: wrap; gap: 15px; }
+h2 span { display: flex; align-items: center; gap: 10px; }
+
+.admin-tabs { display: flex; gap: 8px; margin-bottom: 25px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; flex-wrap: wrap; }
+.tab-btn { padding: 12px 22px; border: none; background: transparent; color: #64748b; font-weight: 700; border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 14.5px; display: flex; align-items: center; gap: 8px; }
+.tab-btn:hover { background: rgba(0, 0, 0, 0.04); color: #1e293b; }
+.tab-btn.active { background: #1a73e8; color: white; box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15); }
+
+.btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; }
+.btn { padding: 11px 20px; border: none; border-radius: 50px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13.5px; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); white-space: nowrap; }
+.btn-primary { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.btn-primary:hover { background: #e2e8f0; color: #1e293b; }
+.btn-success { background: #22c55e; color: white; } 
+.btn-success:hover { background: #16a34a; }
+.btn-danger { background: linear-gradient(135deg, #ff9f43, #ff6b6b); color: white; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.25); }
+.btn-danger:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+.table-responsive { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 16px; margin-bottom: 20px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.01); }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 100%; }
+th, td { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; white-space: normal; word-break: break-word; vertical-align: middle; }
+th { background: #f8fafc; color: #64748b; font-weight: 700; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+tr:hover { background: #f8fafc; }
+tr:last-child td { border-bottom: none; }
+
+.empty-message { padding: 40px; text-align: center; color: #94a3b8; font-style: italic; font-size: 15px; }
+.id-text { font-family: monospace; font-weight: 700; color: #1a73e8; background: #e8f0fe; padding: 3px 8px; border-radius: 6px; font-size: 13px; white-space: nowrap; display: inline-block; }
+.badge { padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-block; }
+.badge-danger { background: #fee2e2; color: #ef4444; }
+.badge-warning { background: #fef3c7; color: #d97706; }
+.badge-success { background: #dcfce7; color: #16a34a; }
+
+.dashboard-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; margin-bottom: 25px; }
+@media (max-width: 950px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+.summary-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; }
+.summary-box h3 { font-size: 15px; color: #1e293b; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; font-weight: 700; }
+.stats-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.summary-box .stats-card { background: #f8fafc; padding: 16px; border-radius: 12px; border-left: 5px solid #1a73e8; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+.summary-box .stats-card h4 { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+.summary-box .stats-card p { font-size: 26px; font-weight: 800; color: #1e293b; }
+
+.rank-panel { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; padding: 22px; }
+.rank-panel h3 { font-size: 15px; color: #d97706; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #fffbeb; border-radius: 10px; font-size: 13.5px; border: 1px solid #fef3c7; width: 100%; }
+
+.scores-workspace-layout { display: grid; grid-template-columns: 320px 1fr; gap: 25px; margin-top: 15px; align-items: start; }
+@media (max-width: 950px) { .scores-workspace-layout { grid-template-columns: 1fr; } }
+
+.student-list-sidebar { max-height: 650px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+.student-sidebar-item { padding: 12px 16px; border-radius: 14px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.student-sidebar-item:hover { transform: translateY(-1px); border-color: #cbd5e1; background: #f8fafc; }
+.student-sidebar-item.active { background: #e8f0fe; border-color: #1a73e8; box-shadow: 0 4px 10px rgba(26,115,232,0.08); }
+
+.game-filter-btn {
+    padding: 8px 16px; border: none; background: transparent; color: #64748b; font-size: 13px; font-weight: 700; border-radius: 50px; cursor: pointer; transition: all 0.2s ease;
+}
+.game-filter-btn:hover { color: #1e293b; background: rgba(0,0,0,0.04); }
+.game-filter-btn.active { background: #1a73e8; color: #ffffff !important; box-shadow: 0 4px 10px rgba(26, 115, 232, 0.2); }
+
+.chat-container-box { background: white; border-radius: 24px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; height: calc(100vh - 280px); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
+.chat-header { background: #fff5f5; padding: 18px 25px; border-bottom: 1px solid #e2e8f0; text-align: left; border-left: 5px solid #ef4444; }
+.chat-header h3 { font-size: 16px; color: #1e293b; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.chat-header p { font-size: 12.5px; color: #64748b; margin-top: 2px; }
+.chat-messages-area { flex: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #fafafa; }
+.chat-bubble-row { display: flex; width: 100%; align-items: center; gap: 10px; position: relative; }
+.chat-bubble-row.me { justify-content: flex-end; }
+.chat-bubble-row.other { justify-content: flex-start; }
+.chat-avatar-placeholder { width: 34px; height: 34px; border-radius: 50%; background: #e2e8f0; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; flex-shrink: 0; border: 1px solid #cbd5e1; margin-top: 4px; }
+.chat-bubble-body { max-width: 65%; display: flex; flex-direction: column; position: relative; }
+.chat-bubble-row.me .chat-bubble-body { align-items: flex-end; }
+.chat-bubble-row.other .chat-bubble-body { align-items: flex-start; }
+.chat-msg-author { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; margin-left: 2px; }
+.chat-msg-text { padding: 11px 16px; font-size: 14px; font-weight: 500; line-height: 1.5; word-break: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 16px 16px 2px 16px; }
+.chat-bubble-row.me .chat-msg-text { background: linear-gradient(135deg, #ef4444, #f59e0b); color: white; font-weight: bold; }
+.chat-bubble-row.other .chat-msg-text { background: #ffffff; color: #1e293b; border: 1px solid #e2e8f0; border-radius: 16px 16px 16px 2px; }
+
+.chat-delete-btn { display: none; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 5px; transition: 0.2s; align-self: center; }
+.chat-bubble-row:hover .chat-delete-btn { display: inline-block; }
+
+.chat-input-row { padding: 15px 25px; background: #ffffff; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; align-items: center; }
+.chat-input-row input { flex: 1; padding: 13px 18px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; font-weight: 500; outline: none; background: #f8fafc; }
+.chat-input-row input:focus { border-color: #ef4444; background: white; }
+.chat-input-row button { padding: 12px 22px; border: none; background: #ef4444; color: white; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(239,68,68,0.2); }
+.chat-input-row button:hover { background: #dc2626; }
+
+.cms-split-layout { display: grid; grid-template-columns: 1fr 1.1fr; gap: 25px; margin-top: 15px; align-items: start; }
+@media (max-width: 1200px) { .cms-split-layout { grid-template-columns: 1fr; } }
+
+.preview-simulator-outer { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+.simulator-window-frame { width: 100%; height: 600px; background: #ffffff; transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1); margin: 0 auto; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+.simulator-window-frame.mode-mobile { width: 360px; height: 640px; background: #0f172a; border: 14px solid #334155; border-radius: 40px; padding: 0; box-shadow: 0 25px 50px rgba(0,0,0,0.2); position: relative; }
+.simulator-window-frame.mode-mobile::before { content: ''; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 100px; height: 16px; background: #334155; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; z-index: 99; }
+
+.npp-iframe-wrapper { width: 100%; height: 100%; overflow: auto; background: #ffffff; position: relative; -webkit-overflow-scrolling: touch; }
+.simulator-window-frame iframe { width: 100%; height: 100%; border: none; display: block; background: white; transition: transform 0.2s ease; transform-origin: top left; }
+
+.simulator-window-frame.mode-desktop { width: 100%; height: 600px; border: 1px solid #cbd5e1; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); }
+.simulator-window-frame.mode-desktop .npp-iframe-wrapper { border-radius: 16px; }
+.simulator-window-frame.mode-desktop iframe { border-radius: 16px; transform: none !important; width: 100% !important; height: 100% !important; }
+
+.toggle-view-bar { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #cbd5e1; }
+.toggle-view-btn { padding: 6px 14px; font-size: 12.5px; font-weight: 700; border: none; background: transparent; color: #64748b; border-radius: 6px; cursor: pointer; transition: 0.15s; display: flex; align-items: center; gap: 6px; }
+.toggle-view-btn.active { background: white; color: #1a73e8; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+.npp-editor-container {
+    width: 100%; background: #f0f0f0; border: 1px solid #abc;
+    border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    overflow: hidden; display: flex; flex-direction: column; margin-top: 15px;
+}
+
+.npp-menu-bar { background: #f0f0f0; padding: 4px 10px; font-size: 12px; color: #000; border-bottom: 1px solid #d0d0d0; display: flex; gap: 12px; cursor: default; }
+.npp-menu-item:hover { background: #b8d6fb; border-radius: 2px; }
+
+.npp-toolbar { background: #e7e7e7; padding: 6px 12px; border-bottom: 1px solid #c5c5c5; display: flex; gap: 14px; align-items: center; }
+.npp-tool-icon { font-size: 13px; color: #444; cursor: pointer; transition: 0.1s; }
+.npp-tool-icon:hover { color: #1a73e8; transform: scale(1.1); }
+
+.npp-tabs-row { background: #e0e0e0; display: flex; border-bottom: 1px solid #bbb; padding-top: 4px; padding-left: 10px; }
+.npp-tab { background: #d0d0d0; color: #444; font-size: 12px; font-weight: 600; padding: 6px 16px; border-radius: 5px 5px 0 0; border: 1px solid #b5b5b5; border-bottom: none; display: flex; align-items: center; gap: 8px; cursor: pointer; position: relative; top: 1px; }
+.npp-tab.active { background: #ffffff; color: #000; border-top: 3px solid #f90; z-index: 5; height: 30px; }
+
+.npp-code-workspace { display: flex; background: #ffffff; position: relative; font-family: 'Courier New', Courier, monospace; }
+.npp-line-gutter { background: #e4e4e4; width: 45px; text-align: right; padding: 12px 8px 12px 0; color: #888; font-size: 13px; border-right: 1px solid #c5c5c5; user-select: none; line-height: 1.5; font-weight: bold; }
+.npp-textarea-editor { flex: 1; border: none; outline: none; background: transparent; color: #000000; font-family: 'Courier New', Courier, monospace; font-size: 13.5px; font-weight: 600; line-height: 1.5; padding: 12px; resize: vertical; min-height: 380px; tab-size: 4; -moz-tab-size: 4; white-space: pre; overflow-x: auto; }
+
+.npp-status-bar { background: #f0f0f0; border-top: 1px solid #ccc; padding: 4px 15px; font-size: 11.5px; color: #444; display: flex; justify-content: space-between; font-weight: 600; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+.modal-content { background: #ffffff; width: 100%; max-width: 440px; padding: 30px; border-radius: 24px; border: 1px solid #e2e8f0; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: translateY(0); transition: 0.3s; }
+.modal-header { font-size: 18px; font-weight: 800; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; color: #1e293b; letter-spacing: -0.3px; }
+.modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+.modal .group { margin-bottom: 14px; text-align: left; }
+.modal .group label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #475569; text-transform: uppercase; }
+.modal .group input, .modal .group select { width: 100%; padding: 11px 14px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; font-size: 14px; color: #1e293b; font-weight: 600; }
+.modal .group input:focus, .modal .group select:focus { border-color: #1a73e8; background: #fff; }
+.btn-secondary { background: #f1f5f9; color: #475569; box-shadow: none; }
+.btn-secondary:hover { background: #e2e8f0; color: #1e293b; box-shadow: none; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+#studentsTable td:nth-child(1),
+#studentsTable td:nth-child(4),
+#studentsTable td:nth-child(5),
+#studentsTable td:nth-child(11),
+#scoresTable td:last-child {
+    white-space: nowrap !important;
+    word-break: normal !important;
+}
+
+#resultsTable th, #resultsTable td {
+    font-size: 12px !important;
+    padding: 8px 10px !important;
+    white-space: nowrap !important;
+    text-align: center;
+}
+#resultsTable th {
+    vertical-align: middle;
+}
+
+/* 🌟 CẤU HÌNH TOGGLE CAPSULE TAB ĐĂNG NHẬP MỚI KHÔNG LO TRÙNG CLASS */
+.auth-tabs-login {
+    display: flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 22px;
+    border: 1px solid #e2e8f0;
+}
+.auth-tab-item {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+.auth-tab-item.active {
+    background: #ffffff;
+    color: #1a73e8;
+    box-shadow: 0 4px 10px rgba(26, 115, 232, 0.1);
+}
+</style>
+</head>
+<body>
+
+<div id="authOverlay">
+    <div class="auth-box">
+        <div class="auth-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2>Truy cập hệ thống quản trị</h2>
+        
+        <div class="auth-tabs-login">
+            <button type="button" class="auth-tab-item active" onclick="window.location.href='admin.html'">Admin Hệ thống</button>
+            <button type="button" class="auth-tab-item" onclick="window.location.href='Code/admin_truong.html'">Admin Trường</button>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="adminIdField" placeholder="Nhập ID quản trị hệ thống" autocomplete="off" style="text-transform: none;">
+        </div>
+        <div class="input-group">
+            <input type="password" id="adminPwdField" placeholder="Nhập mật khẩu quản trị" autocomplete="off">
+        </div>
+        <button class="btn-auth" onclick="window.verifyAdminPassword()">Xác nhận vào hệ thống</button>
+        <button class="btn-auth" onclick="window.location.href='index.html'" style="background: #64748b; margin-top: 10px; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2);"><i class="fa-solid fa-arrow-left"></i> Quay về trang chủ</button>
+        <div class="error-msg" id="authError">❌ Thông tin đăng nhập chưa chính xác!</div>
+    </div>
+</div>
+
+<div class="container" id="adminContainer">
+    <h2>
+        <span><i class="fa-solid fa-toolbox" style="color: #1a73e8;"></i> Trung Tâm Kiểm Soát Khảo Sát (Ban Giám Hiệu)</span>
+        <button onclick="window.handleLogout()" class="btn btn-danger" style="margin: 0; padding: 10px 20px; border-radius: 12px; font-size: 14px;"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
+    </h2>
+
+    <div class="admin-tabs">
+        <button class="tab-btn active" id="btn-tab-students" onclick="window.switchMainTab('students')"><i class="fa-solid fa-users"></i> Danh sách học sinh</button>
+        <button class="tab-btn" id="btn-tab-scores" onclick="window.switchMainTab('scores')"><i class="fa-solid fa-star"></i> Kho điểm trò chơi</button>
+        <button class="tab-btn" id="btn-tab-results" onclick="window.switchMainTab('results')"><i class="fa-solid fa-square-poll-horizontal"></i> Báo Cáo Thống Kê</button>
+        <button class="tab-btn" id="btn-tab-feedbacks" onclick="window.switchMainTab('feedbacks')"><i class="fa-solid fa-comment-dots"></i> Ý kiến & Phản hồi</button>
+		<button class="tab-btn" id="btn-tab-posts" onclick="window.switchMainTab('posts')"><i class="fa-solid fa-newspaper"></i> Quản lý Bài Đăng & Bình luận </button>
+        <button class="tab-btn" id="btn-tab-chat" onclick="window.switchMainTab('chat')"><i class="fa-solid fa-bullhorn"></i> Kênh Chat & Phát Thông Báo</button>
+        <button class="tab-btn" id="btn-tab-games-cms" onclick="window.switchMainTab('games-cms')"><i class="fa-solid fa-cubes"></i> Quản lý Giao diện & Trò chơi (WordPress)</button>
+		<button class="tab-btn" id="btn-tab-schools" onclick="window.switchMainTab('schools')"><i class="fa-solid fa-school-flag"></i> Quản lý tài khoản trường</button>
+    </div>
+
+    <div id="panel-students" class="tab-panel active">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.syncCloudSystem()"><i class="fa-solid fa-rotate"></i> Làm mới dữ liệu</button>
+            <button class="btn btn-success" onclick="window.exportTableToExcel('studentsTable', 'Danh_Sach_Hoc_Sinh_He_Thong')"><i class="fa-solid fa-file-excel"></i> Xuất dữ liệu học sinh (Excel)</button>
+        </div>
+
+        <div class="summary-box" style="margin-bottom: 25px; border-left: 5px solid #1a73e8; padding: 18px; background: #ffffff;">
+            <h3 style="font-size: 14px; font-weight: 800; border-bottom: none; margin-bottom: 12px; padding: 0; color: #1a73e8;">
+                <i class="fa-solid fa-filter"></i> Phễu lọc tìm kiếm học sinh toàn bộ hệ thống
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Tỉnh / Thành phố</label>
+                    <select id="studentFilterCity" onchange="window.renderStudentsView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả tỉnh thành --</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Trường học đăng ký</label>
+                    <select id="studentFilterSchool" onchange="window.renderStudentsView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả trường học --</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Khối lớp học đường</label>
+                    <select id="studentFilterClass" onchange="window.renderStudentsView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả khối lớp --</option>
+                        <option value="6">Khối lớp 6</option>
+                        <option value="7">Khối lớp 7</option>
+                        <option value="8">Khối lớp 8</option>
+                        <option value="9">Khối lớp 9</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Giới tính sinh học</label>
+                    <select id="studentFilterGender" onchange="window.renderStudentsView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả giới tính --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table id="studentsTable"> 
+                <thead>
+                    <tr>
+                        <th>Mã ID</th>
+                        <th>Đợt Khảo Sát</th>
+                        <th>Họ và Tên</th>
+                        <th>Số điện thoại</th>
+                        <th>Mật khẩu truy cập</th>
+                        <th>Nơi ở (Tỉnh/TP)</th>
+                        <th>Tuổi</th>
+                        <th>Trường Học</th>
+                        <th>Khối Lớp</th>
+                        <th>Giới tính</th>
+                        <th>Hành động</th> 
+                    </tr>
+                </thead>
+                <tbody id="studentsBody">
+                    <tr><td colspan="11" class="empty-message">Đang quét danh sách tài khoản học sinh...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="panel-scores" class="tab-panel">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.syncCloudSystem()"><i class="fa-solid fa-rotate"></i> Làm mới dữ liệu</button>
+            <button class="btn btn-success" onclick="window.exportTableToExcel('scoresTable', 'Kho_Diem_Khao_Sat')"><i class="fa-solid fa-file-excel"></i> Tải dữ liệu (Excel)</button>
+            <button class="btn btn-danger" onclick="window.clearFirebaseData()"><i class="fa-solid fa-trash-can"></i> Xóa dữ liệu đám mây</button>
+        </div>
+        
+        <div class="summary-box" style="margin-bottom: 25px; border-left: 5px solid #e67e22; padding: 18px; background: #ffffff;">
+            <h3 style="font-size: 14px; font-weight: 800; border-bottom: none; margin-bottom: 12px; padding: 0; color: #e67e22;">
+                <i class="fa-solid fa-filter"></i> Phễu lọc kho điểm trò chơi toàn hệ thống
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Tỉnh / Thành phố</label>
+                    <select id="scoreFilterCity" onchange="window.renderScoresView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả tỉnh thành --</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Trường học đăng ký</label>
+                    <select id="scoreFilterSchool" onchange="window.renderScoresView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả trường học --</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Khối lớp học đường</label>
+                    <select id="scoreFilterClass" onchange="window.renderScoresView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả khối lớp --</option>
+                        <option value="6">Khối lớp 6</option>
+                        <option value="7">Khối lớp 7</option>
+                        <option value="8">Khối lớp 8</option>
+                        <option value="9">Khối lớp 9</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Giới tính sinh học</label>
+                    <select id="scoreFilterGender" onchange="window.renderScoresView()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả giới tính --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="summary-box">
+                <h3 id="summaryTitle">📊 Thống kê hiệu suất chung</h3>
+                <div class="stats-cards">
+                    <div class="stats-card">
+                        <h4>Số học sinh tham gia game</h4>
+                        <p id="totalRegisteredStudents">0</p>
+                    </div>
+                    <div class="stats-card" style="border-left-color: #e67e22;">
+                        <h4>Tổng số lượt chơi đạt được</h4>
+                        <p id="totalPlayedRecords">0</p>
+                    </div>
+                    <div class="stats-card" style="border-left-color: #27ae60;">
+                        <h4>Lượt hoàn thành an toàn</h4>
+                        <p id="safePlayedRecords">0</p>
+                    </div>
+                    <div class="stats-card" style="border-left-color: #dc3545;">
+                        <h4>Lượt bị ngưng khi làm bài</h4>
+                        <p id="stoppedPlayedRecords">0</p>
+                    </div>
+                </div>
+                <div style="position:relative; width:100%; height:220px; margin-top:25px; border-top:1px dashed #cbd5e1; padding-top:15px;">
+                    <h4 style="font-size:13px; color:#1a73e8; font-weight:700; margin-bottom:10px; text-transform:uppercase;"><i class="fa-solid fa-chart-bar"></i> Phân bổ tổng số lượt chơi theo từng game</h4>
+                    <canvas id="scoresBarChart"></canvas>
+                </div>
+            </div>
+            <div class="rank-panel">
+                <h3>🏆 TOP 5 Học sinh xuất sắc (Trung bình đúng bài 2, 3, 5)</h3>
+                <div class="rank-list" id="adminRankList"></div>
+            </div>
+        </div>
+
+        <div class="scores-workspace-layout">
+            <div class="summary-box" style="padding: 16px;">
+                <h3 style="font-size: 14px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; color:#1a73e8;"><i class="fa-solid fa-id-badge"></i> Chọn Hồ Sơ Học Sinh</h3>
+                <div class="student-list-sidebar" id="studentScoreSidebarList"></div>
+            </div>
+
+            <div>
+                <div style="display: flex; gap: 6px; margin-bottom: 15px; background: #f1f5f9; padding: 6px; border-radius: 50px; width: fit-content; align-items: center; flex-wrap: wrap;">
+                    <button class="game-filter-btn active" id="score-filter-all" onclick="window.filterAdminScores('all')">☀️ Tất cả</button>
+                    <button class="game-filter-btn" id="score-filter-combined" onclick="window.filterAdminScores('combined')">📋 Đánh Giá Tổng Hợp</button>
+                    <button class="game-filter-btn" id="score-filter-game1" onclick="window.filterAdminScores('game1')">🧠 1. Memory Match</button>
+                    <button class="game-filter-btn" id="score-filter-game2" onclick="window.filterAdminScores('game2')">✋ 2. Stop Game</button>
+                    <button class="game-filter-btn" id="score-filter-game3" onclick="window.filterAdminScores('game3')">🔄 3. N-Back</button>
+                    <button class="game-filter-btn" id="score-filter-game4" onclick="window.filterAdminScores('game4')">✏️ 4. Trail Test</button>
+                    <button class="game-filter-btn" id="score-filter-game5" onclick="window.filterAdminScores('game5')">🔀 5. Flexibility</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="scoresTable"> 
+                        <thead>
+                            <tr>
+                                <th>Mã học sinh ID</th>
+                                <th>Họ và Tên</th>
+                                <th>Bài khảo sát (Trò chơi)</th>
+                                <th>Thông số đạt được</th>
+                                <th>Thời điểm thực hiện</th>
+                                <th>Đánh giá nguy cơ</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoresBody">
+                            <tr><td colspan="7" class="empty-message">Vui lòng bấm chọn học sinh ở cột bên trái để truy xuất lịch sử trò chơi.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-results" class="tab-panel">
+        <div class="summary-box" style="margin-bottom: 25px; border-left: 5px solid #a29bfe; padding: 18px; background: #ffffff;">
+            <h3><i class="fa-solid fa-filter"></i> Phễu lọc trích xuất ma trận kết quả thống kê (TRI)</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; text-align: left; margin-top: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Tỉnh / Thành phố</label>
+                    <select id="resultFilterCity" onchange="window.filterResultsData()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả tỉnh thành --</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Trường học đăng ký</label>
+                    <select id="resultFilterSchool" onchange="window.filterResultsData()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả trường học --</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Khối lớp học đường</label>
+                    <select id="resultFilterClass" onchange="window.filterResultsData()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả khối lớp --</option>
+                        <option value="6">Khối lớp 6</option>
+                        <option value="7">Khối lớp 7</option>
+                        <option value="8">Khối lớp 8</option>
+                        <option value="9">Khối lớp 9</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase;">Giới tính sinh học</label>
+                    <select id="resultFilterGender" onchange="window.filterResultsData()" style="padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; background: white; outline: none; color: #1e293b;">
+                        <option value="all">-- Tất cả giới tính --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="window.filterResultsData()"><i class="fa-solid fa-sync"></i> Áp dụng bộ lọc</button>
+                <button class="btn btn-success" onclick="window.exportTableToExcel('resultsTable', 'TRI_Bao_Cao_Ma_Tran_He_Thong')"><i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo Ma Trận (Excel)</button>
+                <button class="btn btn-danger" onclick="window.exportResultsToPDF()" style="background: linear-gradient(135deg, #a29bfe, #6c5ce7); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.25);"><i class="fa-solid fa-file-pdf"></i> Xuất File Báo Cáo (PDF)</button>
+            </div>
+        </div>
+
+        <div id="pdfExportArea" style="background: white; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; color:#1e293b;">
+            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px dashed #cbd5e1; padding-bottom: 15px;">
+                <h3 style="font-size: 18px; font-weight: 800; text-transform: uppercase;">BẢNG TỔNG HỢP KẾT QUẢ KHẢO SÁT & CHỈ SỐ NHẬN THỨC</h3>
+                <p style="font-size: 12px; color: #64748b; margin-top: 4px; font-weight: 600;">Hệ thống đồng bộ tham số chuẩn hóa dữ liệu nghiên cứu học đường</p>
+                <div style="margin-top: 5px; font-size: 12px; font-weight: bold; color: #1a73e8;">
+                    Số lượng bộ lọc tìm thấy: <span id="resTotalCount">0 em</span>
+                </div>
+            </div>
+
+            <div style="width: 100%; max-width: 480px; margin: 0 auto 30px auto; height: 260px; position: relative; padding: 10px; border: 1px solid #f1f5f9; border-radius: 12px; background: #fafafa;">
+                <canvas id="resultsChart"></canvas>
+            </div>
+
+            <div class="table-responsive" style="border: 1px solid #cbd5e1; border-radius:12px; box-shadow:none;">
+                <table id="resultsTable">
+                    <thead>
+                        <tr style="background:#0f172a; color:white;">
+                            <th>ID</th><th>Giới</th><th>Tuổi</th><th>Khối</th><th>Ngủ (giờ/đêm)</th><th>Thiết bị (giờ/ngày)</th>
+                            <th>RT trung bình (ms)</th><th>Go/No-Go: nhấn nhầm (%)</th><th>N-back: chính xác (%)</th>
+                            <th>TMT: chi phí chuyển đổi (s)</th><th>Flex: lỗi kiên định (n)</th><th>Stress (0-40)</th>
+                            <th>Norm_RT</th><th>Norm_FA</th><th>Norm_Acc( đảo)</th><th>Norm_TMT</th><th>Norm_Flex</th><th>Norm_Stress</th>
+                            <th>TRI</th><th>Mức</th><th>TRI (giá trị)</th><th>Mức (giá trị)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <tr><td colspan="22" class="empty-message">Vui lòng chờ tải dữ liệu đám mây...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div id="panel-feedbacks" class="tab-panel">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.syncCloudSystem()"><i class="fa-solid fa-rotate"></i> Làm mới dữ liệu</button>
+            <button class="btn btn-success" onclick="window.exportTableToExcel('feedbacksTable', 'Phan_Hoi_Va_Danh_Gia')"><i class="fa-solid fa-file-excel"></i> Tải dữ liệu Phản hồi & Đánh giá (Excel)</button>
+            <button class="btn btn-danger" onclick="window.clearFirebaseData()"><i class="fa-solid fa-trash-can"></i> Xóa dữ liệu đám mây</button>
+        </div>
+        <div class="table-responsive">
+            <table id="feedbacksTable"> 
+                <thead>
+                    <tr>
+                        <th>Thời gian gửi</th>
+                        <th>Phân loại</th>
+                        <th>Mã ID</th>
+                        <th>Họ và Tên</th>
+                        <th>Trường & Lớp</th>
+                        <th>Nội dung 1 (Ý kiến / Số sao)</th>
+                        <th>Nội dung 2 (Ưu điểm / Chi tiết nhận xét)</th>
+                        <th>Nội dung 3 (Nhược điểm)</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbacksBody">
+                    <tr><td colspan="9" class="empty-message">Hộp thư phản hồi & đánh giá hiện đang trống.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+	
+    <div id="panel-posts" class="tab-panel">
+    <div class="btn-group">
+        <button class="btn btn-primary" onclick="window.syncCloudSystem()"><i class="fa-solid fa-rotate"></i> Làm mới bài viết</button>
+    </div>
+    
+    <div class="summary-box" style="margin-bottom: 25px; border-left: 5px solid #1a73e8;">
+        <h3>✍️ Đăng bài thông báo mới từ Ban Giám Hiệu</h3>
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
+            <input type="text" id="adminPostInput" placeholder="Nhập nội dung bài viết công bố toàn trường..." style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none;">
+            <button class="btn btn-success" onclick="window.createAdminPost()" style="border-radius: 12px;"><i class="fa-solid fa-paper-plane"></i> Đăng bài</button>
+        </div>
+    </div>
+
+    <div id="adminPostsContainer" style="display: flex; flex-direction: column; gap: 20px;"></div>
+</div>
+
+    <div id="panel-chat" class="tab-panel">
+        <div class="chat-container-box">
+            <div class="chat-header">
+                <h3><i class="fa-solid fa-bullhorn" style="color:#ef4444;"></i> Trung Tâm Phát Thông Báo Chỉ Đạo Toàn Trường</h3>
+                <p>Nội dung soạn ở đây sẽ hiển thị dưới dạng biểu ngữ đỏ nổi bật ở phòng chat của tất cả các em học sinh.</p>
+            </div>
+            <div id="adminChatBox" class="chat-messages-area">
+                <p style='text-align:center; color:#94a3b8; padding:20px;'>🔄 Đang tải tin nhắn từ phòng chat...</p>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="adminChatInput" placeholder="Nhập văn bản thông báo hoặc lời nhắc nhở gửi học sinh..." autocomplete="off">
+                <button onclick="window.sendAdminAnnouncement()"><i class="fa-solid fa-paper-plane"></i> Gửi Thông Báo</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-games-cms" class="tab-panel">
+        <div class="cms-split-layout">
+            <div>
+                <div class="summary-box" style="margin-bottom: 20px; border-left: 5px solid #1a73e8;">
+                    <h3 id="formGameTitle" style="color:#1a73e8; border-bottom:none; padding:0; margin-bottom:15px;">
+                        <i class="fa-solid fa-sliders"></i> Trình điều chỉnh cấu hình ứng dụng (WordPress)
+                    </h3>
+                    <input type="hidden" id="editGameKey" value="">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Mã ID hệ thống (Key viết liền)</label>
+                            <input type="text" id="gameKey" placeholder="Ví dụ: game1, trangchu" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Tên Giao diện / Game hiển thị</label>
+                            <input type="text" id="gameName" placeholder="Ví dụ: Trang chủ học sinh" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Biểu tượng Logo (Emoji/Icon)</label>
+                            <input type="text" id="gameIcon" placeholder="Ví dụ: 🏠 hoặc 🧠" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #475569;">Đường dẫn file chạy (Path HTML)</label>
+                            <input type="text" id="gameUrl" placeholder="Ví dụ: code/trangchu.html" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn btn-success" id="btnSaveGame" onclick="window.saveGameFromCms()">
+                            <i class="fa-solid fa-save"></i> Lưu thông số tệp
+                        </button>
+                        <button class="btn btn-primary" id="btnCancelEdit" style="display:none;" onclick="window.cancelEditGame()">
+                            Hủy bỏ
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Icon</th>
+                                <th>Mã Tệp</th>
+                                <th>Tên Phần Mềm / Trang</th>
+                                <th>Đường Dẫn Chạy</th>
+                                <th>Trạng Thái</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cmsGamesTableBody">
+                            <tr><td colspan="6" class="empty-message">Đang đồng bộ danh sách tệp giao diện động...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="preview-simulator-outer">
+                <div style="background:#fff; padding:12px 20px; border-radius:16px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; width: 100%;">
+                    <span style="font-weight:700; color:#1e293b;"><i class="fa-solid fa-desktop" style="color:#1a73e8;"></i> Bộ mô phỏng Live Preview</span>
+                    <div class="toggle-view-bar">
+                        <button class="toggle-view-btn active" id="viewBtnMobile" onclick="window.changeSimulatorMode('mobile')">
+                            <i class="fa-solid fa-mobile-screen-button"></i> Điện thoại
+                        </button>
+                        <button class="toggle-view-btn" id="viewBtnDesktop" onclick="window.changeSimulatorMode('desktop')">
+                            <i class="fa-solid fa-laptop"></i> Máy tính
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="simulatorFrameWrapper" class="simulator-window-frame mode-mobile">
+                    <div class="npp-iframe-wrapper">
+                        <iframe id="cmsLivePreviewFrame" src="about:blank"></iframe>
+                    </div>
+                </div>
+
+                <div class="npp-editor-container">
+                    <div class="npp-menu-bar">
+                        <span class="npp-menu-item" style="padding:1px 6px;">File</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">Edit</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">Search</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">View</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">Encoding</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">Language</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">Settings</span>
+                        <span class="npp-menu-item" style="padding:1px 6px;">Plugins</span>
+                    </div>
+                    <div class="npp-toolbar">
+                        <i class="fa-solid fa-floppy-disk npp-tool-icon" title="Lưu mã nguồn lên Cloud đám mây (Ctrl+S)" onclick="window.saveCodeFromNpp()"></i>
+                        <i class="fa-solid fa-rotate-left npp-tool-icon" title="Hoàn tác"></i>
+                        <i class="fa-solid fa-arrow-rotate-right npp-tool-icon" title="Làm lại"></i>
+                        <i class="fa-solid fa-magnifying-glass-plus npp-tool-icon" title="Phóng to font chữ"></i>
+                        <i class="fa-solid fa-magnifying-glass-minus npp-tool-icon" title="Thu nhỏ font chữ"></i>
+                        <span style="font-size:11px; font-weight:bold; color:#1a73e8; background:#fff; padding:2px 8px; border-radius:4px; border:1px solid #ccc; margin-left:auto;">Notepad++ v8.5.2 Engine</span>
+                    </div>
+                    <div class="npp-toolbar" style="background:#fdf6e3; padding:4px 15px; border-bottom:1px solid #e6dbb2; font-size:11.5px; font-weight:bold; color:#b58900;">
+                        <i class="fa-solid fa-circle-exclamation"></i> PHÂN QUYỀN HỆ THỐNG: CHẾ ĐỘ CHỈ XEM ĐỐI VỚI ADMIN PHỤ. CAN THIỆP SÂU CHỈ KHẢ DỤNG CHO TÀI KHOẢN MASTER.
+                    </div>
+                    <div class="npp-tabs-row">
+                        <div class="npp-tab active">
+                            <i class="fa-regular fa-file-code" style="color:#1a73e8;"></i> <span id="nppTabName">index.html</span>
+                        </div>
+                    </div>
+                    <div class="npp-code-workspace">
+                        <div class="npp-line-gutter" id="nppLineGutter">
+                            1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15
+                        </div>
+                        <textarea class="npp-textarea-editor" id="nppCodeEditor" placeholder="" spellcheck="false"></textarea>
+                    </div>
+                    <div class="npp-status-bar">
+                        <span id="nppStatusLength">Length: 0 | Lines: 1</span>
+                        <span id="nppStatusLnCol">Ln: 1  Col: 1</span>
+                        <span>Windows (CRLF) | UTF-8 | HTML file</span>
+                    </div>
+                </div>
+                <button class="btn btn-success" style="border-radius:12px; width:100%; justify-content:center; padding:12px; font-weight:800; box-shadow: 0 4px 12px rgba(34,197,94,0.3);" onclick="window.saveCodeFromNpp()"><i class="fa-solid fa-cloud-arrow-up"></i> CẬP NHẬT CODE KHUNG NOTEPAD++ LÊN CLOUD HỆ THỐNG</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="panel-schools" class="tab-panel">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="window.syncCloudSystem()"><i class="fa-solid fa-rotate"></i> Làm mới danh sách trường</button>
+        </div>
+        
+        <div class="table-responsive">
+            <table> 
+                <thead>
+                    <tr style="background:#0f172a; color:white;">
+                        <th>Tên Quản Lý (BGH)</th>
+                        <th>Trường Học Đăng Ký</th>
+                        <th>Số điện thoại (ID Đăng nhập)</th>
+                        <th>Tỉnh / Thành Phố</th>
+                        <th>Trạng Thái Tài Khoản</th>
+                        <th>Hành Động Phân Quyền</th>
+                    </tr>
+                </thead>
+                <tbody id="schoolsTableBody">
+                    <tr><td colspan="6" class="empty-message">Đang quét danh sách tài khoản trường học...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<div id="editStudentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">📝 Chỉnh sửa thông tin học sinh</div>
+        <input type="hidden" id="editStudentId">
+        
+        <div class="group">
+            <label>Họ và Tên</label>
+            <input type="text" id="editStudentName">
+        </div>
+        <div class="group">
+            <label>Số điện thoại</label>
+            <input type="text" id="editStudentPhone">
+        </div>
+        <div class="group">
+            <label>Mật khẩu đăng nhập (Thô)</label>
+            <input type="text" id="editStudentPwd">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div class="group">
+                <label>Tuổi</label>
+                <input type="number" id="editStudentAge">
+            </div>
+            <div class="group">
+                <label>Khối Lớp</label>
+                <input type="number" id="editStudentClass">
+            </div>
+        </div>
+        <div class="group">
+            <label>Tên Trường Học</label>
+            <input type="text" id="editStudentSchool">
+        </div>
+        <div class="group">
+            <label>Tỉnh/Thành phố</label>
+            <input type="text" id="editStudentCity">
+        </div>
+        <div class="group">
+            <label>Giới tính</label>
+            <select id="editStudentGender">
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+            </select>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="window.closeModal('editStudentModal')">Hủy bỏ</button>
+            <button class="btn" onclick="window.submitEditStudent()">Cập nhật dữ liệu</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+	import { getDatabase, ref, onValue, set, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+	
+    const firebaseConfig = {
+		apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0", 
+		authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+		databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+		projectId: "bo-tro-cho-tam-li",
+		storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+		messagingSenderId: "150226282506",
+		appId: "1:150226282506:web:4df0cab215501b315317f3"
+	};
+
+	const app = initializeApp(firebaseConfig);
+	const db = getDatabase(app);
+
+    let objStudents = {};
+    let objScores = {};
+	let objAdmins = {};
+    let objFeedbacks = {};
+	let objPosts = {};
+    let objRatings = {};
+    let objCmsGames = {};
+    let objPublicChat = {}; 
+    
+    let currentActiveTab = 'students';
+    let globalScoresChart = null;
+    let globalResultsChart = null; 
+    let currentSimulatorMode = 'mobile'; 
+    window.selectedStudentScoreId = 'all';
+    window.currentAdminScoreGameFilter = 'all'; 
+    window.currentAdminId = ""; 
+
+    window.closeModal = function(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    window.handleLogout = function() {
+        if(confirm("⚠️ Xác nhận đăng xuất khỏi hệ thống quản lý?")) {
+            localStorage.removeItem('adminToken');
+            sessionStorage.clear();
+            alert('✅ Bạn đã đăng xuất thành công!');
+            window.location.reload();
+        }
+    }
+
+    function validateMasterAdminPrivilege() {
+        if (window.currentAdminId !== '_ngpht.31_') {
+            alert("❌ TỪ CHỐI THỰC THI! Chức năng can thiệp chỉnh sửa/xóa này chỉ dành riêng cho tài khoản Quản trị tối cao (_ngpht.31_). Các tài khoản khác chỉ được xem.");
+            return false;
+        }
+        return true;
+    }
+
+    window.flattenDynamicNodes = function(snapshotValue, identifierKey) {
+        let list = [];
+        if (!snapshotValue || typeof snapshotValue !== 'object') return list;
+        
+        if (identifierKey in snapshotValue || 'answers' in snapshotValue || 'general' in snapshotValue || 'stars' in snapshotValue) {
+            list.push(snapshotValue);
+            return list;
+        }
+        
+        Object.keys(snapshotValue).forEach(key1 => {
+            let sub = snapshotValue[key1];
+            if (sub && typeof sub === 'object') {
+                if (identifierKey in sub || 'answers' in sub || 'general' in sub || 'stars' in sub) {
+                    if(!sub.id) sub.id = key1;
+                    list.push(sub);
+                } else {
+                    Object.keys(sub).forEach(key2 => {
+                        let inner = sub[key2];
+                        if (inner && typeof inner === 'object') {
+                            if(!inner.id) inner.id = key2;
+                            if(!inner.studentId) inner.studentId = key1;
+                            list.push(inner);
+                        }
+                    });
+                }
+            }
+        });
+        return list;
+    };
+
+    window.verifyAdminPassword = async function() {
+        const idVal = document.getElementById("adminIdField").value.trim();
+        const inputVal = document.getElementById("adminPwdField").value.trim();
+        
+        if (idVal === "" || inputVal === "") {
+            alert("⚠️ Vui lòng nhập đầy đủ cả ID và Mật khẩu quản trị!");
+            return;
+        }
+
+        try {
+            const snapshot = await get(ref(db, 'admins'));
+            if (snapshot.exists()) {
+                const admins = snapshot.val();
+                let matched = false;
+
+                for (let key in admins) {
+                    let adminData = admins[key];
+                    if (!adminData) continue;
+
+                    let currentId = adminData.id || key; 
+                    let currentPwd = adminData.pwd;
+
+                    if (String(currentId).trim() === idVal && String(currentPwd).trim() === inputVal) {
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (matched) {
+                    document.getElementById("authOverlay").style.display = "none";
+                    document.getElementById("adminContainer").style.display = "block";
+                    window.currentAdminId = idVal; 
+                    window.syncCloudSystem(); 
+                } else {
+                    alert("❌ Sai ID hoặc Mật khẩu quản trị! Bạn kiểm tra lại xem có gõ nhầm chữ hoa/thường không nhé.");
+                }
+            } else {
+                alert("❌ Không tìm thấy nhánh 'admins' trên Firebase! Bạn cần lên Firebase Console tạo nhánh trước.");
+            }
+        } catch (error) {
+            alert("❌ Lỗi kết nối Firebase: " + error.message);
+        }
+    }
+
+    function updateStudentFilterDropdowns() {
+        let funnelIds = {
+            city: ['studentFilterCity', 'scoreFilterCity', 'resultFilterCity'],
+            school: ['studentFilterSchool', 'scoreFilterSchool', 'resultFilterSchool']
+        };
+
+        let cities = new Set();
+        let schools = new Set();
+
+        Object.values(objStudents).forEach(u => {
+            if (u.city && u.city.trim() !== "") cities.add(u.city.trim());
+            if (u.school && u.school.trim() !== "") schools.add(u.school.trim());
+        });
+
+        let sortedCities = Array.from(cities).sort();
+        let sortedSchools = Array.from(schools).sort();
+
+        funnelIds.city.forEach(id => {
+            let el = document.getElementById(id); if (!el) return;
+            let prev = el.value;
+            let html = '<option value="all">-- Tất cả tỉnh thành --</option>';
+            sortedCities.forEach(c => { html += `<option value="${c}">${c}</option>`; });
+            el.innerHTML = html; el.value = prev;
+            if (el.selectedIndex === -1) el.value = "all";
+        });
+
+        funnelIds.school.forEach(id => {
+            let el = document.getElementById(id); if (!el) return;
+            let prev = el.value;
+            let html = '<option value="all">-- Tất cả trường học --</option>';
+            sortedSchools.forEach(s => { html += `<option value="${s}">${s}</option>`; });
+            el.innerHTML = html; el.value = prev;
+            if (el.selectedIndex === -1) el.value = "all";
+        });
+    }
+
+    window.syncCloudSystem = function() {
+        onValue(ref(db, 'users'), (snapshot) => {
+            objStudents = snapshot.exists() ? snapshot.val() : {};
+            updateStudentFilterDropdowns(); 
+            if(currentActiveTab === 'students') renderStudentsView();
+            if(currentActiveTab === 'scores') renderScoresView();
+            if(currentActiveTab === 'results') window.filterResultsData();
+            if(currentActiveTab === 'feedbacks') renderFeedbacksView();
+        });
+
+        onValue(ref(db, 'scores'), (snapshot) => {
+            objScores = snapshot.exists() ? snapshot.val() : {};
+            if(currentActiveTab === 'scores') renderScoresView();
+            if(currentActiveTab === 'results') window.filterResultsData();
+        });
+
+        onValue(ref(db, 'feedbacks'), (snapshot) => {
+            objFeedbacks = snapshot.exists() ? snapshot.val() : {};
+            if(currentActiveTab === 'feedbacks') renderFeedbacksView();
+        });
+
+        onValue(ref(db, 'ratings'), (snapshot) => {
+            objRatings = snapshot.exists() ? snapshot.val() : {};
+            if(currentActiveTab === 'feedbacks') renderFeedbacksView();
+        });
+
+        onValue(ref(db, 'app_config/active_games'), (snapshot) => {
+            if (!snapshot.exists()) {
+                const autoConfig = {
+                    'trangchu': { name: "Trang chủ hệ thống", icon: "🏠", url: "trangchu.html", status: true },
+                    'game1': { name: "Memory Matching Test", icon: "🧠", url: "code/game1.html", status: true },
+                    'game2': { name: "Stop the Game (Go/No-Go)", icon: "✋", url: "code/game2.html", status: true },
+                    'game3': { name: "N-Back Task Studio", icon: "🔄", url: "code/game3.html", status: true },
+                    'game4': { name: "Trail Making Test Speed", icon: "✏️", url: "code/game4.html", status: true },
+                    'game5': { name: "Flexibility Cognitive Test", icon: "🔀", url: "code/game5.html", status: true }
+                };
+                set(ref(db, 'app_config/active_games'), autoConfig);
+                return;
+            }
+            objCmsGames = snapshot.val();
+            if(currentActiveTab === 'games-cms') renderCmsGamesView();
+        });
+
+        onValue(ref(db, 'posts'), (snapshot) => {
+            objPosts = snapshot.exists() ? snapshot.val() : {};
+            if(currentActiveTab === 'posts') window.renderAdminPostsView();
+        });
+        
+        onValue(ref(db, 'admins'), (snapshot) => {
+            objAdmins = snapshot.exists() ? snapshot.val() : {};
+            if(currentActiveTab === 'schools') window.renderSchoolsManagementView();
+        });
+		window.initAdminChatListener();
+    }
+
+    window.exportTableToExcel = function(tableId, filename = '') {
+        let tableElement = document.getElementById(tableId);
+        if (!tableElement) { alert("Không tìm thấy bảng dữ liệu để xuất!"); return; }
+        let html = tableElement.outerHTML;
+        let blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = filename ? filename + '.xls' : 'Xuat_Du_Lieu.xls';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    window.clearFirebaseData = function() {
+        if (!validateMasterAdminPrivilege()) return;
+        if (!confirm("⚠️ CẢNH BÁO NGUY HIỂM: Bạn có chắc chắn muốn XÓA TOÀN BỘ lịch sử không? Hành động này không thể hoàn tác!")) return;
+        const updates = { scores: null, feedbacks: null, ratings: null };
+        update(ref(db), updates).then(() => {
+            alert("✅ Đã dọn sạch toàn bộ dữ liệu trên đám mây!");
+        }).catch(err => alert("Lỗi: " + err));
+    }
+
+    window.banStudentAccount = async function(studentId) {
+        if (!validateMasterAdminPrivilege()) return; 
+
+        const durationSelect = document.getElementById(`banDuration-${studentId}`);
+        const durationValue = durationSelect.value;
+        const durationText = durationSelect.options[durationSelect.selectedIndex].text;
+
+        if (!confirm(`⚠️ Thầy cô có chắc muốn KHÓA tài khoản học sinh [${studentId}] trong vòng [${durationText}] không?`)) return;
+
+        try {
+            let expireTimestamp = durationValue === "permanent" ? "permanent" : Date.now() + parseInt(durationValue);
+            await update(ref(db, `users/${studentId}`), { banUntil: expireTimestamp, isLocked: null });
+            alert(`🎉 Đã áp dụng hình phạt chặn tài khoản [${studentId}] thành công! Thời hạn: ${durationText}.`);
+        } catch (error) { alert("❌ Lỗi cấu hình dữ liệu ban: " + error.message); }
+    }
+
+    window.unbanStudentAccount = async function(studentId) {
+        if (!validateMasterAdminPrivilege()) return; 
+        if (!confirm(`⚠️ Xác nhận GỠ PHẠT sớm trước thời hạn cho học sinh [${studentId}]?`)) return;
+        try {
+            await update(ref(db, `users/${studentId}`), { banUntil: null, isLocked: null });
+            alert(`🎉 Học sinh [${studentId}] đã được gỡ lệnh cấm hoàn toàn!`);
+        } catch (error) { alert("❌ Lỗi không thể gỡ ban: " + error.message); }
+    }
+
+    window.deleteStudentAccount = async function(studentId) {
+        if (!validateMasterAdminPrivilege()) return; 
+        const confirmMsg = `⚠️ Bạn có chắc chắn muốn XÓA VĨNH VIỄN tài khoản [${studentId}] này không?`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const updates = {};
+            updates[`users/${studentId}`] = null;
+            
+            if (objScores) {
+                Object.keys(objScores).forEach(key => {
+                    let val = objScores[key];
+                    if (key === studentId || (val && typeof val === 'object' && val.studentId === studentId)) { updates[`scores/${key}`] = null; }
+                });
+            }
+            
+            if (objFeedbacks) {
+                let flatFeedbacks = window.flattenDynamicNodes(objFeedbacks, 'studentId');
+                flatFeedbacks.forEach(f => {
+                    if (f.studentId === studentId) {
+                        if (objFeedbacks[studentId] && f.id in objFeedbacks[studentId]) { updates[`feedbacks/${studentId}/${f.id}`] = null; } 
+                        else { updates[`feedbacks/${f.id}`] = null; }
+                    }
+                });
+            }
+
+            if (objRatings) {
+                Object.keys(objRatings).forEach(key => {
+                    let val = objRatings[key];
+                    if (key === studentId || (val && typeof val === 'object' && val.studentId === studentId)) { updates[`ratings/${key}`] = null; }
+                });
+            }
+
+            if (objPublicChat) {
+                Object.keys(objPublicChat).forEach(key => {
+                    let val = objPublicChat[key];
+                    if (val && typeof val === 'object' && val.studentId === studentId) { updates[`public_chat/${key}`] = null; }
+                });
+            }
+            
+            await update(ref(db), updates);
+            if (window.selectedStudentScoreId === studentId) window.selectedStudentScoreId = 'all';
+            alert(`🎉 Đã xóa vĩnh viễn học sinh [${studentId}] khỏi hệ thống Cloud!`);
+        } catch (error) { alert("❌ Thất bại khi thực hiện xóa: " + error); }
+    }
+
+    window.clearStudentScoresFromRank = function(stId) {
+        if (!validateMasterAdminPrivilege()) return;
+        if (!confirm(`⚠️ Bạn có chắc chắn muốn XÓA TOÀN BỘ LỊCH SỬ ĐIỂM SỐ của học sinh [${stId}]?`)) return;
+        
+        const updates = {};
+        if (objScores) {
+            Object.keys(objScores).forEach(key => {
+                let val = objScores[key];
+                if (key === stId || (val && typeof val === 'object' && val.studentId === stId)) { updates[`scores/${key}`] = null; }
+            });
+        }
+        
+        update(ref(db), updates).then(() => {
+            alert(`✅ Đã loại bỏ học sinh [${stId}] ra khỏi danh sách bảng xếp hạng thành công!`);
+        }).catch(err => alert("Lỗi thực thi: " + err));
+    }
+
+    window.deleteScoreRecord = function(scoreId) {
+        if (!validateMasterAdminPrivilege()) return;
+        if(!confirm(`⚠️ Bạn có chắc muốn xóa bản ghi điểm số này không?`)) return;
+        set(ref(db, 'scores/' + scoreId), null).then(() => { alert("✅ Đã dọn dẹp bản ghi điểm số thành công!"); });
+    }
+
+    window.deleteFeedbackOrRatingRecord = function(dbPath) {
+        if (!validateMasterAdminPrivilege()) return;
+        if(!confirm(`⚠️ Bạn có chắc muốn xóa vĩnh viễn bản ghi phản hồi/đánh giá này không?`)) return;
+        set(ref(db, dbPath), null).then(() => { alert("✅ Đã dọn dẹp bản ghi thành công!"); });
+    }
+
+    window.openEditStudentModal = function(studentId) {
+        if (!validateMasterAdminPrivilege()) return;
+        let u = objStudents[studentId]; if(!u) return;
+        document.getElementById("editStudentId").value = studentId;
+        document.getElementById("editStudentName").value = u.name || "";
+        document.getElementById("editStudentPhone").value = u.phone || "";
+        document.getElementById("editStudentPwd").value = u.password_raw || "";
+        document.getElementById("editStudentAge").value = u.age || "";
+        document.getElementById("editStudentClass").value = u.class || "";
+        document.getElementById("editStudentSchool").value = u.school || "";
+        document.getElementById("editStudentCity").value = u.city || "";
+        document.getElementById("editStudentGender").value = u.gender || "Nam";
+        document.getElementById("editStudentModal").style.display = "flex";
+    }
+
+    window.submitEditStudent = async function() {
+        if (!validateMasterAdminPrivilege()) return;
+        let id = document.getElementById("editStudentId").value;
+        let name = document.getElementById("editStudentName").value.trim();
+        let phone = document.getElementById("editStudentPhone").value.trim();
+        let pwd = document.getElementById("editStudentPwd").value.trim();
+        let age = document.getElementById("editStudentAge").value.trim();
+        let cls = document.getElementById("editStudentClass").value.trim();
+        let school = document.getElementById("editStudentSchool").value.trim();
+        let city = document.getElementById("editStudentCity").value.trim();
+        let gender = document.getElementById("editStudentGender").value;
+
+        if(!name || !pwd || !age || !cls || !school || !city || !phone) { alert("⚠️ Vui lòng không để trống các trường bắt buộc!"); return; }
+
+        let hashedPwd = objStudents[id].password;
+        if(pwd !== objStudents[id].password_raw) {
+            const msgBuffer = new TextEncoder().encode(pwd);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            hashedPwd = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        let updatedUser = { ...objStudents[id], name, phone, password: hashedPwd, password_raw: pwd, age, class: cls, school, city, gender };
+        const updates = {};
+        updates[`users/${id}`] = updatedUser;
+        
+        if (objScores) {
+            Object.keys(objScores).forEach(key => {
+                let val = objScores[key];
+                if (key === id && typeof val === 'object') {
+                    Object.keys(val).forEach(subKey => {
+                        updates[`scores/${id}/${subKey}/name`] = name;
+                        updates[`scores/${id}/${subKey}/schoolClass`] = "Lớp " + cls;
+                    });
+                } else if (val && typeof val === 'object' && val.studentId === id) {
+                    updates[`scores/${key}/name`] = name;
+                    updates[`scores/${key}/schoolClass`] = "Lớp " + cls;
+                }
+            });
+        }
+        
+        if (objFeedbacks) {
+            let flatFeedbacks = window.flattenDynamicNodes(objFeedbacks, 'studentId');
+            flatFeedbacks.forEach(f => {
+                if (f.studentId === id) {
+                    if (objFeedbacks[id] && f.id in objFeedbacks[id]) {
+                        updates[`feedbacks/${id}/${f.id}/name`] = name;
+                        updates[`feedbacks/${id}/${f.id}/schoolClass`] = "Lớp " + cls;
+                    } else {
+                        updates[`feedbacks/${f.id}/name`] = name;
+                        updates[`feedbacks/${f.id}/schoolClass`] = "Lớp " + cls;
+                    }
+                }
+            });
+        }
+
+        if (objRatings) {
+            Object.keys(objRatings).forEach(key => {
+                let val = objRatings[key];
+                if (key === id && typeof val === 'object') {
+                    updates[`ratings/${id}/name`] = name;
+                    updates[`ratings/${id}/schoolClass`] = "Lớp " + cls;
+                } else if (val && typeof val === 'object' && val.studentId === id) {
+                    updates[`ratings/${key}/name`] = name;
+                    updates[`ratings/${key}/schoolClass`] = "Lớp " + cls;
+                }
+            });
+        }
+
+        if (objPublicChat) {
+            Object.keys(objPublicChat).forEach(key => {
+                let val = objPublicChat[key];
+                if (val && typeof val === 'object' && val.studentId === id) { updates[`public_chat/${key}/name`] = name; }
+            });
+        }
+
+        update(ref(db), updates).then(() => { 
+            alert(`🎉 Thành công: Đã lưu thông tin mới và đồng bộ dữ liệu lên Cloud!`); 
+            window.closeModal('editStudentModal'); 
+        }).catch(err => alert("Lỗi kết nội đồng bộ: " + err));
+    }
+
+    window.filterAdminScores = function(gameKey) {
+        window.currentAdminScoreGameFilter = gameKey;
+        document.querySelectorAll('.game-filter-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById('score-filter-' + gameKey);
+        if (activeBtn) activeBtn.classList.add('active');
+        renderScoresView();
+    }
+
+    window.switchMainTab = function(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        
+        document.getElementById('btn-tab-' + tabId).classList.add('active');
+        document.getElementById('panel-' + tabId).classList.add('active');
+        currentActiveTab = tabId;
+        
+        if(tabId === 'students') renderStudentsView();
+        if(tabId === 'scores') renderScoresView();
+        if(tabId === 'results') window.filterResultsData();
+        if(currentActiveTab === 'feedbacks') renderFeedbacksView();
+        if(tabId === 'posts') window.renderAdminPostsView();
+        if(tabId === 'games-cms') {
+            renderCmsGamesView();
+            window.editGameSetup('trangchu'); 
+        }
+		if(tabId === 'schools') {
+            window.renderSchoolsManagementView();
+        }
+    }
+
+    window.selectStudentScore = function(stId) {
+        window.selectedStudentScoreId = stId;
+        renderScoresView();
+    }
+
+    function renderStudentsView() {
+        let body = document.getElementById("studentsBody"); if(!body) return; body.innerHTML = "";
+        let keys = Object.keys(objStudents);
+        if(keys.length === 0) { body.innerHTML = `<tr><td colspan="11" class="empty-message">Hệ thống chưa ghi nhận tài khoản học sinh nào.</td></tr>`; return; }
+
+        let fCity = document.getElementById("studentFilterCity")?.value || "all";
+        let fSchool = document.getElementById("studentFilterSchool")?.value || "all";
+        let fClass = document.getElementById("studentFilterClass")?.value || "all";
+        let fGender = document.getElementById("studentFilterGender")?.value || "all";
+
+        let filteredKeys = keys.filter(key => {
+            let u = objStudents[key];
+            if (!u) return false;
+            if (fCity !== "all" && (!u.city || u.city.trim() !== fCity)) return false;
+            if (fSchool !== "all" && (!u.school || u.school.trim() !== fSchool)) return false;
+            if (fClass !== "all" && String(u.class) !== fClass) return false;
+            if (fGender !== "all" && u.gender !== fGender) return false;
+            return true;
+        });
+
+        if(filteredKeys.length === 0) { body.innerHTML = `<tr><td colspan="11" class="empty-message">Không tìm thấy học sinh nào thỏa mãn các tiêu chí lọc trên.</td></tr>`; return; }
+
+        filteredKeys.sort((a, b) => (parseInt(a.replace("HS", ""), 10) || 0) - (parseInt(b.replace("HS", ""), 10) || 0));
+        filteredKeys.forEach(key => {
+            let u = objStudents[key]; let rawPwd = u.password_raw || "";
+            let idNum = parseInt(key.replace("HS", ""), 10) || 0;
+            let batchBadge = `<span class="badge badge-warning">Đợt ${Math.ceil(idNum / 10)}</span>`;
+
+            let pwdActionHtml = rawPwd 
+                ? `<div style="display:flex; align-items:center; gap:8px; justify-content:center;">
+                    <span id="pwd-${key}" style="font-family: monospace; color:#334155; font-weight:700;">•••••</span>
+                    <i class="fa-solid fa-eye" id="eye-${key}" style="cursor:pointer; color:#64748b;" onclick="window.togglePasswordDisplay('${key}', '${rawPwd}')"></i>
+                   </div>`
+                : `<span style="color:#94a3b8; font-style:italic; font-size:12px;">Mã hóa SHA-256</span>`;
+
+            let banUntil = u.banUntil || null;
+            let isCurrentlyBanned = false;
+            let banRemainingText = "";
+
+            if (banUntil === "permanent") { isCurrentlyBanned = true; banRemainingText = "Vĩnh viễn"; } 
+            else if (banUntil && parseInt(banUntil) > Date.now()) {
+                isCurrentlyBanned = true;
+                let diffMs = parseInt(banUntil) - Date.now();
+                if (diffMs > 24 * 60 * 60 * 1000) banRemainingText = Math.ceil(diffMs / (24 * 60 * 60 * 1000)) + " ngày";
+                else if (diffMs > 60 * 60 * 1000) banRemainingText = Math.ceil(diffMs / (60 * 60 * 1000)) + " giờ";
+                else banRemainingText = Math.ceil(diffMs / (60 * 1000)) + " phút";
+            }
+
+            let lockActionHtml = isCurrentlyBanned
+                ? `<div style="display:flex; align-items:center; gap:5px;">
+                        <span class="badge badge-danger" style="padding:6px 10px; font-size:11.5px;"><i class="fa-solid fa-user-slash"></i> Khóa (${banRemainingText})</span>
+                        <button class="btn" style="padding:5px 10px; font-size:12px; margin:0; background:#22c55e; color:white; border:none; border-radius:8px;" onclick="window.unbanStudentAccount('${key}')"><i class="fa-solid fa-lock-open"></i> Mở</button>
+                    </div>`
+                : `<div style="display:flex; align-items:center; gap:5px;">
+                        <select id="banDuration-${key}" style="padding:5px; font-size:12px; border-radius:8px; border:1px solid #cbd5e1; font-weight:700; background:white; outline:none;">
+                            <option value="300000">5 phút</option>
+                            <option value="1800000">30 phút</option>
+                            <option value="3600000">1 giờ</option>
+                            <option value="86400000">1 ngày</option>
+                            <option value="permanent">Vĩnh viễn</option>
+                        </select>
+                        <button class="btn" style="padding:5px 10px; font-size:12px; margin:0; border:1px solid #cbd5e1; border-radius:8px;" onclick="window.banStudentAccount('${key}')"><i class="fa-solid fa-lock"></i> Phạt</button>
+                    </div>`;
+
+            body.innerHTML += `<tr>
+                <td><span class="id-text">${u.id || key}</span></td>
+                <td>${batchBadge}</td>
+                <td><b>${u.name || '---'}</b></td>
+                <td><span style="color:#16a34a; font-weight:700;"><i class="fa-solid fa-phone"></i> ${u.phone || '---'}</span></td>
+                <td>${pwdActionHtml}</td>
+                <td>${u.city || '---'}</td>
+                <td style="font-weight: 600;">${u.age || '---'} tuổi</td>
+                <td>${u.school || '---'}</td>
+                <td><span class="badge" style="background:#f1f5f9; color:#475569;">Lớp ${u.class || '---'}</span></td>
+                <td>${u.gender || '---'}</td>
+                <td>
+                    <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                        ${lockActionHtml}
+                        <button class="btn btn-primary" style="padding: 6px 12px; font-size:12px; margin:0; background:#e0f2fe; color:#0369a1; border:none; border-radius:8px;" onclick="window.openEditStudentModal('${key}')"><i class="fa-solid fa-user-pen"></i> Sửa</button>
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size:12px; margin:0; border-radius:8px;" onclick="window.deleteStudentAccount('${u.id || key}')"><i class="fa-solid fa-user-xmark"></i> Xóa</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+    }
+
+    function renderScoresView() {
+        let body = document.getElementById("scoresBody"); if(!body) return; body.innerHTML = "";
+        let allScores = window.flattenDynamicNodes(objScores, 'gameName');
+        
+        let fCitySc = document.getElementById("scoreFilterCity")?.value || "all";
+        let fSchoolSc = document.getElementById("scoreFilterSchool")?.value || "all";
+        let fClassSc = document.getElementById("scoreFilterClass")?.value || "all";
+        let fGenderSc = document.getElementById("scoreFilterGender")?.value || "all";
+
+        allScores = allScores.filter(s => {
+            let u = objStudents[s.studentId];
+            if (!u) return false;
+            if (fCitySc !== "all" && (!u.city || u.city.trim() !== fCitySc)) return false;
+            if (fSchoolSc !== "all" && (!u.school || u.school.trim() !== fSchoolSc)) return false;
+            if (fClassSc !== "all" && String(u.class) !== fClassSc) return false;
+            if (fGenderSc !== "all" && u.gender !== fGenderSc) return false;
+            return true;
+        });
+
+        let sidebar = document.getElementById("studentScoreSidebarList");
+        if(sidebar) {
+            let sortedStudentKeys = Object.keys(objStudents).sort((a, b) => (parseInt(a.replace("HS", ""), 10) || 0) - (parseInt(b.replace("HS", ""), 10) || 0));
+            sortedStudentKeys = sortedStudentKeys.filter(stKey => {
+                let u = objStudents[stKey];
+                if (!u) return false;
+                if (fCitySc !== "all" && (!u.city || u.city.trim() !== fCitySc)) return false;
+                if (fSchoolSc !== "all" && (!u.school || u.school.trim() !== fSchoolSc)) return false;
+                if (fClassSc !== "all" && String(u.class) !== fClassSc) return false;
+                if (fGenderSc !== "all" && u.gender !== fGenderSc) return false;
+                return true;
+            });
+
+            let sidebarHtml = `
+                <div class="student-sidebar-item ${window.selectedStudentScoreId === 'all' ? 'active' : ''}" onclick="window.selectStudentScore('all')">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:800;">
+                        <span>🌟 TẤT CẢ HỌC SINH</span>
+                        <span class="badge" style="background:#1a73e8; color:white;">${allScores.length} bài</span>
+                    </div>
+                </div>
+            `;
+            sortedStudentKeys.forEach(stKey => {
+                let stInfo = objStudents[stKey];
+                let scoreCount = allScores.filter(s => s.studentId === stKey).length;
+                sidebarHtml += `
+                    <div class="student-sidebar-item ${window.selectedStudentScoreId === stKey ? 'active' : ''}" onclick="window.selectStudentScore('${stKey}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span class="id-text">${stKey}</span>
+                            <span class="badge ${scoreCount > 0 ? 'badge-success' : 'badge-danger'}">${scoreCount} lượt chơi</span>
+                        </div>
+                        <div style="font-size:13.5px; font-weight:700; color:#1e293b; margin-top:2px;">${stInfo.name || 'N/A'}</div>
+                        <div style="font-size:11px; color:#64748b;">Lớp ${stInfo.class || '?'} - ${stInfo.school || '?'}</div>
+                    </div>
+                `;
+            });
+            sidebar.innerHTML = sidebarHtml;
+        }
+
+        let filtered = (window.selectedStudentScoreId === 'all') ? allScores : allScores.filter(s => s.studentId === window.selectedStudentScoreId);
+
+        if (window.currentAdminScoreGameFilter && window.currentAdminScoreGameFilter !== 'all') {
+            if (window.currentAdminScoreGameFilter === 'combined') {
+                filtered = filtered.filter(s => s.gameName && s.gameName.toLowerCase().includes("tổng hợp"));
+            } else {
+                filtered = filtered.filter(s => {
+                    if (!s.gameName || s.gameName.toLowerCase().includes("tổng hợp")) return false;
+                    let name = s.gameName.toLowerCase();
+                    if (window.currentAdminScoreGameFilter === 'game1' && name.includes("memory")) return true;
+                    if (window.currentAdminScoreGameFilter === 'game2' && (name.includes("stop") || name.includes("go/no-go") || name.includes("ức chế"))) return true;
+                    if (window.currentAdminScoreGameFilter === 'game3' && name.includes("n-back")) return true;
+                    if (window.currentAdminScoreGameFilter === 'game4' && (name.includes("trail") || name.includes("tốc độ"))) return true;
+                    if (window.currentAdminScoreGameFilter === 'game5' && (name.includes("flexibility") || name.includes("linh hoạt"))) return true;
+                    return false;
+                });
+            }
+        }
+
+        let studentsSet = new Set(); filtered.forEach(s => { if(s.studentId) studentsSet.add(s.studentId); });
+        document.getElementById("totalRegisteredStudents").innerText = studentsSet.size;
+        document.getElementById("totalPlayedRecords").innerText = filtered.length;
+        document.getElementById("safePlayedRecords").innerText = filtered.filter(s => s.gameName && !s.gameName.includes("[STRESS_REJECT_LB]")).length;
+        document.getElementById("stoppedPlayedRecords").innerText = filtered.filter(s => s.gameName && s.gameName.includes("[STRESS_REJECT_LB]")).length;
+        
+        let c1 = allScores.filter(s => s.gameName?.toLowerCase().includes("memory")).length;
+        let c2 = allScores.filter(s => s.gameName?.toLowerCase().includes("stop") || s.gameName?.toLowerCase().includes("go") || s.gameName?.toLowerCase().includes("ức chế")).length;
+        let c3 = allScores.filter(s => s.gameName?.toLowerCase().includes("n-back")).length;
+        let c4 = allScores.filter(s => s.gameName?.toLowerCase().includes("trail") || s.gameName?.toLowerCase().includes("tốc độ")).length;
+        let c5 = allScores.filter(s => s.gameName?.toLowerCase().includes("flexibility") || s.gameName?.toLowerCase().includes("linh hoạt")).length;
+
+        let ctxBar = document.getElementById('scoresBarChart');
+        if (ctxBar) {
+            if (globalScoresChart) globalScoresChart.destroy();
+            globalScoresChart = new Chart(ctxBar.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['G1: Memory', 'G2: Stop Game', 'G3: N-Back', 'G4: Trail Test', 'G5: Flexibility'],
+                    datasets: [{ label: 'Số lượt hoàn thành kiểm tra', data: [c1, c2, c3, c4, c5], backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6'], borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        if(filtered.length === 0) { body.innerHTML = `<tr><td colspan="7" class="empty-message">Không có bản ghi điểm số nào khớp bộ lọc trò chơi hiện tại.</td></tr>`; return; }
+        filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        filtered.forEach(s => {
+            let accuracyStr = String(s.accuracy || "Bình thường");
+            let badgeClass = accuracyStr.includes("Cao") ? "badge-danger" : (accuracyStr.includes("Trung bình") ? "badge-warning" : "badge-success");
+            body.innerHTML += `<tr>
+                <td><span class="id-text">${s.studentId || 'N/A'}</span></td>
+                <td><b>${s.name || '---'}</b></td>
+                <td><span style="font-weight:700; color:#1a73e8;"><i class="fa-solid fa-gamepad"></i> ${s.gameName || 'Bài test'}</span></td>
+                <td><code>${s.score || s.timePlayed || '---'}</code></td>
+                <td style="color:#64748b; font-size:13px;">${s.timestamp ? new Date(s.timestamp).toLocaleString("vi-VN") : "---"}</td>
+                <td><span class="badge ${badgeClass}">${s.accuracy || "Bình thường"}</span></td>
+                <td><button class="btn btn-danger" style="padding: 6px 12px; font-size:12px; margin:0; border-radius:8px;" onclick="window.deleteScoreRecord('${s.id}')"><i class="fa-solid fa-trash"></i> Xóa</button></td>
+            </tr>`;
+        });
+        buildLeaderboardRank(allScores);
+    }
+
+    function buildLeaderboardRank(allScores) {
+        let rankContainer = document.getElementById("adminRankList"); if(!rankContainer) return; rankContainer.innerHTML = "";
+        let studentGroups = {};
+        allScores.filter(s => s.gameName && !s.gameName.includes("[STRESS_REJECT_LB]")).forEach(s => {
+            let key = s.studentId || s.name; if(!key || !objStudents[s.studentId]) return;
+            if(!studentGroups[key]) studentGroups[key] = { name: s.name || "Ẩn danh", id: s.studentId || "N/A", vals: [] };
+            let match = String(s.score||"").match(/(\d+)/); if(match) studentGroups[key].vals.push(parseInt(match[1]));
+        });
+        let arr = []; for(let k in studentGroups) { if(studentGroups[k].vals.length>0) arr.push({ name: studentGroups[k].name, id: studentGroups[k].id, avg: (studentGroups[k].vals.reduce((a,b)=>a+b,0)/studentGroups[k].vals.length).toFixed(1) }); }
+        arr.sort((a,b)=>b.avg - a.avg).slice(0,5).forEach((item, idx) => {
+            rankContainer.innerHTML += `<div class="rank-item">
+                <span>${idx===0?"🥇":(idx===1?"🥈":(idx===2?"🥉":`#${idx+1}`))} <b>${item.name}</b> <small class="id-text">[${item.id}]</small></span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-weight:700; color:#16a34a;">${item.avg} điểm</span>
+                    <i class="fa-solid fa-trash-can" style="color:#ef4444; cursor:pointer; font-size:13px;" onclick="window.clearStudentScoresFromRank('${item.id}')" title="Xóa học sinh khỏi bảng xếp hạng"></i>
+                </div>
+            </div>`;
+        });
+    }
+
+    window.filterResultsData = function() {
+        let body = document.getElementById("resultsTableBody"); if (!body) return; body.innerHTML = "";
+
+        let fCityRes = document.getElementById("resultFilterCity")?.value || "all";
+        let fSchoolRes = document.getElementById("resultFilterSchool")?.value || "all";
+        let fClassRes = document.getElementById("resultFilterClass")?.value || "all";
+        let fGenderRes = document.getElementById("resultFilterGender")?.value || "all";
+
+        let allScores = window.flattenDynamicNodes(objScores, 'gameName');
+        let matchedStudentsCount = 0;
+        let keys = Object.keys(objStudents);
+        let levelCounts = { m1: 0, m2: 0, m3: 0 };
+
+        if(keys.length === 0) { body.innerHTML = `<tr><td colspan="22" class="empty-message">Đang kết nối dữ liệu máy chủ đám mây...</td></tr>`; return; }
+        keys.sort((a, b) => (parseInt(a.replace("HS", ""), 10) || 0) - (parseInt(b.replace("HS", ""), 10) || 0));
+
+        keys.forEach(stKey => {
+            let u = objStudents[stKey]; if (!u) return;
+            let clsStr = String(u.class || "");
+            let genderStr = String(u.gender || "");
+
+            if (fCityRes !== "all" && (!u.city || u.city.trim() !== fCityRes)) return;
+            if (fSchoolRes !== "all" && (!u.school || u.school.trim() !== fSchoolRes)) return;
+            if (fClassRes !== "all" && clsStr !== fClassRes) return;
+            if (fGenderRes !== "all" && genderStr !== fGenderRes) return;
+
+            matchedStudentsCount++;
+
+            let stScores = allScores.filter(s => s.studentId === stKey);
+            let combinedRec = stScores.find(s => s.gameName && s.gameName.toLowerCase().includes("tổng hợp")) || {};
+            let g1 = stScores.find(s => s.gameName && s.gameName.toLowerCase().includes("memory")) || {};
+            let g2 = stScores.find(s => s.gameName && (s.gameName.toLowerCase().includes("stop") || s.gameName.toLowerCase().includes("go") || s.gameName.toLowerCase().includes("ức chế"))) || {};
+            let g3 = stScores.find(s => s.gameName && s.gameName.toLowerCase().includes("n-back")) || {};
+            let g4 = stScores.find(s => s.gameName && (s.gameName.toLowerCase().includes("trail") || s.gameName.toLowerCase().includes("tốc độ"))) || {};
+            let g5 = stScores.find(s => s.gameName && (s.gameName.toLowerCase().includes("flexibility") || s.gameName.toLowerCase().includes("linh hoạt"))) || {};
+
+            let parseMetrics = (gameObj) => {
+                let res = { correct: 0, wrong: 0, rt: 0, duration: 0 }; if (!gameObj) return res;
+                res.duration = parseInt(gameObj.timePlayed) || 0;
+                
+                // Trường hợp 1: Nếu score là một Object cấu trúc sẵn
+                if (gameObj.score && typeof gameObj.score === 'object') {
+                    res.correct = gameObj.score.correct || gameObj.score.right || gameObj.score.score || 0;
+                    res.wrong = gameObj.score.wrong || gameObj.score.errors || gameObj.score.failed || 0;
+                    res.rt = parseInt(gameObj.score.rtAvg || gameObj.score.rt || gameObj.score.reactionTime || 0);
+                } 
+                // Trường hợp 2: Nếu score là một chuỗi văn bản ghép (Ví dụ: "Đúng: 12, Lỗi: 1, RT: 390ms")
+                else if (gameObj.score) {
+                    let scoreStr = String(gameObj.score);
+                    let matchDung = scoreStr.match(/(?:Đúng|Correct|Right|Score)[:\s]*(\d+)/i) || scoreStr.match(/(\d+)\s*(?:câu đúng|đúng)/i);
+                    if (matchDung) res.correct = parseInt(matchDung[1]);
+                    
+                    let matchSai = scoreStr.match(/(?:Sai|Lỗi|Wrong|Error|Fail)[:\s]*(\d+)/i) || scoreStr.match(/(\d+)\s*(?:câu sai|lỗi|sai)/i);
+                    if (matchSai) res.wrong = parseInt(matchSai[1]);
+                    
+                    // 🚀 THÊM MỚI: Tự động dùng bộ lọc Regex tìm số RT nằm trong chuỗi văn bản
+                    let matchRt = scoreStr.match(/(?:RT|Phản hồi|Response|Time|Avg)[:\s]*(\d+)/i);
+                    if (matchRt) res.rt = parseInt(matchRt[1]);
+                }
+                
+                // Trường hợp 3: Nếu RT nằm ở lớp ngoài cùng độc lập của bản ghi
+                if (gameObj.rtAvg) res.rt = parseInt(gameObj.rtAvg);
+                else if (gameObj.rt) res.rt = parseInt(gameObj.rt);
+                else if (gameObj.reactionTime) res.rt = parseInt(gameObj.reactionTime);
+                
+                return res;
+            };
+
+            let d1 = parseMetrics(g1); let d2 = parseMetrics(g2); let d3 = parseMetrics(g3); let d4 = parseMetrics(g4); let d5 = parseMetrics(g5);
+            let sleepExcel = parseFloat(combinedRec.sleepHours || u.sleepHours || 7);
+            let deviceExcel = parseFloat(combinedRec.deviceHours || u.deviceHours || 2);
+            
+            let gonogoFA = 0;
+            if (combinedRec.gonogoFA !== undefined && combinedRec.gonogoFA !== "---") gonogoFA = parseFloat(combinedRec.gonogoFA) || 0;
+            else { let totalGo = d2.correct + d2.wrong; gonogoFA = totalGo > 0 ? Math.round((d2.wrong / totalGo) * 100) : 0; }
+
+            let totalN = d3.correct + d3.wrong;
+            let nbackAcc = g3.accuracy ? parseInt(g3.accuracy) : (totalN > 0 ? Math.round((d3.correct / totalN) * 100) : 0);
+            let tmtCost = d4.duration; let flexErrors = d5.wrong || 0; let stressScoreNum = parseInt(combinedRec.stressScore || u.stressScore || 12);
+            let rtAvgNum = parseInt(combinedRec.rtAvg || combinedRec.rt || combinedRec.reactionTime || 0) || d2.rt || d1.rt || d3.rt || d4.rt || d5.rt || 0;
+            
+            // Nếu các tầng trên đều bằng 0, thử bóc tách Regex trực tiếp từ chuỗi score của bản ghi tổng hợp
+            if (rtAvgNum < 100 && combinedRec.score) {
+                let matchCombinedRt = String(combinedRec.score).match(/(?:RT|Phản hồi|Response|Time|Avg)[:\s]*(\d+)/i);
+                if (matchCombinedRt) rtAvgNum = parseInt(matchCombinedRt[1]);
+            }
+            
+            // Nếu rà soát mọi ngóc ngách vẫn hoàn toàn trống dữ liệu thì mới dùng mốc chuẩn hóa học đường 435ms
+            if (rtAvgNum < 100) rtAvgNum = 435;
+
+            let norm_rt = Math.min(Math.max((rtAvgNum - 322) / (622 - 322), 0), 1);
+            let norm_fa = Math.min(Math.max((gonogoFA - 0.2) / (19.2 - 0.2), 0), 1);
+            let norm_acc = (totalN > 0 || g3.accuracy) ? Math.min(Math.max((97.2 - nbackAcc) / (97.2 - 60), 0), 1) : 0;
+            let norm_tmt = Math.min(Math.max((tmtCost - 10) / (68 - 10), 0), 1);
+            let norm_flex = Math.min(Math.max((flexErrors - 0) / (8 - 0), 0), 1);
+            let norm_stress = Math.min(Math.max((stressScoreNum - 0) / (33 - 0), 0), 1);
+
+            let triFinal = (norm_rt * 0.2) + (norm_fa * 0.15) + (norm_acc * 0.2) + (norm_tmt * 0.15) + (norm_flex * 0.1) + (norm_stress * 0.2);
+            let triLevelVal = "Mức 1 (Thấp)";
+            if (triFinal >= 0.65) { triLevelVal = "Mức 3 (Cần hỗ trợ)"; levelCounts.m3++; } 
+            else if (triFinal >= 0.45) { triLevelVal = "Mức 2 (Cần theo dõi)"; levelCounts.m2++; } 
+            else levelCounts.m1++;
+
+            body.innerHTML += `<tr>
+                <td><b>${stKey}</b></td><td>${u.gender || '---'}</td><td>${u.age || '---'}</td><td>Lớp ${u.class || '---'}</td>
+                <td>${sleepExcel}</td><td>${deviceExcel}</td><td>${rtAvgNum}</td><td>${gonogoFA}</td><td>${nbackAcc}</td>
+                <td>${tmtCost}</td><td>${flexErrors}</td><td>${stressScoreNum}</td>
+                <td>${norm_rt.toFixed(3)}</td><td>${norm_fa.toFixed(3)}</td><td>${norm_acc.toFixed(3)}</td>
+                <td>${norm_tmt.toFixed(3)}</td><td>${norm_flex.toFixed(3)}</td><td>${norm_stress.toFixed(3)}</td>
+                <td style="font-weight:700; color:#1a73e8;">${triFinal.toFixed(3)}</td><td>${triLevelVal}</td>
+                <td style="font-weight:700; color:#1a73e8;">${triFinal.toFixed(3)}</td><td>${triLevelVal}</td>
+            </tr>`;
+        });
+
+        let countEl = document.getElementById("resTotalCount"); if(countEl) countEl.innerText = matchedStudentsCount + " em";
+
+        let ctxRes = document.getElementById('resultsChart');
+        if (ctxRes) {
+            if (globalResultsChart) globalResultsChart.destroy();
+            globalResultsChart = new Chart(ctxRes.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Mức 1 (Nguy cơ Thấp)', 'Mức 2 (Cần theo dõi)', 'Mức 3 (Cần hỗ trợ)'],
+                    datasets: [{ data: [levelCounts.m1, levelCounts.m2, levelCounts.m3], backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'], borderWidth: 2, borderColor: '#ffffff' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { weight: 'bold', size: 11 } } },
+                        title: { display: true, text: 'Tỷ Lệ Phân Phối Mức Độ Nguy Cơ Nhận Thức (TRI) Sau Bộ Lọc', font: { size: 13, weight: 'bold' }, color: '#1e293b' }
+                    }
+                }
+            });
+        }
+    };
+
+    window.exportResultsToPDF = function() {
+        const element = document.getElementById('pdfExportArea'); if (!element) return;
+        const opt = {
+            margin: 8, filename: `Bao_Cao_Ma_Tran_TRI_${Date.now()}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    function renderFeedbacksView() {
+        let body = document.getElementById("feedbacksBody"); if(!body) return; body.innerHTML = "";
+        let list = [];
+
+        if (objFeedbacks && typeof objFeedbacks === 'object') {
+            Object.keys(objFeedbacks).forEach(key1 => {
+                let item = objFeedbacks[key1]; if (!item || typeof item !== 'object') return;
+                if ('general' in item || 'content1' in item) {
+                    let studentInfo = objStudents[item.studentId || key1] || {};
+                    list.push({ id: key1, studentId: item.studentId || key1, name: item.name || studentInfo.name || '---', schoolClass: item.schoolClass || item.class || (studentInfo.class ? "Lớp " + studentInfo.class : '---'), time: item.time || (item.timestamp ? new Date(parseInt(item.timestamp)).toLocaleString("vi-VN") : '---'), timestamp: parseInt(item.timestamp) || 0, type: item.type || 'Góp ý', c1: item.general || item.content1 || '---', c2: item.pros || item.content2 || '---', c3: item.cons || item.content3 || '---', path: 'feedbacks/' + key1 });
+                } else {
+                    Object.keys(item).forEach(key2 => {
+                        let subItem = item[key2]; if (!subItem || typeof subItem !== 'object') return;
+                        let studentInfo = objStudents[subItem.studentId || key1] || {};
+                        list.push({ id: key2, studentId: subItem.studentId || key1, name: subItem.name || studentInfo.name || '---', schoolClass: subItem.schoolClass || subItem.class || (studentInfo.class ? "Lớp " + studentInfo.class : '---'), time: subItem.time || (subItem.timestamp ? new Date(parseInt(subItem.timestamp)).toLocaleString("vi-VN") : '---'), timestamp: parseInt(subItem.timestamp) || 0, type: subItem.type || 'Góp ý', c1: subItem.general || subItem.content1 || '---', c2: subItem.pros || subItem.content2 || '---', c3: subItem.cons || subItem.content3 || '---', path: 'feedbacks/' + key1 + '/' + key2 });
+                    });
+                }
+            });
+        }
+
+        if (objRatings && typeof objRatings === 'object') {
+            Object.keys(objRatings).forEach(key1 => {
+                let item = objRatings[key1]; if (!item || typeof item !== 'object') return;
+                if ('stars' in item) {
+                    let studentInfo = objStudents[item.studentId || key1] || {};
+                    list.push({ id: key1, studentId: item.studentId || key1, name: item.name || studentInfo.name || '---', schoolClass: item.schoolClass || item.class || (studentInfo.class ? "Lớp " + studentInfo.class : '---'), time: item.timestamp ? new Date(parseInt(item.timestamp)).toLocaleString("vi-VN") : '---', timestamp: parseInt(item.timestamp) || 0, type: 'Đánh giá sao ⭐', c1: `${item.stars || 0} ⭐`, c2: item.text || '---', c3: '---', path: 'ratings/' + key1 });
+                } else {
+                    Object.keys(item).forEach(key2 => {
+                        let subItem = item[key2]; if (!subItem || typeof subItem !== 'object' || !('stars' in subItem)) return;
+                        let studentInfo = objStudents[subItem.studentId || key1] || {};
+                        list.push({ id: key2, studentId: subItem.studentId || key1, name: subItem.name || studentInfo.name || '---', schoolClass: subItem.schoolClass || subItem.class || (studentInfo.class ? "Lớp " + studentInfo.class : '---'), time: subItem.timestamp ? new Date(parseInt(subItem.timestamp)).toLocaleString("vi-VN") : '---', timestamp: parseInt(subItem.timestamp) || 0, type: 'Đánh giá sao ⭐', c1: `${subItem.stars || 0} ⭐`, c2: subItem.text || '---', c3: '---', path: 'ratings/' + key1 + '/' + key2 });
+                    });
+                }
+            });
+        }
+
+        if(list.length === 0) { body.innerHTML = `<tr><td colspan="9" class="empty-message">Hộp thư phản hồi & đánh giá hiện đang trống.</td></tr>`; return; }
+        list.sort((a, b) => a.timestamp - a.timestamp);
+        
+        list.forEach(f => {
+            let typeBadge = f.type.includes('Đánh giá') ? `<span class="badge badge-warning"><i class="fa-solid fa-star"></i> Đánh giá</span>` : `<span class="badge badge-success">${f.type}</span>`;
+            body.innerHTML += `<tr>
+                <td>${f.time}</td><td>${typeBadge}</td><td><span class="id-text">${f.studentId}</span></td><td><b>${f.name}</b></td><td>${f.schoolClass}</td><td>${f.c1}</td><td>${f.c2}</td><td>${f.c3}</td>
+                <td><button class="btn btn-danger" style="padding: 6px 12px; font-size:12px; margin:0; border-radius:8px;" onclick="window.deleteFeedbackOrRatingRecord('${f.path}')"><i class="fa-solid fa-trash"></i> Xóa</button></td>
+            </tr>`;
+        });
+    }
+
+    window.changeSimulatorMode = function(mode) {
+        currentSimulatorMode = mode; const frameShell = document.getElementById("simulatorFrameWrapper");
+        const btnMobile = document.getElementById("viewBtnMobile"); const btnDesktop = document.getElementById("viewBtnDesktop");
+        if (mode === 'mobile') { frameShell.className = "simulator-window-frame mode-mobile"; btnMobile.classList.add("active"); btnDesktop.classList.remove("active"); } 
+        else { frameShell.className = "simulator-window-frame mode-desktop"; btnDesktop.classList.add("active"); btnMobile.classList.remove("active"); }
+        window.applyAutoResponsiveZoom(); 
+    };
+
+    window.applyAutoResponsiveZoom = function() {
+        const iframe = document.getElementById("cmsLivePreviewFrame"); if (!iframe || currentSimulatorMode === 'desktop') { if (iframe) iframe.style.transform = "none"; return; }
+        const targetWidth = 1100; const containerWidth = 332; const scaleRatio = containerWidth / targetWidth;
+        iframe.style.width = targetWidth + "px"; iframe.style.height = (612 / scaleRatio) + "px"; iframe.style.transform = `scale(${scaleRatio})`;
+    };
+
+    function updateNppStatusBar(text) {
+        const length = text.length; const lines = text.split('\n').length;
+        document.getElementById("nppStatusLength").innerText = `Length: ${length.toLocaleString()} | Lines: ${lines}`;
+        let gutterHtml = ""; for(let i=1; i<=Math.max(lines, 15); i++) { gutterHtml += i + "<br>"; }
+        document.getElementById("nppLineGutter").innerHTML = gutterHtml;
+    }
+
+    window.editGameSetup = function(key) {
+        const game = objCmsGames[key]; if(!game) return;
+        document.getElementById("gameKey").value = key; document.getElementById("gameKey").disabled = true;
+        document.getElementById("gameName").value = game.name || ""; document.getElementById("gameIcon").value = game.icon || "";
+        document.getElementById("gameUrl").value = game.url || ""; document.getElementById("editGameKey").value = key;
+        document.getElementById("formGameTitle").innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Cấu hình tệp: <span style="color:red">${key}</span>`;
+        document.getElementById("btnCancelEdit").style.display = "inline-block";
+        document.getElementById("nppTabName").innerText = game.url ? game.url.split('/').pop() : `${key}.html`;
+
+        const editorArea = document.getElementById("nppCodeEditor"); const previewFrame = document.getElementById("cmsLivePreviewFrame");
+        if (game.codeContent) {
+            editorArea.value = game.codeContent; previewFrame.removeAttribute("src"); previewFrame.srcdoc = game.codeContent;
+            updateNppStatusBar(game.codeContent); setTimeout(window.applyAutoResponsiveZoom, 150);
+        } else {
+            editorArea.value = "";
+            if (window.location.protocol === 'file:') { previewFrame.srcdoc = "<h3>Chế độ xem thử tệp tĩnh HTML</h3>"; updateNppStatusBar(editorArea.value); setTimeout(window.applyAutoResponsiveZoom, 150); } 
+            else if (game.url && game.url !== "---") {
+                fetch(game.url).then(res => res.text()).then(code => {
+                    editorArea.value = code; previewFrame.removeAttribute("src"); previewFrame.srcdoc = code;
+                    updateNppStatusBar(code); setTimeout(window.applyAutoResponsiveZoom, 150);
+                }).catch(err => { previewFrame.srcdoc = "<h3>Biên soạn mã nguồn HTML bên tab Notepad++ rồi bấm Lưu để compile!</h3>"; updateNppStatusBar(editorArea.value); });
+            } else { previewFrame.src = "about:blank"; updateNppStatusBar(editorArea.value); }
+        }
+    };
+
+    window.saveCodeFromNpp = function() {
+        if (!validateMasterAdminPrivilege()) return; const key = document.getElementById("editGameKey").value;
+        if (!key) { alert("⚠️ Vui lòng chọn một file bất kỳ từ danh sách!"); return; }
+        const codeValue = document.getElementById("nppCodeEditor").value;
+        set(ref(db, `app_config/active_games/${key}/codeContent`), codeValue).then(() => {
+            alert(`🎉 [NOTEPAD++] Đã biên dịch thành công mã nguồn file [${key}] lên máy chủ!`);
+            document.getElementById("cmsLivePreviewFrame").srcdoc = codeValue;
+            updateNppStatusBar(codeValue); setTimeout(window.applyAutoResponsiveZoom, 150);
+        });
+    };
+
+    window.saveGameFromCms = function() {
+        if (!validateMasterAdminPrivilege()) return;
+        const key = document.getElementById("gameKey").value.trim(); const name = document.getElementById("gameName").value.trim();
+        const icon = document.getElementById("gameIcon").value.trim(); const url = document.getElementById("gameUrl").value.trim();
+        if(!key || !name || !url) { alert("⚠️ Vui lòng điền đầy đủ thông tin!"); return; }
+        const existingCode = objCmsGames[key]?.codeContent || "";
+        const targetData = { name: name, icon: icon || "🎮", url: url, status: true, codeContent: existingCode };
+        set(ref(db, 'app_config/active_games/' + key), targetData).then(() => { alert("🎉 Đã lưu thông số tệp cấu hình ứng dụng!"); window.cancelEditGame(); });
+    };
+
+    window.toggleGameStatus = function(key, currentStatus) { if (!validateMasterAdminPrivilege()) return; set(ref(db, `app_config/active_games/${key}/status`), !currentStatus); };
+    window.deleteGameSetup = function(key) { if (!validateMasterAdminPrivilege()) return; if(confirm(`⚠️ Bạn có chắc chắn muốn xóa file [${key}] không?`)) { set(ref(db, 'app_config/active_games/' + key), null); } };
+    window.cancelEditGame = function() {
+        document.getElementById("gameKey").value = ""; document.getElementById("gameKey").disabled = false; document.getElementById("gameName").value = ""; document.getElementById("gameIcon").value = ""; document.getElementById("gameUrl").value = ""; document.getElementById("editGameKey").value = "";
+        document.getElementById("formGameTitle").innerHTML = `<i class="fa-solid fa-sliders"></i> Trình điều chỉnh cấu hình ứng dụng (WordPress)`; document.getElementById("btnCancelEdit").style.display = "none";
+    };
+
+    function renderCmsGamesView() {
+        let body = document.getElementById("cmsGamesTableBody"); if(!body) return; body.innerHTML = ""; let keys = Object.keys(objCmsGames);
+        if(keys.length === 0) { body.innerHTML = `<tr><td colspan="6" class="empty-message">Chưa cấu hình danh mục tệp hiển thị nào.</td></tr>`; return; }
+        keys.forEach(key => {
+            let g = objCmsGames[key]; let statusBtn = g.status ? `<button class="btn btn-success" style="padding:5px 10px; font-size:11px;" onclick="window.toggleGameStatus('${key}', true)">🟢 Hoạt động</button>` : `<button class="btn btn-primary" style="padding:5px 10px; font-size:11px; background:#94a3b8; color:#fff; border:none;" onclick="window.toggleGameStatus('${key}', false)">⚪ Tạm ẩn</button>`;
+            body.innerHTML += `<tr><td style="font-size:20px;">${g.icon || '🎮'}</td><td><span class="id-text" style="background:#f1f5f9; color:#475569;">${key}</span></td><td><b>${g.name}</b></td><td><code style="color:#0f172a; font-weight:600;">${g.url}</code></td><td>${statusBtn}</td><td><div style="display:flex; gap:6px;"><button class="btn btn-primary" style="padding:5px 10px; font-size:11px; margin:0;" onclick="window.editGameSetup('${key}')"><i class="fa-solid fa-code"></i> Code IDE</button><button class="btn btn-danger" style="padding:5px 10px; font-size:11px; margin:0;" onclick="window.deleteGameSetup('${key}')">Xóa</button></div></td></tr>`;
+        });
+    }
+
+    window.initAdminChatListener = function() {
+        onValue(ref(db, 'public_chat'), (snapshot) => {
+            objPublicChat = snapshot.exists() ? snapshot.val() : {}; let chatBox = document.getElementById("adminChatBox"); if(!chatBox) return;
+            if(!snapshot.exists()) { chatBox.innerHTML = "<p style='text-align:center; color:#94a3b8;'>Phòng chat trống...</p>"; return; }
+            let entries = Object.entries(snapshot.val()).sort((a,b) => a[1].timestamp - b[1].timestamp); let html = "";
+            entries.forEach(([msgKey, msg]) => {
+                let deleteBtnHtml = `<button class="chat-delete-btn" onclick="window.deleteChatMessage('${msgKey}')" title="Xóa tin nhắn" style="background:transparent; border:none; color:#ef4444; cursor:pointer; margin: 0 5px; padding:4px;"><i class="fa-solid fa-trash-can"></i></button>`;
+                if(msg.isAdmin || msg.studentId === "ADMIN") {
+                    html += `<div class="chat-bubble-row me" style="display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-bottom:10px;">${deleteBtnHtml}<div class="chat-bubble-body" style="text-align:right;"><span class="chat-msg-author" style="color:#ef4444; font-weight:700; display:block; margin-bottom:4px;"><i class="fa-solid fa-bullhorn"></i> BAN GIÁM HIỆU</span><div class="chat-msg-text" style="background: linear-gradient(135deg, #ef4444, #f59e0b); color: white; padding:10px 14px; border-radius:16px 16px 2px 16px; display:inline-block; max-width:100%; word-break:break-word;">${msg.message}</div></div></div>`;
+                } else {
+                    html += `<div class="chat-bubble-row other" style="display:flex; justify-content:flex-start; align-items:center; gap:10px; margin-bottom:10px;"><div class="chat-avatar-placeholder" style="width:34px; height:34px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-weight:bold;">👤</div><div class="chat-bubble-body"><span class="chat-msg-author" style="font-weight:700; color:#475569; display:block; margin-bottom:4px;">${msg.name || 'Học sinh'} (${msg.studentId})</span><div class="chat-msg-text" style="background: #ffffff; color: #1e293b; border: 1px solid #e2e8f0; padding:10px 14px; border-radius:16px 16px 16px 2px; display:inline-block; max-width:100%; word-break:break-word;">${msg.message}</div></div>${deleteBtnHtml}</div>`;
+                }
+            });
+            chatBox.innerHTML = html; chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    }
+
+    window.deleteChatMessage = function(msgKey) { if (!validateMasterAdminPrivilege()) return; if (!confirm("⚠️ Bạn có chắc chắn muốn xóa tin nhắn này không?")) return; set(ref(db, 'public_chat/' + msgKey), null).catch(err => alert("Lỗi: " + err)); }
+    window.sendAdminAnnouncement = function() { let input = document.getElementById("adminChatInput"); let txt = input.value.trim(); if(!txt) return; set(ref(db, 'public_chat/' + Date.now()), { studentId: "ADMIN", name: "BAN GIÁM HIỆU", message: txt, isAdmin: true, timestamp: Date.now() }).then(() => input.value = ""); }
+    window.togglePasswordDisplay = function(key, rawPwd) { const pwdSpan = document.getElementById(`pwd-${key}`); const eyeIcon = document.getElementById(`eye-${key}`); if (pwdSpan.innerText === "•••••") { pwdSpan.innerText = rawPwd; eyeIcon.className = "fa-solid fa-eye-slash"; } else { pwdSpan.innerText = "•••••"; eyeIcon.className = "fa-solid fa-eye"; } }
+
+    document.getElementById("nppCodeEditor").addEventListener("keyup", updateCursorPosIndicator);
+    document.getElementById("nppCodeEditor").addEventListener("click", updateCursorPosIndicator);
+    function updateCursorPosIndicator() { const text = this.value; const selStart = this.selectionStart; const lines = text.substring(0, selStart).split('\n'); const ln = lines.length; const col = lines[lines.length - 1].length + 1; document.getElementById("nppStatusLnCol").innerText = `Ln: ${ln}  Col: ${col}`; }
+
+    window.renderAdminPostsView = function() {
+        let container = document.getElementById("adminPostsContainer"); if(!container) return; container.innerHTML = "";
+        let entries = Object.entries(objPosts).sort((a,b) => b[1].timestamp - a[1].timestamp);
+        if(entries.length === 0) { container.innerHTML = "<tr><td class='empty-message'>Chưa có bài đăng nào trên hệ thống bảng tin.</td></tr>"; return; }
+        entries.forEach(([postKey, post]) => {
+            let commentHtml = "";
+            if(post.comments) {
+                Object.entries(post.comments).forEach(([cmtKey, cmt]) => {
+                    commentHtml += `<div style="background:#f1f5f9; padding:8px 12px; border-radius:8px; margin-top:5px; display:flex; justify-content:space-between; align-items:center;"><span style="font-size:13px; color:#334155;"><b>${cmt.userName}</b>: ${cmt.text}</span><i class="fa-solid fa-trash-can" style="color:#ef4444; cursor:pointer; font-size:12px;" onclick="window.deleteAdminComment('${postKey}', '${cmtKey}')" title="Xóa"></i></div>`;
+                });
+            }
+            container.innerHTML += `<div class="summary-box" style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 16px; margin-bottom: 15px; text-align: left;"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px; flex-wrap: wrap; gap: 10px;"><div><span style="font-size: 14px; font-weight: 700; color:#1e293b;">👤 ${post.authorName}</span> <span class="id-text">[${post.authorId}]</span><span class="badge badge-warning" style="margin-left:5px;">Chế độ: ${post.visibility}</span></div><button class="btn btn-danger" style="padding:6px 12px; font-size:12px; margin:0; border-radius:8px;" onclick="window.deleteAdminPost('${postKey}')"><i class="fa-solid fa-trash-can"></i> Xóa bài viết</button></div><p style="margin: 15px 0; font-size:14.5px; font-weight:600; color: #1e293b; line-height: 1.5;">${post.content}</p><div style="background:#f8fafc; padding:12px; border-radius:12px; border: 1px solid #e2e8f0;"><h4 style="font-size:12px; color:#64748b; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;"><i class="fa-regular fa-comment-dots"></i> Bình luận tương tác (${post.comments ? Object.keys(post.comments).length : 0})</h4>${commentHtml || "<span style='font-size:12.5px; color:#94a3b8; font-style:italic;'>Chưa có lượt bình luận nào...</span>"}</div></div>`;
+        });
+    }
+
+    window.createAdminPost = function() {
+        let input = document.getElementById("adminPostInput"); let text = input.value.trim(); if(!text) { alert("⚠️ Vui lòng nhập nội dung trước khi công bố bài viết!"); return; }
+        let postId = Date.now(); set(ref(db, 'posts/' + postId), { authorId: "ADMIN", authorName: "BAN GIÁM HIỆU", avatar: "👑", content: text, timestamp: postId, visibility: "public" }).then(() => { input.value = ""; alert("🎉 Đã đăng bài viết thông báo công khai lên bảng tin toàn trường!"); });
+    }
+
+    window.deleteAdminPost = function(postKey) { if(!validateMasterAdminPrivilege()) return; if(confirm("⚠️ Bạn có chắc chắn muốn XÓA VĨNH VIỄN bài viết này kèm tất cả bình luận không?")) { set(ref(db, 'posts/' + postKey), null).then(() => { alert("✅ Đã gỡ bỏ bài viết khỏi hệ thống dữ liệu!"); }); } }
+    window.deleteAdminComment = function(postKey, cmtKey) { if(!validateMasterAdminPrivilege()) return; if(confirm("⚠️ Bạn có chắc muốn xóa bình luận này của học sinh không?")) { set(ref(db, `posts/${postKey}/comments/${cmtKey}`), null).then(() => { alert("✅ Đã gỡ bỏ bình luận thành công!"); }); } }
+
+    window.renderSchoolsManagementView = function() {
+        let body = document.getElementById("schoolsTableBody");
+        if(!body) return; body.innerHTML = "";
+        
+        let keys = Object.keys(objAdmins);
+        // Lọc bỏ tài khoản tối cao Master của bạn ra, chỉ hiện các admin cấp trường học
+        let schoolAdminKeys = keys.filter(k => objAdmins[k] && objAdmins[k].role === 'school_admin');
+
+        if(schoolAdminKeys.length === 0) {
+            body.innerHTML = `<tr><td colspan="6" class="empty-message">Hệ thống chưa ghi nhận tài khoản trường học nào đăng ký.</td></tr>`;
+            return;
+        }
+
+        schoolAdminKeys.forEach(key => {
+            let sch = objAdmins[key];
+            let isActive = sch.status === 'active'; 
+            
+            let statusBadge = isActive 
+                ? `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Đang hoạt động</span>`
+                : `<span class="badge badge-warning"><i class="fa-solid fa-hourglass-half"></i> Chờ phê duyệt</span>`;
+
+            let toggleBtnHtml = isActive
+                ? `<button class="btn" style="padding:6px 12px; font-size:12px; margin:0; background:#64748b; color:white; border:none; border-radius:8px;" onclick="window.changeSchoolAccountStatus('${key}', 'pending')"><i class="fa-solid fa-ban"></i> Tạm khóa</button>`
+                : `<button class="btn btn-success" style="padding:6px 12px; font-size:12px; margin:0; border-radius:8px; background:#22c55e; color:white;" onclick="window.changeSchoolAccountStatus('${key}', 'active')"><i class="fa-solid fa-user-check"></i> Phê Duyệt</button>`;
+
+            body.innerHTML += `<tr>
+                <td><b>${sch.name || '---'}</b></td>
+                <td><span style="color:#6c5ce7; font-weight:700;"><i class="fa-solid fa-school"></i> ${sch.school || '---'}</span></td>
+                <td><span class="id-text" style="background:#f3f2ff; color:#6c5ce7; border:1px solid #e0dbff;">${sch.phone || key}</span></td>
+                <td><b>${sch.city || '---'}</b></td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                        ${toggleBtnHtml}
+                        <button class="btn btn-danger" style="padding:6px 12px; font-size:12px; margin:0; border-radius:8px;" onclick="window.deleteSchoolAccountByMaster('${key}')"><i class="fa-solid fa-trash"></i> Xóa vĩnh viễn</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // Hàm thay đổi trạng thái Duyệt hoặc Khóa tài khoản trường học
+    window.changeSchoolAccountStatus = function(phoneId, statusValue) {
+        if (!validateMasterAdminPrivilege()) return;
+        
+        let confirmTxt = statusValue === 'active' ? "Thầy cô có chắc chắn muốn PHÊ DUYỆT cho trường này đi vào hoạt động?" : "Thầy cô có chắc chắn muốn KHÓA quyền truy cập của trường này?";
+        if(!confirm(confirmTxt)) return;
+
+        update(ref(db, `admins/${phoneId}`), { status: statusValue }).then(() => {
+            alert("🎉 Cập nhật trạng thái phân quyền tài khoản thành công!");
+        }).catch(err => alert("❌ Lỗi xử lý đám mây: " + err.message));
+    }
+
+    // Hàm xóa vĩnh viễn dữ liệu tài khoản trường học
+    window.deleteSchoolAccountByMaster = function(phoneId) {
+        if (!validateMasterAdminPrivilege()) return;
+        if (!confirm("⚠️ CẢNH BÁO NGUY HIỂM: Hành động này sẽ xóa sổ hoàn toàn tài khoản trường này khỏi Cloud! Thầy cô có chắc chắn muốn thực hiện?")) return;
+
+        set(ref(db, `admins/${phoneId}`), null).then(() => {
+            alert("✅ Đã xóa vĩnh viễn tài khoản trường khỏi hệ thống!");
+        }).catch(err => alert("❌ Thất bại: " + err.message));
+    }
+	window.syncCloudSystem();
+</script>
+</body>
+</html>

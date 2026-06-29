@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng nhập - Hệ Thống Khảo Sát Nhận Thức</title>
+<link rel="icon" type="image/x-icon" href="icon.ico">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    body { 
+        min-height: 100vh; display: flex; justify-content: center; align-items: center; 
+        background: linear-gradient(-45deg, #e15f41, #1a73e8, #6c5ce7, #e67e22, #10b981); 
+        background-size: 400% 400%; animation: bg 15s ease infinite; padding: 20px; 
+    }
+    @keyframes bg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    
+    .box { 
+        width: 460px; background: rgba(255, 255, 255, 0.92); 
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+        border: 1px solid rgba(255, 255, 255, 0.6); padding: 40px 32px; 
+        border-radius: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); 
+        color: #0f172a; position: relative; text-align: center;
+    }
+    
+    h2 { text-align: center; margin-bottom: 25px; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+
+    .tabs { display: flex; justify-content: center; background: #e2e8f0; padding: 6px; border-radius: 14px; margin-bottom: 25px; gap: 4px; border: 1px solid #cbd5e1; }
+    .tab-btn { flex: 1; padding: 11px 4px; border: none; background: transparent; color: #475569; font-weight: 700; font-size: 11.5px; cursor: pointer; border-radius: 10px; transition: 0.2s; white-space: nowrap; }
+    .tab-btn:hover { color: #0f172a; }
+    .tab-btn.active { background: #ffffff; color: #1a73e8; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+
+    .form-panel { display: none; width: 100%; }
+    .form-panel.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .group { position: relative; margin-bottom: 18px; text-align: left; }
+    .group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .group input, .group select { width: 100%; padding: 12px 16px; background: #f1f5f9; border: 1px solid #94a3b8; border-radius: 12px; outline: none; font-size: 14.5px; color: #0f172a; font-weight: 600; transition: all 0.2s ease; }
+    .group input:focus, .group select:focus { background: #ffffff; border-color: #1a73e8; box-shadow: 0 0 0 4px rgba(26,115,232,0.15); }
+    .group input:disabled { background: #cbd5e1; color: #475569; cursor: not-allowed; }
+    .group select option { color: #0f172a; background: #fff; }
+    .group select optgroup { font-weight: 700; color: #1a73e8; background: #e2e8f0; }
+
+    .password-container { position: relative; width: 100%; }
+    .password-container input { padding-right: 45px !important; }
+    .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #475569; z-index: 10; font-size: 16px; transition: 0.2s; }
+    .toggle-password:hover { color: #1a73e8; }
+
+    .helper-links { display: flex; justify-content: space-around; margin: -6px 0 22px 0; padding: 0 2px; gap: 8px; flex-wrap: wrap; }
+    .helper-links a { color: #475569; font-size: 12.5px; font-weight: 700; text-decoration: none; cursor: pointer; transition: 0.2s; }
+    .helper-links a:hover { color: #1a73e8; text-decoration: underline; }
+
+    .consent-group { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; background: #f1f5f9; padding: 14px; border-radius: 12px; border: 1px dashed #94a3b8; text-align: left; }
+    .consent-group input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #1a73e8; }
+    .consent-group label { font-size: 13px; line-height: 1.5; color: #334155; font-weight: 600; cursor: pointer; user-select: none; }
+
+    .btn { width: 100%; padding: 14px; background: #1a73e8; border: none; border-radius: 12px; font-size: 15px; font-weight: bold; color: white; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(26,115,232,0.2); text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn:hover { background: #155cb4; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(26,115,232,0.3); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-zalo { background: #0068ff !important; box-shadow: 0 4px 12px rgba(0,104,255,0.3) !important; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: bold; color: white; border-radius: 12px; padding: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-zalo:hover { background: #0056d6 !important; transform: translateY(-1px); }
+
+    .keep-login-box { text-align: center; padding: 10px 0; animation: fadeIn 0.4s ease; }
+    .welcome-msg { font-size: 14.5px; margin-bottom: 25px; line-height: 1.6; color: #334155; font-weight: 600; }
+    .welcome-msg strong { color: #0f172a; font-size: 19px; font-weight: 800; display: block; margin-top: 5px; }
+    .btn-switch { margin-top: 14px; background: #e2e8f0; color: #334155; border: 1px solid #94a3b8; box-shadow: none; }
+    .btn-switch:hover { background: #cbd5e1; color: #0f172a; box-shadow: none; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+    .modal-content { background: #ffffff; width: 100%; max-width: 420px; padding: 30px; border-radius: 24px; border: 1px solid #cbd5e1; color: #0f172a; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); transform: translateY(-20px); transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1); }
+    .modal-header { font-size: 18px; font-weight: 800; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px; color: #0f172a; letter-spacing: -0.3px; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-secondary { background: #e2e8f0; color: #475569; box-shadow: none; }
+    .btn-secondary:hover { background: #cbd5e1; color: #0f172a; box-shadow: none; }
+
+    .lock-banner { display: none; color: #ef4444; font-size: 13px; font-weight: 700; margin-bottom: 15px; background: #fee2e2; padding: 12px; border-radius: 12px; border: 1px solid #fca5a5; text-align: left; line-height: 1.5; }
+    .info-banner { display: none; color: #b45309; font-size: 13px; font-weight: 700; margin-bottom: 15px; background: #fef3c7; padding: 12px; border-radius: 12px; border: 1px solid #fcd34d; text-align: left; line-height: 1.5; }
+
+    ::placeholder { color: #64748b; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h2><i class="fa-solid fa-graduation-cap" style="color:#1a73e8; margin-right:6px;"></i> KHẢO SÁT NHẬN THỨC</h2>
+    
+    <div id="navigationTabs" class="tabs">
+        <button class="tab-btn active" onclick="window.switchTab('login', this)">HỌC SINH ĐN</button>
+        <button class="tab-btn" onclick="window.switchTab('parent', this)">PHỤ HUYNH</button>
+        <button class="tab-btn" onclick="window.switchTab('register', this)">ĐĂNG KÝ MỚI</button>
+        <button class="tab-btn" onclick="window.switchTab('teacher', this)">GIÁO VIÊN ĐN</button>
+    </div>
+    
+    <div id="keepLoginPanel" class="keep-login-box" style="display: none;">
+        <div class="welcome-msg">
+            Hệ thống nhận diện phiên làm việc trước đó của:
+            <strong id="savedUserName">Nguyễn Văn A</strong>
+            <small id="savedUserId" style="display:block; color:#1a73e8; font-weight:700; margin-top:6px; font-size:12.5px; font-family:monospace;"></small>
+        </div>
+        <button class="btn" onclick="continueSession()"><i class="fa-solid fa-play"></i> Tiếp tục phiên làm việc</button>
+        <button class="btn btn-switch" onclick="forgetAndSwitchAccount()"><i class="fa-solid fa-user-gear"></i> Đăng nhập tài khoản khác</button>
+    </div>
+
+    <div id="loginPanel" class="form-panel active">
+        <div class="group">
+            <label><i class="fa-solid fa-id-card"></i> Nhập mã số học sinh (ID)</label>
+            <input type="text" id="loginId" placeholder="Ví dụ: HS001" style="text-transform: uppercase;" oninput="window.checkLockoutStatus()">
+        </div>
+        <div class="group">
+            <label><i class="fa-solid fa-lock"></i> Mật khẩu</label>
+            <div class="password-container">
+                <input type="password" id="loginPassword" placeholder="Nhập mật khẩu của bạn">
+                <i class="fa-solid fa-eye toggle-password" onclick="window.togglePasswordVisibility('loginPassword', this)"></i>
+            </div>
+        </div>
+
+        <div class="helper-links">
+            <a onclick="openModal('forgotIdModal')"><i class="fa-solid fa-magnifying-glass"></i> Quên ID?</a>
+            <a onclick="openModal('forgotPwdModal')"><i class="fa-solid fa-key"></i> Quên mật khẩu?</a>
+        </div>
+
+        <div id="studentLockBanner" class="lock-banner">
+            ⚠️ ID này đã bị khóa tạm thời trong 5 phút do nhập sai quá 4 lần. Vui lòng liên hệ Admin qua Zalo ở dưới để khôi phục mật khẩu.
+        </div>
+
+        <button class="btn" id="btnLoginStudent" onclick="loginWithId()">Đăng nhập</button>
+    </div>
+
+    <div id="parentPanel" class="form-panel">
+        <div class="group">
+            <label><i class="fa-solid fa-user-shield"></i> Nhập mã số phụ huynh (ID)</label>
+            <input type="text" id="parentLoginId" placeholder="Ví dụ: PH_HS001" style="text-transform: uppercase;" oninput="window.checkParentStatus()">
+        </div>
+        <div class="group">
+            <label><i class="fa-solid fa-lock"></i> Mật khẩu của học sinh</label>
+            <div class="password-container">
+                <input type="password" id="parentLoginPassword" placeholder="Nhập mật khẩu của con em">
+                <i class="fa-solid fa-eye toggle-password" onclick="window.togglePasswordVisibility('parentLoginPassword', this)"></i>
+            </div>
+        </div>
+
+        <div id="parentInfoBanner" class="info-banner">
+            ℹ️ Nếu chưa biết được hoặc quên mật khẩu học sinh, phụ huynh có thể nhấn vào ô hỗ trợ Zalo ở dưới để được tư vấn.
+        </div>
+
+        <button class="btn" style="background: #6c5ce7; box-shadow: 0 4px 12px rgba(108,92,231,0.25);" onclick="loginWithParentId()">Xem kết quả khảo sát</button>
+    </div>
+    
+    <div id="registerPanel" class="form-panel">
+        <div class="group">
+            <label>Họ và Tên</label>
+            <input type="text" id="name" placeholder="Ví dụ: Nguyễn Văn A">
+        </div>
+        
+        <div class="group">
+            <label>Tỉnh/Thành phố</label>
+            <select id="city">
+                <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                <optgroup label="Thành phố trực thuộc Trung ương">
+                    <option value="TP. Hà Nội">TP. Hà Nội</option>
+                    <option value="TP. Hải Phòng">TP. Hải Phòng</option>
+                    <option value="TP. Huế">TP. Huế</option>
+                    <option value="TP. Đà Nẵng">TP. Đà Nẵng</option>
+                    <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
+                    <option value="TP. Cần Thơ">TP. Cần Thơ</option>
+                </optgroup>
+                <optgroup label="Các Tỉnh">
+                    <option value="An Giang">An Giang</option>
+                    <option value="Bắc Ninh">Bắc Ninh</option>
+                    <option value="Cà Mau">Cà Mau</option>
+                    <option value="Cao Bằng">Cao Bằng</option>
+                    <option value="Đắk Lắk">Đắk Lắk</option>
+                    <option value="Điện Biên">Điện Biên</option>
+                    <option value="Đồng Nai">Đồng Nai</option>
+                    <option value="Đồng Tháp">Đồng Tháp</option>
+                    <option value="Gia Lai">Gia Lai</option>
+                    <option value="Hà Tĩnh">Hà Tĩnh</option>
+                    <option value="Hưng Yên">Hưng Yên</option>
+                    <option value="Khánh Hòa">Khánh Hòa</option>
+                    <option value="Lai Châu">Lai Châu</option>
+                    <option value="Lâm Đồng">Lâm Đồng</option>
+                    <option value="Lạng Sơn">Lạng Sơn</option>
+                    <option value="Lào Cai">Lào Cai</option>
+                    <option value="Nghệ An">Nghệ An</option>
+                    <option value="Ninh Bình">Ninh Bình</option>
+                    <option value="Phú Thọ">Phú Thọ</option>
+                    <option value="Quảng Ngãi">Quảng Ngãi</option>
+                    <option value="Quảng Ninh">Quảng Ninh</option>
+                    <option value="Quảng Trị">Quảng Trị</option>
+                    <option value="Sơn La">Sơn La</option>
+                    <option value="Tây Ninh">Tây Ninh</option>
+                    <option value="Thái Nguyên">Thái Nguyên</option>
+                    <option value="Thanh Hóa">Thanh Hóa</option>
+                    <option value="Tuyên Quang">Tuyên Quang</option>
+                    <option value="Vĩnh Long">Vĩnh Long</option>
+                </optgroup>
+            </select>
+        </div>
+        
+        <div class="group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>Tuổi</label>
+                <input type="number" id="age" placeholder="Từ 11-15 tuổi">
+            </div>
+            <div>
+                <label>Khối Lớp</label>
+                <input type="number" id="class" placeholder="Số lớp (6,7,8,9)">
+            </div>
+        </div>
+        
+        <div class="group" style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px;">
+            <div>
+                <label>Tên Trường</label>
+                <input type="text" id="school" placeholder="THCS Nguyễn Khuyến">
+            </div>
+            <div>
+                <label>Giới tính</label>
+                <select id="gender">
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>Số điện thoại (Học sinh hoặc Cha mẹ)</label>
+            <input type="text" id="phone" placeholder="Bắt buộc đủ 10 số, đầu số có số 0 (Ví dụ: 0762...)">
+        </div>
+
+        <div class="group">
+            <label>Tạo mật khẩu</label>
+            <div class="password-container">
+                <input type="password" id="registerPassword" placeholder="Thiết lập mật khẩu đăng nhập">
+                <i class="fa-solid fa-eye toggle-password" onclick="window.togglePasswordVisibility('registerPassword', this)"></i>
+            </div>
+        </div>
+
+        <div class="group">
+            <label>Xác nhận mật khẩu</label>
+            <div class="password-container">
+                <input type="password" id="confirmRegisterPassword" placeholder="Nhập lại mật khẩu phía trên">
+                <i class="fa-solid fa-eye toggle-password" onclick="window.togglePasswordVisibility('confirmRegisterPassword', this)"></i>
+            </div>
+        </div>
+
+        <div class="consent-group">
+            <input type="checkbox" id="consent">
+            <label for="consent">Tôi xác nhận hoàn toàn tự nguyện tham gia đợt khảo sát sàng lọc nhận thức và cam kết tập trung hoàn thành các bài kiểm tra.</label>
+        </div>
+        
+        <button class="btn" onclick="startSurvey()">Bắt đầu làm bài</button>
+    </div>
+
+    <div id="adminLoginPanel" class="form-panel">
+        <p style="font-size: 14.5px; color: #475569; margin: 15px 0 25px 0; line-height: 1.6; font-weight: 600;">
+            Hệ thống phân luồng dành riêng cho Ban Giám Hiệu và Thầy Cô Quản Trị Học Đường.
+        </p>
+        <button class="btn" style="background: #16a34a; box-shadow: 0 4px 12px rgba(22,163,74,0.25);" onclick="window.location.href='admin.html'">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Chuyển qua trang Admin (Quản lý)
+        </button>
+    </div>
+
+    <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0 15px 0;">
+    <a href="https://zalo.me/0762523437" target="_blank" class="btn btn-zalo">
+        <i class="fa-solid fa-comment-dots"></i> Liên hệ Admin (Zalo)
+    </a>
+</div>
+
+<div id="forgotIdModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">🔍 Tra cứu lại Mã số ID</div>
+        <div class="group">
+            <label>Họ và Tên</label>
+            <input type="text" id="findIdName" placeholder="Nhập chính xác họ tên">
+        </div>
+        <div class="group">
+            <label>Tên Trường</label>
+            <input type="text" id="findIdSchool" placeholder="Ví dụ: THCS Nguyễn Khuyến">
+        </div>
+        <div class="group">
+            <label>Khối Lớp</label>
+            <input type="number" id="findIdClass" placeholder="Nhập số lớp (6, 7, 8, 9)">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('forgotIdModal')">Hủy</button>
+            <button class="btn" onclick="findStudentId()">Tìm kiếm</button>
+        </div>
+    </div>
+</div>
+
+<div id="forgotPwdModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">🔒 Đặt lại Mật khẩu Mới</div>
+        
+        <div class="group">
+            <label>Mã số học sinh (ID)</label>
+            <input type="text" id="findPwdId" placeholder="Ví dụ: HS001" style="text-transform: uppercase;">
+        </div>
+        <div class="group">
+            <label>Họ tên thật</label>
+            <input type="text" id="findPwdName" placeholder="Nhập chính xác họ tên đã đăng ký">
+        </div>
+        <div class="group">
+            <label>Số điện thoại đã đăng ký</label>
+            <input type="text" id="findPwdPhone" placeholder="Nhập đúng số điện thoại lúc đăng ký">
+        </div>
+
+        <div id="forgotPasswordStep" style="display: none; margin-top: 15px; border-top: 1px dashed #cbd5e1; padding-top: 15px; animation: fadeIn 0.4s ease;">
+            <div class="group">
+                <label>Mật khẩu mới</label>
+                <div class="password-container">
+                    <input type="password" id="newPassword" placeholder="Nhập mật khẩu mới mong muốn">
+                    <i class="fa-solid fa-eye toggle-password" onclick="window.togglePasswordVisibility('newPassword', this)"></i>
+                </div>
+            </div>
+            <div class="group">
+                <label>Xác nhận mật khẩu mới</label>
+                <div class="password-container">
+                    <input type="password" id="confirmNewPassword" placeholder="Nhập lại mật khẩu mới phía trên">
+                    <i class="fa-solid fa-eye toggle-password" onclick="window.togglePasswordVisibility('confirmNewPassword', this)"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('forgotPwdModal')">Hủy</button>
+            <button class="btn" id="btnVerifyForgot" onclick="verifyForgotInfo()">Xác thực thông tin</button>
+            <button class="btn" id="btnUpdateForgot" onclick="updateNewPassword()" style="display: none; background: #16a34a; box-shadow: 0 4px 12px rgba(22,163,74,0.25);">Cập nhật mật khẩu mới</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4YeCvjrLI0bRtvotCOVfGLLsXjVJyb0",
+        authDomain: "bo-tro-cho-tam-li.firebaseapp.com",
+        databaseURL: "https://bo-tro-choi-tam-li-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "bo-tro-cho-tam-li",
+        storageBucket: "bo-tro-cho-tam-li.firebasestorage.app",
+        messagingSenderId: "150226282506",
+        appId: "1:150226282506:web:4df0cab215501b315317f3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let checkedUser = null;
+
+    async function hashPassword(password) {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    window.togglePasswordVisibility = function(inputId, iconEl) {
+        const passwordInput = document.getElementById(inputId);
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            iconEl.classList.remove("fa-eye");
+            iconEl.classList.add("fa-eye-slash");
+        } else {
+            passwordInput.type = "password";
+            iconEl.classList.remove("fa-eye-slash");
+            iconEl.classList.add("fa-eye");
+        }
+    }
+
+    window.switchTab = function(tabName, btnEl) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.form-panel').forEach(panel => {
+            panel.classList.remove('active');
+            panel.style.display = 'none';
+        });
+        
+        if (btnEl) {
+            btnEl.classList.add('active');
+        } else {
+            if (tabName === 'login') document.querySelector('.tabs button:nth-child(1)')?.classList.add('active');
+        }
+        
+        if (tabName === 'login') {
+            document.getElementById('loginPanel').style.display = 'block';
+            document.getElementById('loginPanel').classList.add('active');
+            window.checkLockoutStatus();
+        } else if (tabName === 'parent') {
+            document.getElementById('parentPanel').style.display = 'block';
+            document.getElementById('parentPanel').classList.add('active');
+            window.checkParentStatus();
+        } else if (tabName === 'register') {
+            document.getElementById('registerPanel').style.display = 'block';
+            document.getElementById('registerPanel').classList.add('active');
+        } else if (tabName === 'teacher') {
+            document.getElementById('adminLoginPanel').style.display = 'block';
+            document.getElementById('adminLoginPanel').classList.add('active');
+        }
+    }
+
+    window.openModal = function(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+    window.closeModal = function(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        if(modalId === 'forgotPwdModal') {
+            document.getElementById("findPwdId").value = "";
+            document.getElementById("findPwdName").value = "";
+            document.getElementById("findPwdPhone").value = "";
+            document.getElementById("newPassword").value = "";
+            document.getElementById("confirmNewPassword").value = "";
+            
+            document.getElementById("forgotPasswordStep").style.display = "none";
+            document.getElementById("btnVerifyForgot").style.display = "block";
+            document.getElementById("btnUpdateForgot").style.display = "none";
+            
+            document.getElementById("findPwdId").disabled = false;
+            document.getElementById("findPwdName").disabled = false;
+            document.getElementById("findPwdPhone").disabled = false;
+            
+            checkedUser = null;
+        }
+    }
+
+    window.continueSession = function() {
+        let savedUser = JSON.parse(localStorage.getItem("user"));
+        savedUser.loginTime = new Date().toLocaleString("vi-VN");
+        localStorage.setItem("user", JSON.stringify(savedUser));
+        
+        if (savedUser.role === "parent") {
+            window.location.href = "Code/thongke.html";
+        } else {
+            window.location.href = "Code/trangchu.html";
+        }
+    }
+
+    window.forgetAndSwitchAccount = function() {
+        localStorage.removeItem("user");
+        document.getElementById("keepLoginPanel").style.display = "none";
+        document.getElementById("navigationTabs").style.display = "flex";
+        window.switchTab('login');
+    }
+
+    // --- LOGIC XỬ LÝ LOCKOUT HỌC SINH ---
+    window.checkLockoutStatus = function() {
+        let inputId = document.getElementById("loginId").value.trim().toUpperCase();
+        let btn = document.getElementById("btnLoginStudent");
+        let banner = document.getElementById("studentLockBanner");
+
+        if (!inputId) {
+            btn.disabled = false;
+            btn.style.filter = "none";
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+            banner.style.display = "none";
+            return;
+        }
+
+        let lockData = JSON.parse(localStorage.getItem("lock_student_" + inputId)) || { attempts: 0, lockUntil: 0 };
+        
+        if (lockData.lockUntil > Date.now()) {
+            let timeLeft = Math.ceil((lockData.lockUntil - Date.now()) / 1000);
+            btn.disabled = true;
+            btn.style.filter = "blur(2px)";
+            btn.style.opacity = "0.5";
+            btn.style.cursor = "not-allowed";
+            banner.innerText = `⚠️ ID này đã bị khóa tạm thời. Vui lòng quay lại sau ${timeLeft} giây hoặc liên hệ Admin qua Zalo ở dưới để khôi phục tài khoản nhé.`;
+            banner.style.display = "block";
+        } else {
+            btn.disabled = false;
+            btn.style.filter = "none";
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+            banner.style.display = "none";
+        }
+    }
+
+    function recordStudentFailure(id) {
+        let lockData = JSON.parse(localStorage.getItem("lock_student_" + id)) || { attempts: 0, lockUntil: 0 };
+        lockData.attempts += 1;
+        
+        if (lockData.attempts >= 4) {
+            lockData.lockUntil = Date.now() + 5 * 60 * 1000; // Khóa 5 phút
+            localStorage.setItem("lock_student_" + id, JSON.stringify(lockData));
+            window.checkLockoutStatus();
+            alert("❌ Em đã nhập sai mã số hoặc mật khẩu quá 4 lần! Hệ thống tự động khóa đăng nhập 5 phút. Hãy liên hệ Admin qua Zalo bên dưới.");
+        } else {
+            localStorage.setItem("lock_student_" + id, JSON.stringify(lockData));
+            alert(`❌ Thông tin đăng nhập chưa chính xác. Em còn ${4 - lockData.attempts} lần thử thử trước khi bị khóa.`);
+        }
+    }
+
+    window.loginWithId = async function() {
+        let inputId = document.getElementById("loginId").value.trim().toUpperCase();
+        let inputPwd = document.getElementById("loginPassword").value.trim();
+
+        if(inputId === "" || inputPwd === "") {
+            alert("⚠️ Vui lòng nhập đầy đủ Mã số ID và Mật khẩu!");
+            return;
+        }
+
+        // Kiểm tra vòng bảo vệ lockout lỗi 4 lần tại máy cục bộ (Giữ nguyên gốc)
+        let lockData = JSON.parse(localStorage.getItem("lock_student_" + inputId)) || { attempts: 0, lockUntil: 0 };
+        if (lockData.lockUntil > Date.now()) {
+            window.checkLockoutStatus();
+            return;
+        }
+
+        let hashedInputPwd = await hashPassword(inputPwd);
+
+        get(child(ref(db), `users/${inputId}`)).then((snapshot) => {
+            if (snapshot.exists()) {
+                let matchedUser = snapshot.val();
+                
+                // 🔴 ĐOẠN KIỂM TRA MỚI: Nếu tài khoản bị Admin khóa trên Firebase
+                let banUntil = matchedUser.banUntil || null;
+                
+                if (banUntil === "permanent") {
+                    alert("❌ TÀI KHOẢN BỊ KHÓA VĨNH VIỄN: Tài khoản của em đã bị Ban Giám Hiệu khóa vĩnh viễn trên hệ thống. Vui lòng liên hệ trực tiếp thầy cô để xử lý lỗi vi phạm!");
+                    return; // Chặn đứng đăng nhập
+                } else if (banUntil && parseInt(banUntil) > Date.now()) {
+                    let timeLeftMs = parseInt(banUntil) - Date.now();
+                    
+                    // Quy đổi mili giây còn lại thành ngôn ngữ tiếng Việt dễ đọc
+                    let timeRemainingStr = "";
+                    if (timeLeftMs > 24 * 60 * 60 * 1000) {
+                        timeRemainingStr = Math.ceil(timeLeftMs / (24 * 60 * 60 * 1000)) + " ngày";
+                    } else if (timeLeftMs > 60 * 60 * 1000) {
+                        timeRemainingStr = Math.ceil(timeLeftMs / (60 * 60 * 1000)) + " giờ";
+                    } else if (timeLeftMs > 60 * 1000) {
+                        timeRemainingStr = Math.ceil(timeLeftMs / (60 * 1000)) + " phút";
+                    } else {
+                        timeRemainingStr = Math.ceil(timeLeftMs / 1000) + " giây";
+                    }
+
+                    alert(`❌ TRẠNG THÁI BỊ KHÓA: Tài khoản của em đang phải chịu hình phạt tạm ngưng làm bài test. Em vui lòng quay lại sau [${timeRemainingStr}] nữa hệ thống sẽ tự động mở khóa nhé!`);
+                    return; // Chặn đứng đăng nhập
+                }
+
+                // Nếu không bị khóa, tiến hành kiểm tra mật khẩu như bình thường
+                if(matchedUser.password !== hashedInputPwd) {
+                    recordStudentFailure(inputId);
+                    return;
+                }
+                
+                // Đăng nhập thành công -> Xóa dấu vết đếm sai cũ
+                localStorage.removeItem("lock_student_" + inputId);
+                matchedUser.loginTime = new Date().toLocaleString("vi-VN");
+                matchedUser.role = "student";
+                localStorage.setItem("user", JSON.stringify(matchedUser));
+                alert(`🎉 Đăng nhập thành công! Xin chào học sinh: ${matchedUser.name}`);
+                window.location.href = "Code/trangchu.html";
+            } else {
+                recordStudentFailure(inputId);
+            }
+        }).catch((error) => {
+            alert("❌ Lỗi kết nối cơ sở dữ liệu: " + error);
+        });
+    }
+
+    // --- LOGIC XỬ LÝ LOCKOUT PHỤ HUYNH ---
+    window.checkParentStatus = function() {
+        let inputId = document.getElementById("parentLoginId").value.trim().toUpperCase();
+        let infoBanner = document.getElementById("parentInfoBanner");
+
+        if (!inputId) {
+            infoBanner.style.display = "none";
+            return;
+        }
+
+        let parentLock = JSON.parse(localStorage.getItem("lock_parent_" + inputId)) || { attempts: 0 };
+        if (parentLock.attempts >= 4) {
+            infoBanner.style.display = "block";
+        } else {
+            infoBanner.style.display = "none";
+        }
+    }
+
+    function recordParentFailure(id) {
+        let parentLock = JSON.parse(localStorage.getItem("lock_parent_" + id)) || { attempts: 0 };
+        parentLock.attempts += 1;
+        localStorage.setItem("lock_parent_" + id, JSON.stringify(parentLock));
+        window.checkParentStatus();
+        
+        if (parentLock.attempts >= 4) {
+            alert("⚠️ Phụ huynh đã nhập sai quá 4 lần. Hệ thống đã mở hộp thoại hỗ trợ hướng dẫn liên hệ Zalo bên dưới.");
+        } else {
+            alert(`❌ Mật khẩu chưa chính xác. Vui lòng kiểm tra lại. (Sai lần thứ ${parentLock.attempts}/4)`);
+        }
+    }
+
+    window.loginWithParentId = async function() {
+        let inputId = document.getElementById("parentLoginId").value.trim().toUpperCase();
+        let inputPwd = document.getElementById("parentLoginPassword").value.trim();
+
+        if(inputId === "" || inputPwd === "") {
+            alert("⚠️ Vui lòng nhập đầy đủ Mã số Phụ huynh và Mật khẩu!");
+            return;
+        }
+
+        if(!inputId.startsWith("PH_")) {
+            alert("⚠️ Mã số Phụ huynh không đúng định dạng! Phải bắt đầu bằng PH_ (Ví dụ: PH_HS001)");
+            return;
+        }
+
+        let studentId = inputId.replace("PH_", "");
+        let hashedInputPwd = await hashPassword(inputPwd);
+
+        get(child(ref(db), `users/${studentId}`)).then((snapshot) => {
+            if (snapshot.exists()) {
+                let matchedUser = snapshot.val();
+                if(matchedUser.password !== hashedInputPwd) {
+                    recordParentFailure(inputId);
+                    return;
+                }
+                
+                // Thành công
+                localStorage.removeItem("lock_parent_" + inputId);
+                let parentUser = {
+                    ...matchedUser,
+                    role: "parent",
+                    parentLoginId: inputId,
+                    loginTime: new Date().toLocaleString("vi-VN")
+                };
+                
+                localStorage.setItem("user", JSON.stringify(parentUser));
+                alert(`🎉 Đăng nhập thành công! Xin chào Phụ huynh em: ${matchedUser.name}`);
+                window.location.href = "Code/thongke.html";
+            } else {
+                recordParentFailure(inputId);
+            }
+        }).catch((error) => {
+            alert("❌ Lỗi kết nối dữ liệu: " + error);
+        });
+    }
+
+    window.startSurvey = async function(){
+        let name = document.getElementById("name").value.trim();
+        let city = document.getElementById("city").value.trim();
+        let age = document.getElementById("age").value.trim();
+        let school = document.getElementById("school").value.trim();
+        let classVal = document.getElementById("class").value.trim();
+        let gender = document.getElementById("gender").value;
+        let phone = document.getElementById("phone").value.trim();
+        let password = document.getElementById("registerPassword").value.trim();
+        let confirmPassword = document.getElementById("confirmRegisterPassword").value.trim();
+
+        if(name == "" || city == "" || age == "" || school == "" || classVal == "" || password == "" || confirmPassword == "" || phone == ""){
+            alert("⚠️ Vui lòng điền đầy đủ các thông tin bắt buộc!"); 
+            return;
+        }
+
+        let phoneRegex = /^0\d{9}$/;
+        if(!phoneRegex.test(phone)) {
+            alert("⚠️ Số điện thoại không hợp lệ! Phải nhập đủ 10 chữ số và bắt đầu bằng số 0.");
+            return;
+        }
+
+        if(password !== confirmPassword) {
+            alert("⚠️ Xác nhận mật khẩu không trùng khớp! Vui lòng kiểm tra lại ô xác nhận.");
+            return;
+        }
+
+        let userAge = parseInt(age, 10);
+        if(userAge < 11 || userAge > 15) {
+            alert("⚠️ Không được phép tham gia khi không thuộc lứa tuổi THCS (11-15 tuổi)!"); 
+            return;
+        }
+
+        let userClass = parseInt(classVal, 10);
+        if(isNaN(userClass) || userClass < 6 || userClass > 9) {
+            alert("⚠️ Không được phép tham gia! Chỉ dành cho học sinh thuộc cấp THCS."); 
+            return;
+        }
+
+        if(!document.getElementById("consent").checked) {
+            alert("⚠️ Bạn cần xác nhận đồng ý tham gia ở hộp kiểm phía trên!"); 
+            return;
+        }
+
+        let hashedRegisterPwd = await hashPassword(password);
+
+        get(child(ref(db), 'users')).then((snapshot) => {
+            let nextId = "HS001";
+            if (snapshot.exists()) {
+                let usersData = snapshot.val();
+                let existingNums = new Set();
+                
+                Object.keys(usersData).forEach(id => {
+                    if (id.startsWith("HS")) {
+                        let num = parseInt(id.substring(2), 10);
+                        if (!isNaN(num)) existingNums.add(num);
+                    }
+                });
+                
+                let missingNum = 1;
+                while (existingNums.has(missingNum)) {
+                    missingNum++;
+                }
+                
+                nextId = "HS" + String(missingNum).padStart(3, '0');
+            }
+
+            let user = {
+                id: nextId, 
+                name: name, 
+                city: city, 
+                age: age, 
+                school: school, 
+                class: classVal, 
+                gender: gender, 
+                phone: phone,
+                email: "---",
+                password: hashedRegisterPwd, 
+                password_raw: password, 
+                role: "student",
+                loginTime: new Date().toLocaleString("vi-VN")
+            };
+
+            set(ref(db, 'users/' + nextId), user).then(() => {
+                localStorage.setItem("user", JSON.stringify(user));
+                alert(`🎉 Đăng ký thành công! Mã số học sinh của em là: ${nextId}\nHãy ghi nhớ mã ID này và Mật khẩu để đăng nhập lần sau.`);
+                window.location.href = "Code/trangchu.html";
+            });
+        });
+    }
+
+    window.findStudentId = function() {
+        let fName = document.getElementById("findIdName").value.trim().toLowerCase();
+        let fSchool = document.getElementById("findIdSchool").value.trim().toLowerCase();
+        let fClass = document.getElementById("findIdClass").value.trim();
+
+        if(fName === "" || fSchool === "" || fClass === "") {
+            alert("⚠️ Vui lòng nhập đủ Họ tên, Trường và Khối lớp!");
+            return;
+        }
+
+        get(child(ref(db), 'users')).then((snapshot) => {
+            if (snapshot.exists()) {
+                let users = Object.values(snapshot.val());
+                let match = users.find(u => u.name.toLowerCase() === fName && u.school.toLowerCase() === fSchool && u.class === fClass);
+                if(match) {
+                    alert(`✅ Hệ thống đám mây tìm thấy ID của bạn!\n👉 Mã số ID: ${match.id}`);
+                    document.getElementById("loginId").value = match.id;
+                    window.closeModal('forgotIdModal');
+                } else {
+                    alert("❌ Không tìm thấy ID của bạn, vui lòng kiểm tra lại thông tin trên");
+                }
+            }
+        });
+    }
+
+    window.verifyForgotInfo = function() {
+        let fId = document.getElementById("findPwdId").value.trim().toUpperCase();
+        let fName = document.getElementById("findPwdName").value.trim().toLowerCase();
+        let fPhone = document.getElementById("findPwdPhone").value.trim();
+
+        if(fId === "" || fName === "" || fPhone === "") {
+            alert("⚠️ Vui lòng điền đầy đủ Mã ID, Họ tên và Số điện thoại!");
+            return;
+        }
+
+        get(child(ref(db), `users/${fId}`)).then((snapshot) => {
+            if (snapshot.exists()) {
+                let u = snapshot.val();
+                if (u.name.toLowerCase() === fName && u.phone === fPhone) {
+                    checkedUser = u;
+                    alert("✅ Xác thực thông tin thành công! Vui lòng thiết lập mật khẩu mới bên dưới.");
+                    
+                    document.getElementById("forgotPasswordStep").style.display = "block";
+                    document.getElementById("btnVerifyForgot").style.display = "none";
+                    document.getElementById("btnUpdateForgot").style.display = "block";
+                    
+                    document.getElementById("findPwdId").disabled = true;
+                    document.getElementById("findPwdName").disabled = true;
+                    document.getElementById("findPwdPhone").disabled = true;
+                } else { 
+                    alert("❌ Thông tin xác minh tài khoản không chính xác!"); 
+                }
+            } else { 
+                alert("❌ Mã số ID không tồn tại trên hệ thống!"); 
+            }
+        }).catch((error) => {
+            alert("❌ Lỗi kết nối cơ sở dữ liệu: " + error);
+        });
+    }
+
+    window.updateNewPassword = async function() {
+        let newPwd = document.getElementById("newPassword").value.trim();
+        let confirmPwd = document.getElementById("confirmNewPassword").value.trim();
+
+        if(newPwd === "" || confirmPwd === "") {
+            alert("⚠️ Vui lòng nhập mật khẩu mới và xác nhận mật khẩu!");
+            return;
+        }
+
+        if(newPwd !== confirmPwd) {
+            alert("⚠️ Xác nhận mật khẩu mới không trùng khớp! Vui lòng kiểm tra lại.");
+            return;
+        }
+
+        if(!checkedUser) {
+            alert("❌ Lỗi phiên làm việc: Chưa thực hiện xác thực danh tính!");
+            window.closeModal('forgotPwdModal');
+            return;
+        }
+
+        let hashedResetPwd = await hashPassword(newPwd);
+
+        checkedUser.password = hashedResetPwd;
+        checkedUser.password_raw = newPwd; 
+
+        set(ref(db, 'users/' + checkedUser.id), checkedUser).then(() => {
+            alert("🎉 Đặt lại mật khẩu mới thành công! Em hãy đăng nhập lại bằng mật khẩu mới này nhé.");
+            window.closeModal('forgotPwdModal');
+        }).catch((error) => {
+            alert("❌ Lỗi không thể cập nhật dữ liệu: " + error);
+        });
+    }
+
+    // Cơ chế chạy nền tự động tính toán thời gian giải phóng Khóa bảo vệ (Không cần ép người dùng gõ phím)
+    setInterval(() => {
+        window.checkLockoutStatus();
+    }, 1000);
+
+    let savedUser = localStorage.getItem("user");
+    if (savedUser) {
+        try {
+            let userData = JSON.parse(savedUser);
+            if (userData && userData.name) {
+                if (userData.role === "parent") {
+                    document.getElementById("savedUserName").innerText = `Phụ huynh em: ${userData.name}`;
+                    document.getElementById("savedUserId").innerText = `Mã số PH: ${userData.parentLoginId}`;
+                } else {
+                    document.getElementById("savedUserName").innerText = userData.name;
+                    document.getElementById("savedUserId").innerText = `Mã số ID: ${userData.id || "Chưa cấp"}`;
+                }
+                document.getElementById("keepLoginPanel").style.display = "block";
+                document.getElementById("loginPanel").style.display = "none";
+                document.getElementById("parentPanel").style.display = "none";
+                document.getElementById("registerPanel").style.display = "none";
+                document.getElementById("adminLoginPanel").style.display = "none";
+                document.getElementById("navigationTabs").style.display = "none";
+            }
+        } catch (e) {}
+    }
+</script>
+</body>
+</html>
